@@ -1,19 +1,15 @@
-import importlib.util
 import os
 import re
+import sys
 from pathlib import Path
 from typing import Dict, Iterable, List, Set, Tuple
 
+# Ensure the project root is on sys.path so that `utils` can be imported normally.
+_PROJECT_ROOT = str(Path(__file__).resolve().parents[1])
+if _PROJECT_ROOT not in sys.path:
+    sys.path.insert(0, _PROJECT_ROOT)
 
-# Load shared CSV helpers from the project-level utils module.
-_ROOT_UTILS_PATH = Path(__file__).resolve().parents[1] / "utils.py"
-_SPEC = importlib.util.spec_from_file_location("root_utils", _ROOT_UTILS_PATH)
-if _SPEC is None or _SPEC.loader is None:
-    raise ImportError(f"Cannot load shared utils from {_ROOT_UTILS_PATH}")
-_ROOT_UTILS = importlib.util.module_from_spec(_SPEC)
-_SPEC.loader.exec_module(_ROOT_UTILS)
-sniff_dialect = _ROOT_UTILS.sniff_dialect
-read_dict_rows = _ROOT_UTILS.read_dict_rows
+from utils import read_dict_rows, sniff_dialect  # noqa: E402
 
 
 # Constants and paths
