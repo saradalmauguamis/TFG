@@ -1,7 +1,19 @@
-import csv
+import importlib.util
 import os
 import re
+from pathlib import Path
 from typing import Dict, Iterable, List, Set, Tuple
+
+
+# Load shared CSV helpers from the project-level utils module.
+_ROOT_UTILS_PATH = Path(__file__).resolve().parents[1] / "utils.py"
+_SPEC = importlib.util.spec_from_file_location("root_utils", _ROOT_UTILS_PATH)
+if _SPEC is None or _SPEC.loader is None:
+    raise ImportError(f"Cannot load shared utils from {_ROOT_UTILS_PATH}")
+_ROOT_UTILS = importlib.util.module_from_spec(_SPEC)
+_SPEC.loader.exec_module(_ROOT_UTILS)
+sniff_dialect = _ROOT_UTILS.sniff_dialect
+read_dict_rows = _ROOT_UTILS.read_dict_rows
 
 
 # Constants and paths
@@ -43,44 +55,6 @@ def check_missing_files(list_of_files: List[str]) -> None:
         print("The following files were not found:")
         for path in missing_files:
             print(" -", path)
-
-
-def sniff_dialect(file_path: str) -> type[csv.Dialect]:
-    """Detect the CSV delimiter and fall back to comma if detection fails."""
-    try:
-        with open(file_path, "r", encoding="utf-8-sig", newline="") as file_handle:
-            sample = file_handle.read(65536)
-        return csv.Sniffer().sniff(sample, delimiters=",;\t")
-    except Exception:
-        class _DefaultDialect(csv.Dialect):
-            delimiter = ","
-            quotechar = '"'
-            doublequote = True
-            skipinitialspace = False
-            lineterminator = "\n"
-            quoting = csv.QUOTE_MINIMAL
-
-        return _DefaultDialect
-
-
-def read_dict_rows(file_path: str) -> Iterable[Dict[str, str]]:
-    """Read a CSV file and yield lowercase, stripped row dictionaries."""
-    dialect = sniff_dialect(file_path)
-    with open(file_path, "r", encoding="utf-8-sig", newline="") as file_handle:
-        reader = csv.DictReader(file_handle, dialect=dialect)
-        if reader.fieldnames is None:
-            raise RuntimeError(f"The file {os.path.basename(file_path)} has no header.")
-
-        normalized_field_names = {
-            name: name.lower().strip() for name in reader.fieldnames
-        }
-        for row in reader:
-            normalized_row: Dict[str, str] = {}
-            for key, value in row.items():
-                normalized_key = normalized_field_names.get(key, key).lower()
-                normalized_value = (value if value is not None else "").strip()
-                normalized_row[normalized_key] = normalized_value
-            yield normalized_row
 
 
 def get_first_nonempty(row: Dict[str, str], *names: str) -> str:
