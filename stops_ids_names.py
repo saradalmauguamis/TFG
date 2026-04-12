@@ -20,7 +20,7 @@ def collect_stops_by_prefix(
 
     for row in read_dict_rows(stops_file):
         stop_id = row.get("stop_id", "")
-        stop_name = row["stop_name"]
+        stop_name = row.get("stop_name", "").strip()
 
         for prefix in line_prefixes:
             if stop_id.startswith(prefix):
