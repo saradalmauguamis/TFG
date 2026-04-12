@@ -13,7 +13,9 @@ from utils import read_dict_rows, sniff_dialect  # noqa: E402
 
 
 # Constants and paths
-BASE = os.path.join(os.path.dirname(os.path.abspath("")), ".src", "gtfs", "data")
+# Resolve GTFS data folder independent of process working directory.
+_DEFAULT_DATA_DIR = Path(__file__).resolve().parents[1] / ".src" / "gtfs" / "data"
+BASE = str(Path(os.environ.get("GTFS_DATA_DIR", str(_DEFAULT_DATA_DIR))).resolve())
 PATHWAYS_FILE = os.path.join(BASE, "pathways.txt")
 TRANSFERS_FILE = os.path.join(BASE, "transfers.txt")
 STOPS_FILE = os.path.join(BASE, "stops.txt")
