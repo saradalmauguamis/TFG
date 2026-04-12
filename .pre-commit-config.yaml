@@ -1,0 +1,27 @@
+minimum_pre_commit_version: 4.5.0
+repos:
+  # General file cleanup
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v4.5.0
+    hooks:
+      - id: trailing-whitespace
+        exclude: \.rtf$
+      - id: end-of-file-fixer
+        exclude: (\.rtf$|\.work/)
+      - id: check-yaml
+      - id: check-json
+      - id: check-merge-conflict
+
+  # Python code formatting with Black
+  - repo: https://github.com/psf/black
+    rev: 24.1.1
+    hooks:
+      - id: black
+        language_version: python3.12
+
+  # Python linting with Flake8
+  - repo: https://github.com/PyCQA/flake8
+    rev: 7.0.0
+    hooks:
+      - id: flake8
+        args: ['--max-line-length=100', '--ignore=E203,W503']

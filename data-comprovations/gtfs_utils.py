@@ -121,7 +121,7 @@ def load_to_stop_ids(file_path: str) -> Set[str]:
     return stop_ids
 
 
-# Validation helpers 
+# Validation helpers
 def check_trip(trip_id: str, seqs_sorted: List[int]) -> List[str]:
     """Check whether stop_sequence increases by one for a trip."""
     messages: List[str] = []
@@ -275,5 +275,3 @@ __all__ = [
     "load_platform_pairs_present",
     "build_graph_and_coverage",
 ]
-
-
