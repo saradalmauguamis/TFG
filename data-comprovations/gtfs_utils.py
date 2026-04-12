@@ -257,3 +257,41 @@ def build_graph_and_coverage(
     return platform_graph, platform_to_entries, covered_platforms
 
 
+# Explicit re-exports for type checking and IDE support
+__all__ = [
+    # Shared CSV helpers from root utils
+    "sniff_dialect",
+    "read_dict_rows",
+    # Constants
+    "BASE",
+    "PATHWAYS_FILE",
+    "TRANSFERS_FILE",
+    "STOPS_FILE",
+    "STOP_TIMES_FILE",
+    "STOP_TIMES_CLEANED_FILE",
+    "TRIPS_FILE",
+    "TRIPS_CLEANED_FILE",
+    "ROUTES_FILE",
+    "ROUTE_TERMINAL_STOPS",
+    "PW_PAIR",
+    # Functions
+    "check_missing_files",
+    "get_first_nonempty",
+    "load_stop_ids",
+    "load_stop_names",
+    "load_pathway_ids",
+    "load_route_ids",
+    "load_trip_ids",
+    "load_from_stop_ids",
+    "load_to_stop_ids",
+    "check_trip",
+    "make_signature",
+    "iter_pathway_pairs",
+    "load_transfer_pairs",
+    "load_stops_info",
+    "load_platforms_by_name",
+    "load_platform_pairs_present",
+    "build_graph_and_coverage",
+]
+
+
