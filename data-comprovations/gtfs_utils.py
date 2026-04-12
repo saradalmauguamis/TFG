@@ -25,21 +25,6 @@ TRIPS_FILE = os.path.join(BASE, "trips.txt")
 TRIPS_CLEANED_FILE = os.path.join(BASE, "trips_cleaned.txt")
 ROUTES_FILE = os.path.join(BASE, "routes.txt")
 
-# Route terminals by route_id: (first_terminal_stop_id, last_terminal_stop_id)
-ROUTE_TERMINAL_STOPS: Dict[str, Tuple[str, str]] = {
-    "1.1.1": ("1.111", "1.140"),
-    "1.2.1": ("1.210", "1.227"),
-    "1.3.1": ("1.314", "1.339"),
-    "1.4.1": ("1.413", "1.434"),
-    "1.5.1": ("1.509", "1.534"),
-    "1.91.1": ("1.901", "1.918"),
-    "1.94.1": ("1.930", "1.945"),
-    "1.101.1": ("1.951", "1.916"),
-    "1.104.1": ("1.930", "1.936"),
-    "1.11.1": ("1.1136", "1.1140"),
-    "1.99.1": ("1.9901", "1.9902"),
-}
-
 
 # Regex pattern PW_PAIR
 PW_PAIR = re.compile(r"^PW\.(?P<a>[^_]+)_(?P<b>[^\s]+)$")
@@ -270,7 +255,6 @@ __all__ = [
     "TRIPS_FILE",
     "TRIPS_CLEANED_FILE",
     "ROUTES_FILE",
-    "ROUTE_TERMINAL_STOPS",
     "PW_PAIR",
     # Functions
     "check_missing_files",
