@@ -4,12 +4,12 @@ import sys
 from pathlib import Path
 from typing import Dict, Iterable, List, Set, Tuple
 
-# Ensure the project root is on sys.path so that `utils` can be imported normally.
+# Ensure the project root is on sys.path so that shared scripts can be imported.
 _PROJECT_ROOT = str(Path(__file__).resolve().parents[1])
 if _PROJECT_ROOT not in sys.path:
     sys.path.insert(0, _PROJECT_ROOT)
 
-from utils import read_dict_rows, sniff_dialect  # noqa: E402
+from scripts.utils import read_dict_rows, sniff_dialect  # noqa: E402
 
 
 # Constants and paths
