@@ -54,8 +54,8 @@ To check only staged files:
 
 ## Notebooks
 
-- `from_txt_to_xlsx.ipynb` - Convert GTFS `.txt` files to Excel `.xlsx`
-- `data-comprovations/data_comprovations.ipynb` - Data validation checks
+- `scripts/from_txt_to_xlsx.ipynb` - Convert GTFS `.txt` files to Excel `.xlsx`
+- `data_comprovations/data_comprovations.ipynb` - Data validation checks
 
 ## Configuration
 
