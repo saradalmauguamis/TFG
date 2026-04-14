@@ -1,0 +1,59 @@
+minimum_pre_commit_version: 4.5.0
+repos:
+  # General file cleanup
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v4.5.0
+    hooks:
+      - id: check-docstring-first
+      - id: check-toml
+      - id: trailing-whitespace
+        exclude: \.rtf$
+      - id: end-of-file-fixer
+        exclude: (\.rtf$|\.work/)
+      - id: mixed-line-ending
+      - id: check-yaml
+      - id: check-json
+      - id: check-merge-conflict
+      - id: debug-statements
+
+  # Python code formatting with Black
+  - repo: https://github.com/psf/black
+    rev: 24.1.1
+    hooks:
+      - id: black
+        language_version: python3.12
+
+  # Python linting with Flake8
+  - repo: https://github.com/PyCQA/flake8
+    rev: 7.0.0
+    hooks:
+      - id: flake8
+        args: ['--max-line-length=100', '--ignore=E203,W503']
+
+# aily uv run pre-commit run --all-files
+# - ruff (legacy alias)
+# - ruff format
+# - uv-lock
+# - check for added large files
+# - check for merge conflicts
+# - trim trailing whitespace
+# - fix end of files
+# - check docstring is first
+# - check toml
+# - check yaml
+# - check json
+# - debug statements (python)
+# - detect aws credentials
+# - detect private key
+# - mixed line ending
+# - yamllint
+# - add trailing commas
+
+# Not using these checks:
+# - check-added-large-files: not needed for this repo size right now
+# - ruff (legacy alias): flake8 already covers linting here
+# - ruff format: black already handles formatting
+# - uv-lock: this repo does not use uv lock management
+# - check-private-key
+# - detect-aws-credentials
+# - add-trailing-comma: black already handles comma formatting.
