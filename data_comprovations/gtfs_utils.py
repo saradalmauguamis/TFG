@@ -4,12 +4,12 @@ import sys
 from pathlib import Path
 from typing import Dict, Iterable, List, Set, Tuple
 
-# Ensure the project root is on sys.path so that `utils` can be imported normally.
+# Ensure the project root is on sys.path so that shared scripts can be imported.
 _PROJECT_ROOT = str(Path(__file__).resolve().parents[1])
 if _PROJECT_ROOT not in sys.path:
     sys.path.insert(0, _PROJECT_ROOT)
 
-from utils import read_dict_rows, sniff_dialect  # noqa: E402
+from scripts.utils import read_dict_rows, sniff_dialect  # noqa: E402
 
 
 # Constants and paths
@@ -24,21 +24,6 @@ STOP_TIMES_CLEANED_FILE = os.path.join(BASE, "stop_times_cleaned.txt")
 TRIPS_FILE = os.path.join(BASE, "trips.txt")
 TRIPS_CLEANED_FILE = os.path.join(BASE, "trips_cleaned.txt")
 ROUTES_FILE = os.path.join(BASE, "routes.txt")
-
-# Route terminals by route_id: (first_terminal_stop_id, last_terminal_stop_id)
-ROUTE_TERMINAL_STOPS: Dict[str, Tuple[str, str]] = {
-    "1.1.1": ("1.111", "1.140"),
-    "1.2.1": ("1.210", "1.227"),
-    "1.3.1": ("1.314", "1.339"),
-    "1.4.1": ("1.413", "1.434"),
-    "1.5.1": ("1.509", "1.534"),
-    "1.91.1": ("1.901", "1.918"),
-    "1.94.1": ("1.930", "1.945"),
-    "1.101.1": ("1.951", "1.916"),
-    "1.104.1": ("1.930", "1.936"),
-    "1.11.1": ("1.1136", "1.1140"),
-    "1.99.1": ("1.9901", "1.9902"),
-}
 
 
 # Regex pattern PW_PAIR
@@ -136,7 +121,7 @@ def load_to_stop_ids(file_path: str) -> Set[str]:
     return stop_ids
 
 
-# Validation helpers 
+# Validation helpers
 def check_trip(trip_id: str, seqs_sorted: List[int]) -> List[str]:
     """Check whether stop_sequence increases by one for a trip."""
     messages: List[str] = []
@@ -270,7 +255,6 @@ __all__ = [
     "TRIPS_FILE",
     "TRIPS_CLEANED_FILE",
     "ROUTES_FILE",
-    "ROUTE_TERMINAL_STOPS",
     "PW_PAIR",
     # Functions
     "check_missing_files",
@@ -291,5 +275,3 @@ __all__ = [
     "load_platform_pairs_present",
     "build_graph_and_coverage",
 ]
-
-

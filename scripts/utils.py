@@ -11,6 +11,7 @@ def sniff_dialect(file_path: Union[str, Path]) -> type[csv.Dialect]:
             sample = file_handle.read(65536)
         return csv.Sniffer().sniff(sample, delimiters=",;\t")
     except Exception:
+
         class _DefaultDialect(csv.Dialect):
             delimiter = ","
             quotechar = '"'

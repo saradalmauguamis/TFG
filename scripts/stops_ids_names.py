@@ -1,11 +1,15 @@
 from pathlib import Path
 from typing import Dict, List
-from utils import read_dict_rows
+
+try:
+    from scripts.utils import read_dict_rows
+except ModuleNotFoundError:
+    from utils import read_dict_rows
 
 
-# Script location: <repo>/stops_ids_names.py
+# Script location: <repo>/scripts/stops_ids_names.py
 # GTFS folder:      <repo>/.src/gtfs/data
-REPO_ROOT = Path(__file__).resolve().parent
+REPO_ROOT = Path(__file__).resolve().parents[1]
 GTFS_DATA_DIR = REPO_ROOT / ".src" / "gtfs" / "data"
 STOPS_FILE = GTFS_DATA_DIR / "stops.txt"
 
@@ -16,7 +20,9 @@ def collect_stops_by_prefix(
     stops_file: Path, line_prefixes: List[str]
 ) -> Dict[str, List[Dict[str, str]]]:
     """Group stop records by the first matching line prefix."""
-    stops_by_prefix: Dict[str, List[Dict[str, str]]] = {prefix: [] for prefix in line_prefixes}
+    stops_by_prefix: Dict[str, List[Dict[str, str]]] = {
+        prefix: [] for prefix in line_prefixes
+    }
 
     for row in read_dict_rows(stops_file):
         stop_id = row.get("stop_id", "")
@@ -24,7 +30,9 @@ def collect_stops_by_prefix(
 
         for prefix in line_prefixes:
             if stop_id.startswith(prefix):
-                stops_by_prefix[prefix].append({"stop_id": stop_id, "stop_name": stop_name})
+                stops_by_prefix[prefix].append(
+                    {"stop_id": stop_id, "stop_name": stop_name}
+                )
                 break
 
     return stops_by_prefix
