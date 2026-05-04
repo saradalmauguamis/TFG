@@ -19,6 +19,9 @@ def print_iteration_header(
         current_iteration: Current iteration number.
         current_node: Node extracted from the priority queue.
         current_dist: Distance associated with the extracted node.
+
+    returns:
+        None.
     """
     print("\n" + "=" * 50)
     print(
@@ -120,6 +123,9 @@ def rebuild_path(
 def build_example_graph(num_example: int) -> Graph:
     """Directed, weighted graph.
 
+    args:
+        num_example: The example number (1 or 2) to select which graph to return.
+
     returns:
         A graph represented as an adjacency list with weights.
     """
@@ -152,6 +158,11 @@ def build_example_graph(num_example: int) -> Graph:
 
 
 def main() -> None:
+    """Run Dijkstra's algorithm on multiple example graphs and display results.
+
+    returns:
+        None.
+    """
     for num_example in [1, 2]:
         print(f"\n{'#' * 60}\nRunning example {num_example}...\n{'#' * 60}")
         graph = build_example_graph(num_example=num_example)

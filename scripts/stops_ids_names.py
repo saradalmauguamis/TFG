@@ -47,7 +47,11 @@ def collect_stops_by_prefix(
 
 
 def main() -> None:
-    """Run the script and print grouped stop identifiers and names."""
+    """Run the script and print grouped stop identifiers and names.
+
+    returns:
+        None.
+    """
     if not STOPS_FILE.exists():
         print("File not found:", STOPS_FILE)
         return
