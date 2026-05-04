@@ -20,8 +20,7 @@ def print_iteration_header(
         current_node: Node extracted from the priority queue.
         current_dist: Distance associated with the extracted node.
     """
-    print()
-    print("=" * 50)
+    print("\n" + "=" * 50)
     print(
         f"Iteration {current_iteration}: extract {current_node} with distance {current_dist}"
     )
@@ -118,52 +117,67 @@ def rebuild_path(
     return path
 
 
-def build_example_graph() -> Graph:
+def build_example_graph(num_example: int) -> Graph:
     """Directed, weighted graph.
 
     returns:
         A graph represented as an adjacency list with weights.
     """
-    return {
-        "a": {"v1": 7, "v2": 8, "v3": 1},
-        "v1": {"v6": 4, "v5": 4},
-        "v2": {"v1": 6, "v3": 1, "v5": 3},
-        "v3": {"v4": 6, "v5": 2},
-        "v4": {"v5": 1, "v9": 2},
-        "v5": {"v7": 4, "v8": 5, "v9": 1},
-        "v6": {"v5": 1, "v7": 2},
-        "v7": {"v8": 4, "b": 4},
-        "v8": {"b": 1},
-        "v9": {"v8": 3, "b": 6},
-        "b": {},
-    }
+    if num_example == 1:
+        return {
+            "a": {"v1": 7, "v2": 8, "v3": 1},
+            "v1": {"v6": 4, "v5": 4},
+            "v2": {"v1": 6, "v3": 1, "v5": 3},
+            "v3": {"v4": 6, "v5": 2},
+            "v4": {"v5": 1, "v9": 2},
+            "v5": {"v7": 4, "v8": 5, "v9": 1},
+            "v6": {"v5": 1, "v7": 2},
+            "v7": {"v8": 4, "b": 4},
+            "v8": {"b": 1},
+            "v9": {"v8": 3, "b": 6},
+            "b": {},
+        }
+    else:
+        return {
+            "a": {"v2": 4, "v3": 2, "v4": 3},
+            "v2": {"v6": 1},
+            "v3": {"v5": 1, "v6": 5},
+            "v4": {"v5": 2},
+            "v5": {"v6": 2, "b": 4},
+            "v6": {"v7": 3, "v8": 2},
+            "v7": {},
+            "v8": {"b": 1},
+            "b": {},
+        }
 
 
 def main() -> None:
-    graph = build_example_graph()
-    source = "a"
-    target = "b"
+    for num_example in [1, 2]:
+        print(f"\n{'#' * 60}\nRunning example {num_example}...\n{'#' * 60}")
+        graph = build_example_graph(num_example=num_example)
+        source = "a"
+        target = "b"
 
-    start = perf_counter()
-    dist, parent = dijkstra(graph, source, verbose=True)
-    path = rebuild_path(parent, source, target)
-    elapsed_ms = (perf_counter() - start) * 1000
+        start = perf_counter()
+        dist, parent = dijkstra(graph, source, verbose=True)
+        path = rebuild_path(parent, source, target)
+        elapsed_ms = (perf_counter() - start) * 1000
 
-    print("Shortest distances from source:")
-    for node in graph:
-        value = dist[node]
-        shown = value if value != INF else "inf"
-        print(f"- {node}: {shown}")
+        print("Shortest distances from source:")
+        for node in graph:
+            value = dist[node]
+            shown = value if value != INF else "inf"
+            print(f"- {node}: {shown}")
 
-    if path:
-        print(f"\nShortest path from {source} to {target}: {' -> '.join(path)}")
-        total = dist[target]
-        shown_total = total if total != INF else "inf"
-        print(f"Minimum distance found: {shown_total}")
-    else:
-        print(f"\nNo path found from {source} to {target}.")
+        if path:
+            print(f"\nShortest path from {source} to {target}: {' -> '.join(path)}")
+            total = dist[target]
+            shown_total = total if total != INF else "inf"
+            print(f"Minimum distance found: {shown_total}")
+        else:
+            print(f"\nNo path found from {source} to {target}.")
 
-    print(f"Execution time: {elapsed_ms:.3f} ms")
+        print(f"Execution time: {elapsed_ms:.3f} ms")
 
 
 if __name__ == "__main__":
