@@ -36,9 +36,6 @@ def check_missing_files(list_of_files: List[str]) -> None:
 
     args:
         list_of_files: File paths that should exist.
-
-    returns:
-        None.
     """
     missing_files = [path for path in list_of_files if not os.path.exists(path)]
     if missing_files:
@@ -342,9 +339,6 @@ def build_graph_and_coverage(
         args:
             stop_a: First platform stop ID.
             stop_b: Second platform stop ID.
-
-        returns:
-            None.
         """
         platform_graph.setdefault(stop_a, set()).add(stop_b)
         platform_graph.setdefault(stop_b, set()).add(stop_a)
@@ -355,9 +349,6 @@ def build_graph_and_coverage(
         args:
             platform_stop: Platform stop ID.
             entrance_stop: Entrance stop ID.
-
-        returns:
-            None.
         """
         platform_to_entries.setdefault(platform_stop, set()).add(entrance_stop)
         covered_platforms.add(platform_stop)

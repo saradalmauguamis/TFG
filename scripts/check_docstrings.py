@@ -13,9 +13,6 @@ class DocstringChecker(ast.NodeVisitor):
 
         args:
             filename: Path of the file being validated.
-
-        returns:
-            None.
         """
         self.filename = filename
         self.errors: List[str] = []
@@ -25,9 +22,6 @@ class DocstringChecker(ast.NodeVisitor):
 
         args:
             node: AST node for the function definition.
-
-        returns:
-            None.
         """
         docstring = ast.get_docstring(node)
 
@@ -58,14 +52,35 @@ class DocstringChecker(ast.NodeVisitor):
         # Check for returns section (if function has return type annotation or explicit returns)
         has_returns_section = "returns:" in docstring
         has_return_annotation = node.returns is not None
+        returns_none = self._annotation_is_none(node.returns)
 
-        if has_return_annotation and not has_returns_section:
+        if has_return_annotation and not returns_none and not has_returns_section:
             self.errors.append(
                 f"{self.filename}:{node.lineno}: "
                 f"Function '{node.name}' missing 'returns:' section in docstring"
             )
 
         self.generic_visit(node)
+
+    def _annotation_is_none(self, annotation: ast.expr | None) -> bool:
+        """Return whether an annotation is exactly None.
+
+        args:
+            annotation: Function return annotation node.
+
+        returns:
+            True when annotation is `None`, otherwise False.
+        """
+        if annotation is None:
+            return False
+
+        if isinstance(annotation, ast.Constant):
+            return annotation.value is None
+
+        if isinstance(annotation, ast.Name):
+            return annotation.id == "None"
+
+        return False
 
 
 def check_file(filename: str) -> bool:
