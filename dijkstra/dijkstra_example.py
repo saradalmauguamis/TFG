@@ -50,21 +50,26 @@ def dijkstra(
     parent: Dict[Node, Optional[Node]] = {
         node: None for node in nodes
     }  # Different in DO notes
-    expanded: Dict[Node, bool] = {node: False for node in nodes}
+    expanded: Dict[Node, bool] = {
+        node: False for node in nodes
+    }  # expanded[node] = True if the shortest path to node is already found
 
     dist[source] = 0
     pq: List[Tuple[int, Node]] = [
-        (0, source)
+        (dist[source], source)
     ]  # Priority queue of (distance, node) pairs, ordered by distance
     iteration = 0
-    print(f"Starting Dijkstra's algorithm from source: {source}")
+    print(f"Starting Dijkstra's algorithm from source {source}")
 
     while pq:  # It means "while the priority queue is not empty"
         best_dist, node = heapq.heappop(pq)
 
-        # Skip stale queue entries or already expanded nodes
         if expanded[node] or best_dist != dist[node]:
             continue
+        """ Skip already expanded nodes or stale queue entries (robustness
+        check). This check is not in the L.A.-pseudocde because it updates the
+        priority and here we can have multiple entries for the same node
+        (that's why we need this check)"""
 
         iteration += 1
         if verbose:
@@ -75,6 +80,9 @@ def dijkstra(
         for adj, weight in graph[node].items():
             if expanded[adj]:
                 continue
+            """ For not going back to already expanded nodes. We have to think
+            in the perspective of starting from the source and going forward.
+            We want the shortest path from the source, not from any other node"""
 
             new_cost = dist[node] + weight
             if new_cost < dist[adj]:
