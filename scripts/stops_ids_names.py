@@ -19,7 +19,15 @@ LINE_PREFIXES = ["1.1", "1.2", "1.3", "1.4", "1.5", "1.9"]
 def collect_stops_by_prefix(
     stops_file: Path, line_prefixes: List[str]
 ) -> Dict[str, List[Dict[str, str]]]:
-    """Group stop records by the first matching line prefix."""
+    """Group stop records by the first matching line prefix.
+
+    args:
+        stops_file: Path to stops.txt.
+        line_prefixes: Prefixes used to classify stop_id values.
+
+    returns:
+        A mapping from prefix to matching stop records.
+    """
     stops_by_prefix: Dict[str, List[Dict[str, str]]] = {
         prefix: [] for prefix in line_prefixes
     }
@@ -39,6 +47,8 @@ def collect_stops_by_prefix(
 
 
 def main() -> None:
+    """Run the script and print grouped stop identifiers and names."""
+
     if not STOPS_FILE.exists():
         print("File not found:", STOPS_FILE)
         return
