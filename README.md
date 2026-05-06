@@ -1,6 +1,4 @@
-# TFG - GTFS Data Processing
-
-Project for processing and converting GTFS transit data.
+# Modeling and Optimization of Routes in Barcelona's Public Transport Network
 
 ## Setup
 
@@ -37,6 +35,7 @@ Pre-commit runs automatically on every `git commit`. It checks:
 - ✅ YAML and JSON syntax
 - ✅ Python code with Black (formatting)
 - ✅ Python linting with Flake8
+- ✅ Function docstrings and descriptions
 
 ### Run Pre-commit Manually
 
@@ -51,11 +50,6 @@ To check only staged files:
 ```powershell
 .\.venv\Scripts\pre-commit.exe run
 ```
-
-## Notebooks
-
-- `scripts/from_txt_to_xlsx.ipynb` - Convert GTFS `.txt` files to Excel `.xlsx`
-- `data_comprovations/data_comprovations.ipynb` - Data validation checks
 
 ## Configuration
 
