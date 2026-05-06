@@ -1,7 +1,6 @@
 """Dijkstra's algorithm is based in Lluís Alsedà pseudo-code"""
 
 from __future__ import annotations
-
 import heapq
 from time import perf_counter
 from typing import Dict, List, Optional, Tuple
@@ -10,21 +9,6 @@ Node = str
 Weight = int  # IMPORTANT!
 Graph = Dict[Node, Dict[Node, Weight]]
 INF = 10**18
-
-
-def print_iteration_header(
-    current_iteration: int, current_node: Node, current_dist: int
-) -> None:
-    """Print a visual separator and the current iteration header.
-
-    args:
-        current_iteration: Current iteration number.
-        current_node: Node extracted from the priority queue.
-        current_dist: Distance associated with the extracted node.
-    """
-    print(
-        f"\nIteration {current_iteration}: extract {current_node} with distance {current_dist}"
-    )
 
 
 def _run_dijkstra(
@@ -73,7 +57,7 @@ def _run_dijkstra(
 
         iteration += 1
         if verbose:
-            print_iteration_header(iteration, node, best_dist)
+            print(f"\nIteration {iteration}: extract {node} with distance {best_dist}")
 
         expanded[node] = True
 
@@ -255,8 +239,6 @@ def build_example_graph(num_example: int) -> Graph:
 def main() -> None:
     """Run Dijkstra's algorithm on multiple example graphs and display results."""
 
-    examples = [(1, "a", "b"), (2, "v1", "v9"), (3, "v0", "v4"), (4, "A", "K")]
-
     print(
         "Disclaimer: Execution time comparisons provide only a rough reference and"
         " should not be taken as precise benchmarks. Key factors affecting timings:"
@@ -266,6 +248,8 @@ def main() -> None:
         "  • When iterations match, normal Dijkstra computes ALL distances, while"
         " cut_dijkstra computes only distances needed to reach the target"
     )
+
+    examples = [(1, "a", "b"), (2, "v1", "v9"), (3, "v0", "v4"), (4, "A", "K")]
 
     for num_example, source, target in examples:
         print("\n\n" + "=" * 50)
