@@ -36,6 +36,7 @@ Pre-commit runs automatically on every `git commit`. It checks:
 - ✅ Python code with Black (formatting)
 - ✅ Python linting with Flake8
 - ✅ Function docstrings and descriptions
+- ✅ `requirements.txt` matches `.venv` (pre-commit check)
 
 ### Run Pre-commit Manually
 
@@ -50,7 +51,3 @@ To check only staged files:
 ```powershell
 .\.venv\Scripts\pre-commit.exe run
 ```
-
-## Configuration
-
-- `.pre-commit-config.yaml` - Pre-commit hook configuration
