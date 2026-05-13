@@ -11,6 +11,42 @@ if _PROJECT_ROOT not in sys.path:
 
 from scripts.utils import read_dict_rows, sniff_dialect  # noqa: E402
 
+# Explicit re-exports for type checking and IDE support
+__all__ = [
+    # Shared CSV helpers from root utils
+    "sniff_dialect",
+    "read_dict_rows",
+    # Constants
+    "BASE",
+    "PATHWAYS_FILE",
+    "TRANSFERS_FILE",
+    "STOPS_FILE",
+    "STOP_TIMES_FILE",
+    "STOP_TIMES_CLEANED_FILE",
+    "TRIPS_FILE",
+    "TRIPS_CLEANED_FILE",
+    "ROUTES_FILE",
+    "PW_PAIR",
+    # Functions
+    "check_missing_files",
+    "get_first_nonempty",
+    "load_stop_ids",
+    "load_stop_names",
+    "load_pathway_ids",
+    "load_route_ids",
+    "load_trip_ids",
+    "load_from_stop_ids",
+    "load_to_stop_ids",
+    "check_trip",
+    "make_signature",
+    "iter_pathway_pairs",
+    "load_transfer_pairs",
+    "load_stops_info",
+    "load_platforms_by_name",
+    "load_platform_pairs_present",
+    "build_graph_and_coverage",
+]
+
 
 # Constants and paths
 # Resolve GTFS data folder independent of process working directory.
@@ -32,16 +68,20 @@ PW_PAIR = re.compile(r"^PW\.(?P<a>[^_]+)_(?P<b>[^\s]+)$")
 
 # CSV/file helpers
 def check_missing_files(list_of_files: List[str]) -> None:
-    """Print any paths that do not exist.
+    """Verify that all files exist, raising an exception if any are missing.
 
     args:
-        list_of_files: File paths that should exist.
+        list_of_files: File paths that must exist.
+
+    raises:
+        FileNotFoundError: If any files in the list do not exist.
     """
     missing_files = [path for path in list_of_files if not os.path.exists(path)]
     if missing_files:
         print("The following files were not found:")
         for path in missing_files:
             print(" -", path)
+        raise FileNotFoundError(f"Missing {len(missing_files)} required file(s).")
 
 
 def get_first_nonempty(row: Dict[str, str], *names: str) -> str:
@@ -317,7 +357,39 @@ def load_platform_pairs_present(file_path: str) -> Set[Tuple[str, str]]:
     return pairs
 
 
-# The platform graph helper that was still embedded later in the notebook
+# Helper utilities for building platform graphs
+def _add_platform_edge(
+    platform_graph: Dict[str, Set[str]], stop_a: str, stop_b: str
+) -> None:
+    """Add an undirected edge between two platform stops.
+
+    args:
+        platform_graph: Adjacency map being populated.
+        stop_a: First platform stop ID.
+        stop_b: Second platform stop ID.
+    """
+    platform_graph.setdefault(stop_a, set()).add(stop_b)
+    platform_graph.setdefault(stop_b, set()).add(stop_a)
+
+
+def _add_entry(
+    platform_to_entries: Dict[str, Set[str]],
+    covered_platforms: Set[str],
+    platform_stop: str,
+    entrance_stop: str,
+) -> None:
+    """Record an entrance that connects to a platform stop.
+
+    args:
+        platform_to_entries: Mapping of platforms to connected entrances.
+        covered_platforms: Set of platforms already covered by entrances.
+        platform_stop: Platform stop ID.
+        entrance_stop: Entrance stop ID.
+    """
+    platform_to_entries.setdefault(platform_stop, set()).add(entrance_stop)
+    covered_platforms.add(platform_stop)
+
+
 def build_graph_and_coverage(
     pathway_ids: Set[str],
 ) -> Tuple[Dict[str, Set[str]], Dict[str, Set[str]], Set[str]]:
@@ -333,26 +405,6 @@ def build_graph_and_coverage(
     platform_to_entries: Dict[str, Set[str]] = {}
     covered_platforms: Set[str] = set()
 
-    def add_platform_edge(stop_a: str, stop_b: str) -> None:
-        """Add an undirected edge between two platform stops.
-
-        args:
-            stop_a: First platform stop ID.
-            stop_b: Second platform stop ID.
-        """
-        platform_graph.setdefault(stop_a, set()).add(stop_b)
-        platform_graph.setdefault(stop_b, set()).add(stop_a)
-
-    def add_entry(platform_stop: str, entrance_stop: str) -> None:
-        """Record an entrance that connects to a platform stop.
-
-        args:
-            platform_stop: Platform stop ID.
-            entrance_stop: Entrance stop ID.
-        """
-        platform_to_entries.setdefault(platform_stop, set()).add(entrance_stop)
-        covered_platforms.add(platform_stop)
-
     for pathway_id in pathway_ids:
         match = PW_PAIR.match(pathway_id)
         if not match:
@@ -360,48 +412,11 @@ def build_graph_and_coverage(
         stop_a, stop_b = match.group("a"), match.group("b")
 
         if stop_a.startswith("1.") and stop_b.startswith("1."):
-            add_platform_edge(stop_a, stop_b)
+            _add_platform_edge(platform_graph, stop_a, stop_b)
 
         if stop_a.startswith("1.") and stop_b.startswith("E."):
-            add_entry(stop_a, stop_b)
+            _add_entry(platform_to_entries, covered_platforms, stop_a, stop_b)
         elif stop_b.startswith("1.") and stop_a.startswith("E."):
-            add_entry(stop_b, stop_a)
+            _add_entry(platform_to_entries, covered_platforms, stop_b, stop_a)
 
     return platform_graph, platform_to_entries, covered_platforms
-
-
-# Explicit re-exports for type checking and IDE support
-__all__ = [
-    # Shared CSV helpers from root utils
-    "sniff_dialect",
-    "read_dict_rows",
-    # Constants
-    "BASE",
-    "PATHWAYS_FILE",
-    "TRANSFERS_FILE",
-    "STOPS_FILE",
-    "STOP_TIMES_FILE",
-    "STOP_TIMES_CLEANED_FILE",
-    "TRIPS_FILE",
-    "TRIPS_CLEANED_FILE",
-    "ROUTES_FILE",
-    "PW_PAIR",
-    # Functions
-    "check_missing_files",
-    "get_first_nonempty",
-    "load_stop_ids",
-    "load_stop_names",
-    "load_pathway_ids",
-    "load_route_ids",
-    "load_trip_ids",
-    "load_from_stop_ids",
-    "load_to_stop_ids",
-    "check_trip",
-    "make_signature",
-    "iter_pathway_pairs",
-    "load_transfer_pairs",
-    "load_stops_info",
-    "load_platforms_by_name",
-    "load_platform_pairs_present",
-    "build_graph_and_coverage",
-]
