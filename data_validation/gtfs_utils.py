@@ -1,0 +1,422 @@
+import os
+import re
+import sys
+from pathlib import Path
+from typing import Dict, Iterable, List, Set, Tuple
+
+# Ensure the project root is on sys.path so that shared scripts can be imported.
+_PROJECT_ROOT = str(Path(__file__).resolve().parents[1])
+if _PROJECT_ROOT not in sys.path:
+    sys.path.insert(0, _PROJECT_ROOT)
+
+from scripts.utils import read_dict_rows, sniff_dialect  # noqa: E402
+
+# Explicit re-exports for type checking and IDE support
+__all__ = [
+    # Shared CSV helpers from root utils
+    "sniff_dialect",
+    "read_dict_rows",
+    # Constants
+    "BASE",
+    "PATHWAYS_FILE",
+    "TRANSFERS_FILE",
+    "STOPS_FILE",
+    "STOP_TIMES_FILE",
+    "STOP_TIMES_CLEANED_FILE",
+    "TRIPS_FILE",
+    "TRIPS_CLEANED_FILE",
+    "ROUTES_FILE",
+    "PW_PAIR",
+    # Functions
+    "check_missing_files",
+    "get_first_nonempty",
+    "load_stop_ids",
+    "load_stop_names",
+    "load_pathway_ids",
+    "load_route_ids",
+    "load_trip_ids",
+    "load_from_stop_ids",
+    "load_to_stop_ids",
+    "check_trip",
+    "make_signature",
+    "iter_pathway_pairs",
+    "load_transfer_pairs",
+    "load_stops_info",
+    "load_platforms_by_name",
+    "load_platform_pairs_present",
+    "build_graph_and_coverage",
+]
+
+
+# Constants and paths
+# Resolve GTFS data folder independent of process working directory.
+_DEFAULT_DATA_DIR = Path(__file__).resolve().parents[1] / ".src" / "gtfs" / "data"
+BASE = str(Path(os.environ.get("GTFS_DATA_DIR", str(_DEFAULT_DATA_DIR))).resolve())
+PATHWAYS_FILE = os.path.join(BASE, "pathways.txt")
+TRANSFERS_FILE = os.path.join(BASE, "transfers.txt")
+STOPS_FILE = os.path.join(BASE, "stops.txt")
+STOP_TIMES_FILE = os.path.join(BASE, "stop_times.txt")
+STOP_TIMES_CLEANED_FILE = os.path.join(BASE, "stop_times_cleaned.txt")
+TRIPS_FILE = os.path.join(BASE, "trips.txt")
+TRIPS_CLEANED_FILE = os.path.join(BASE, "trips_cleaned.txt")
+ROUTES_FILE = os.path.join(BASE, "routes.txt")
+
+
+# Regex pattern PW_PAIR
+PW_PAIR = re.compile(r"^PW\.(?P<a>[^_]+)_(?P<b>[^\s]+)$")
+
+
+# CSV/file helpers
+def check_missing_files(list_of_files: List[str]) -> None:
+    """Verify that all files exist, raising an exception if any are missing.
+
+    args:
+        list_of_files: File paths that must exist.
+
+    raises:
+        FileNotFoundError: If any files in the list do not exist.
+    """
+    missing_files = [path for path in list_of_files if not os.path.exists(path)]
+    if missing_files:
+        print("The following files were not found:")
+        for path in missing_files:
+            print(" -", path)
+        raise FileNotFoundError(f"Missing {len(missing_files)} required file(s).")
+
+
+def get_first_nonempty(row: Dict[str, str], *names: str) -> str:
+    """Return the first non-empty value found for the given field names.
+
+    args:
+        row: Row dictionary to inspect.
+        *names: Candidate field names in priority order.
+
+    returns:
+        The first non-empty value, or an empty string.
+    """
+    for name in names:
+        value = row.get(name, "").strip()
+        if value:
+            return value
+    return ""
+
+
+# Loaders/parsers
+def load_stop_ids(file_path: str) -> Set[str]:
+    """Return the set of stop_id values from a file.
+
+    args:
+        file_path: Input GTFS file path.
+
+    returns:
+        Unique stop identifiers.
+    """
+    stop_ids: Set[str] = set()
+    for row in read_dict_rows(file_path):
+        stop_id = row.get("stop_id", "").strip()
+        if stop_id:
+            stop_ids.add(stop_id)
+    return stop_ids
+
+
+def load_stop_names(file_path: str) -> Dict[str, str]:
+    """Return a mapping of stop_id to stop_name.
+
+    args:
+        file_path: Input stops file path.
+
+    returns:
+        Dictionary keyed by stop_id with stop_name values.
+    """
+    stop_names: Dict[str, str] = {}
+    for row in read_dict_rows(file_path):
+        stop_id = row.get("stop_id", "").strip()
+        stop_name = row.get("stop_name", "").strip()
+        if stop_id:
+            stop_names[stop_id] = stop_name
+    return stop_names
+
+
+def load_pathway_ids(file_path: str) -> Set[str]:
+    """Return the set of pathway_id values from a file.
+
+    args:
+        file_path: Input pathways file path.
+
+    returns:
+        Unique pathway identifiers.
+    """
+    pathway_ids: Set[str] = set()
+    for row in read_dict_rows(file_path):
+        pathway_id = row.get("pathway_id", "").strip()
+        if pathway_id:
+            pathway_ids.add(pathway_id)
+    return pathway_ids
+
+
+def load_route_ids(file_path: str) -> Set[str]:
+    """Return the set of route_id values from a file.
+
+    args:
+        file_path: Input routes file path.
+
+    returns:
+        Unique route identifiers.
+    """
+    route_ids: Set[str] = set()
+    for row in read_dict_rows(file_path):
+        route_id = row.get("route_id", "").strip()
+        if route_id:
+            route_ids.add(route_id)
+    return route_ids
+
+
+def load_trip_ids(file_path: str) -> Set[str]:
+    """Return the set of trip_id values from a file.
+
+    args:
+        file_path: Input trips file path.
+
+    returns:
+        Unique trip identifiers.
+    """
+    trip_ids: Set[str] = set()
+    for row in read_dict_rows(file_path):
+        trip_id = row.get("trip_id", "").strip()
+        if trip_id:
+            trip_ids.add(trip_id)
+    return trip_ids
+
+
+def load_from_stop_ids(file_path: str) -> Set[str]:
+    """Return the set of from_stop_id values from a file.
+
+    args:
+        file_path: Input transfers file path.
+
+    returns:
+        Unique from_stop_id values.
+    """
+    stop_ids: Set[str] = set()
+    for row in read_dict_rows(file_path):
+        stop_id = row.get("from_stop_id", "").strip()
+        if stop_id:
+            stop_ids.add(stop_id)
+    return stop_ids
+
+
+def load_to_stop_ids(file_path: str) -> Set[str]:
+    """Return the set of to_stop_id values from a file.
+
+    args:
+        file_path: Input transfers file path.
+
+    returns:
+        Unique to_stop_id values.
+    """
+    stop_ids: Set[str] = set()
+    for row in read_dict_rows(file_path):
+        stop_id = row.get("to_stop_id", "").strip()
+        if stop_id:
+            stop_ids.add(stop_id)
+    return stop_ids
+
+
+# Validation helpers
+def check_trip(trip_id: str, seqs_sorted: List[int]) -> List[str]:
+    """Check whether stop_sequence increases by one for a trip.
+
+    args:
+        trip_id: Trip identifier used in messages.
+        seqs_sorted: stop_sequence values sorted in ascending order.
+
+    returns:
+        Validation messages for detected sequence gaps.
+    """
+    messages: List[str] = []
+    last_seq = None
+    for seq in seqs_sorted:
+        if last_seq is not None and seq != last_seq + 1:
+            messages.append(
+                f"Trip_id {trip_id}: stop_sequence does not increment by one ({last_seq} -> {seq})"
+            )
+        last_seq = seq
+    return messages
+
+
+def make_signature(
+    item: Tuple[str, List[Tuple[int, str, str, str]]]
+) -> Tuple[str, Tuple[Tuple[int, str, str, str], ...]]:
+    """Build a canonical signature for a trip from its ordered stop events.
+
+    args:
+        item: Pair of trip_id and raw stop event rows.
+
+    returns:
+        Pair of trip_id and sorted immutable event signature.
+    """
+    trip_id, rows = item
+    normalized = tuple(sorted(rows, key=lambda value: value[0]))
+    return trip_id, normalized
+
+
+def iter_pathway_pairs(file_path: str) -> Iterable[Tuple[str, str, str]]:
+    """Yield (pathway_id, a, b) for rows matching the pathway pattern PW.a_b.
+
+    args:
+        file_path: Input pathways file path.
+
+    returns:
+        Iterator of parsed pathway triples.
+    """
+    for row in read_dict_rows(file_path):
+        pathway_id = row.get("pathway_id", "").strip()
+        if not pathway_id:
+            continue
+        match = PW_PAIR.match(pathway_id)
+        if not match:
+            continue
+        yield pathway_id, match.group("a"), match.group("b")
+
+
+def load_transfer_pairs(file_path: str) -> Iterable[Tuple[str, str]]:
+    """Yield (from_stop_id, to_stop_id) pairs from transfers.txt.
+
+    args:
+        file_path: Input transfers file path.
+
+    returns:
+        Iterator of transfer stop pairs.
+    """
+    for row in read_dict_rows(file_path):
+        from_stop_id = row.get("from_stop_id", "").strip()
+        to_stop_id = row.get("to_stop_id", "").strip()
+        if from_stop_id or to_stop_id:
+            yield from_stop_id, to_stop_id
+
+
+def load_stops_info(file_path: str) -> Dict[str, Tuple[str, str, str]]:
+    """Return stop_id -> (stop_name, stop_lat, stop_lon).
+
+    args:
+        file_path: Input stops file path.
+
+    returns:
+        Mapping of stop_id to name and coordinates.
+    """
+    stops_info: Dict[str, Tuple[str, str, str]] = {}
+    for row in read_dict_rows(file_path):
+        stop_id = row.get("stop_id", "").strip()
+        if not stop_id:
+            continue
+        stops_info[stop_id] = (
+            row.get("stop_name", "").strip(),
+            row.get("stop_lat", "").strip(),
+            row.get("stop_lon", "").strip(),
+        )
+    return stops_info
+
+
+def load_platforms_by_name(file_path: str) -> Dict[str, List[str]]:
+    """Return stop_name -> sorted unique platform stop_id list for 1.* platforms.
+
+    args:
+        file_path: Input stops file path.
+
+    returns:
+        Mapping from stop_name to sorted platform stop IDs.
+    """
+    platforms_by_name: Dict[str, List[str]] = {}
+    for row in read_dict_rows(file_path):
+        stop_id = row.get("stop_id", "").strip()
+        stop_name = row.get("stop_name", "").strip()
+        if not stop_id:
+            continue
+        if stop_id.startswith("1."):
+            platforms_by_name.setdefault(stop_name, []).append(stop_id)
+
+    for stop_name in list(platforms_by_name.keys()):
+        platforms_by_name[stop_name] = sorted(set(platforms_by_name[stop_name]))
+    return platforms_by_name
+
+
+def load_platform_pairs_present(file_path: str) -> Set[Tuple[str, str]]:
+    """Return undirected platform pairs (1.*, 1.*) linked by a pathway.
+
+    args:
+        file_path: Input pathways file path.
+
+    returns:
+        Set of sorted platform-stop pairs.
+    """
+    pairs: Set[Tuple[str, str]] = set()
+    for _, stop_a, stop_b in iter_pathway_pairs(file_path):
+        if stop_a.startswith("1.") and stop_b.startswith("1."):
+            first, second = sorted((stop_a, stop_b))
+            pairs.add((first, second))
+    return pairs
+
+
+# Helper utilities for building platform graphs
+def _add_platform_edge(
+    platform_graph: Dict[str, Set[str]], stop_a: str, stop_b: str
+) -> None:
+    """Add an undirected edge between two platform stops.
+
+    args:
+        platform_graph: Adjacency map being populated.
+        stop_a: First platform stop ID.
+        stop_b: Second platform stop ID.
+    """
+    platform_graph.setdefault(stop_a, set()).add(stop_b)
+    platform_graph.setdefault(stop_b, set()).add(stop_a)
+
+
+def _add_entry(
+    platform_to_entries: Dict[str, Set[str]],
+    covered_platforms: Set[str],
+    platform_stop: str,
+    entrance_stop: str,
+) -> None:
+    """Record an entrance that connects to a platform stop.
+
+    args:
+        platform_to_entries: Mapping of platforms to connected entrances.
+        covered_platforms: Set of platforms already covered by entrances.
+        platform_stop: Platform stop ID.
+        entrance_stop: Entrance stop ID.
+    """
+    platform_to_entries.setdefault(platform_stop, set()).add(entrance_stop)
+    covered_platforms.add(platform_stop)
+
+
+def build_graph_and_coverage(
+    pathway_ids: Set[str],
+) -> Tuple[Dict[str, Set[str]], Dict[str, Set[str]], Set[str]]:
+    """Build the platform graph and entrance coverage information.
+
+    args:
+        pathway_ids: Pathway IDs to parse and classify.
+
+    returns:
+        Tuple with platform graph, platform-to-entrances mapping, and covered platforms.
+    """
+    platform_graph: Dict[str, Set[str]] = {}
+    platform_to_entries: Dict[str, Set[str]] = {}
+    covered_platforms: Set[str] = set()
+
+    for pathway_id in pathway_ids:
+        match = PW_PAIR.match(pathway_id)
+        if not match:
+            continue
+        stop_a, stop_b = match.group("a"), match.group("b")
+
+        if stop_a.startswith("1.") and stop_b.startswith("1."):
+            _add_platform_edge(platform_graph, stop_a, stop_b)
+
+        if stop_a.startswith("1.") and stop_b.startswith("E."):
+            _add_entry(platform_to_entries, covered_platforms, stop_a, stop_b)
+        elif stop_b.startswith("1.") and stop_a.startswith("E."):
+            _add_entry(platform_to_entries, covered_platforms, stop_b, stop_a)
+
+    return platform_graph, platform_to_entries, covered_platforms

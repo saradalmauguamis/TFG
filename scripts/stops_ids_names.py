@@ -11,7 +11,7 @@ REPO_ROOT = Path(__file__).resolve().parents[1]
 if str(REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(REPO_ROOT))
 
-from data_comprovations.gtfs_utils import (  # noqa: E402
+from data_validation.gtfs_utils import (  # noqa: E402
     PATHWAYS_FILE as GTFS_PATHWAYS_FILE,
     STOPS_FILE as GTFS_STOPS_FILE,
     build_graph_and_coverage,
@@ -114,8 +114,6 @@ def main() -> None:
     """
 
     check_missing_files([str(STOPS_FILE)])
-    if not STOPS_FILE.exists():
-        return
 
     print("Printing stops and optional entrances of each line of Barcelona subway")
     grouped_stops = collect_stops_by_prefix(STOPS_FILE, LINE_PREFIXES)
