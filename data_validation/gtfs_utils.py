@@ -9,14 +9,24 @@ _PROJECT_ROOT = str(Path(__file__).resolve().parents[1])
 if _PROJECT_ROOT not in sys.path:
     sys.path.insert(0, _PROJECT_ROOT)
 
+
+# -----------------------------
+# Module setup
+# -----------------------------
+
 from scripts.utils import read_dict_rows, sniff_dialect  # noqa: E402
+
+
+# -----------------------------
+# Explicit re-exports
+# -----------------------------
 
 # Explicit re-exports for type checking and IDE support
 __all__ = [
-    # Shared CSV helpers from root utils
+    # Shared CSV helpers
     "sniff_dialect",
     "read_dict_rows",
-    # Constants
+    # Constants / paths
     "BASE",
     "PATHWAYS_FILE",
     "TRANSFERS_FILE",
@@ -26,10 +36,12 @@ __all__ = [
     "TRIPS_FILE",
     "TRIPS_CLEANED_FILE",
     "ROUTES_FILE",
+    # Regex / Patterns
     "PW_PAIR",
-    # Functions
+    # CSV / file helpers
     "check_missing_files",
     "get_first_nonempty",
+    # Loaders / parsers
     "load_stop_ids",
     "load_stop_names",
     "load_pathway_ids",
@@ -37,19 +49,24 @@ __all__ = [
     "load_trip_ids",
     "load_from_stop_ids",
     "load_to_stop_ids",
-    "check_trip",
-    "make_signature",
+    # Pathway / transfer helpers
     "iter_pathway_pairs",
     "load_transfer_pairs",
     "load_stops_info",
+    # Platform helpers
     "load_platforms_by_name",
     "load_platform_pairs_present",
+    # Graph builders
     "build_graph_and_coverage",
+    # Validation helpers
+    "check_trip",
+    "make_signature",
 ]
 
 
-# Constants and paths
-# Resolve GTFS data folder independent of process working directory.
+# -----------------------------
+# Constants / paths
+# -----------------------------
 _DEFAULT_DATA_DIR = Path(__file__).resolve().parents[1] / ".src" / "gtfs" / "data"
 BASE = str(Path(os.environ.get("GTFS_DATA_DIR", str(_DEFAULT_DATA_DIR))).resolve())
 PATHWAYS_FILE = os.path.join(BASE, "pathways.txt")
@@ -62,11 +79,15 @@ TRIPS_CLEANED_FILE = os.path.join(BASE, "trips_cleaned.txt")
 ROUTES_FILE = os.path.join(BASE, "routes.txt")
 
 
-# Regex pattern PW_PAIR
+# -----------------------------
+# Regex / Patterns
+# -----------------------------
 PW_PAIR = re.compile(r"^PW\.(?P<a>[^_]+)_(?P<b>[^\s]+)$")
 
 
-# CSV/file helpers
+# -----------------------------
+# CSV / file helpers
+# -----------------------------
 def check_missing_files(list_of_files: List[str]) -> None:
     """Verify that all files exist, raising an exception if any are missing.
 
@@ -101,7 +122,9 @@ def get_first_nonempty(row: Dict[str, str], *names: str) -> str:
     return ""
 
 
-# Loaders/parsers
+# -----------------------------
+# Loaders / parsers
+# -----------------------------
 def load_stop_ids(file_path: str) -> Set[str]:
     """Return the set of stop_id values from a file.
 
@@ -222,44 +245,9 @@ def load_to_stop_ids(file_path: str) -> Set[str]:
     return stop_ids
 
 
-# Validation helpers
-def check_trip(trip_id: str, seqs_sorted: List[int]) -> List[str]:
-    """Check whether stop_sequence increases by one for a trip.
-
-    args:
-        trip_id: Trip identifier used in messages.
-        seqs_sorted: stop_sequence values sorted in ascending order.
-
-    returns:
-        Validation messages for detected sequence gaps.
-    """
-    messages: List[str] = []
-    last_seq = None
-    for seq in seqs_sorted:
-        if last_seq is not None and seq != last_seq + 1:
-            messages.append(
-                f"Trip_id {trip_id}: stop_sequence does not increment by one ({last_seq} -> {seq})"
-            )
-        last_seq = seq
-    return messages
-
-
-def make_signature(
-    item: Tuple[str, List[Tuple[int, str, str, str]]]
-) -> Tuple[str, Tuple[Tuple[int, str, str, str], ...]]:
-    """Build a canonical signature for a trip from its ordered stop events.
-
-    args:
-        item: Pair of trip_id and raw stop event rows.
-
-    returns:
-        Pair of trip_id and sorted immutable event signature.
-    """
-    trip_id, rows = item
-    normalized = tuple(sorted(rows, key=lambda value: value[0]))
-    return trip_id, normalized
-
-
+# -----------------------------
+# Pathway / transfer helpers
+# -----------------------------
 def iter_pathway_pairs(file_path: str) -> Iterable[Tuple[str, str, str]]:
     """Yield (pathway_id, a, b) for rows matching the pathway pattern PW.a_b.
 
@@ -357,7 +345,9 @@ def load_platform_pairs_present(file_path: str) -> Set[Tuple[str, str]]:
     return pairs
 
 
-# Helper utilities for building platform graphs
+# -----------------------------
+# Platform graph helpers
+# -----------------------------
 def _add_platform_edge(
     platform_graph: Dict[str, Set[str]], stop_a: str, stop_b: str
 ) -> None:
@@ -398,8 +388,20 @@ def build_graph_and_coverage(
     args:
         pathway_ids: Pathway IDs to parse and classify.
 
-    returns:
-        Tuple with platform graph, platform-to-entrances mapping, and covered platforms.
+        returns:
+                Tuple containing three elements:
+
+                - `platform_graph` (Dict[str, Set[str]]): adjacency map of platform stop IDs
+                    (IDs starting with `1.`) to the set of directly connected platform stop IDs.
+                    Edges are undirected: when two platforms are connected both appear in each
+                    other's adjacency set.
+
+                - `platform_to_entries` (Dict[str, Set[str]]): mapping from a platform stop ID
+                    to the set of entrance stop IDs (IDs starting with `E.`) that connect to that
+                    platform. Only platform↔entrance pathway edges are recorded here.
+
+                - `covered_platforms` (Set[str]): set of platform stop IDs that have at least
+                    one connected entrance (i.e., the keys of `platform_to_entries`).
     """
     platform_graph: Dict[str, Set[str]] = {}
     platform_to_entries: Dict[str, Set[str]] = {}
@@ -420,3 +422,43 @@ def build_graph_and_coverage(
             _add_entry(platform_to_entries, covered_platforms, stop_b, stop_a)
 
     return platform_graph, platform_to_entries, covered_platforms
+
+
+# -----------------------------
+# Validation helpers
+# -----------------------------
+def check_trip(trip_id: str, seqs_sorted: List[int]) -> List[str]:
+    """Check whether stop_sequence increases by one for a trip.
+
+    args:
+        trip_id: Trip identifier used in messages.
+        seqs_sorted: stop_sequence values sorted in ascending order.
+
+    returns:
+        Validation messages for detected sequence gaps.
+    """
+    messages: List[str] = []
+    last_seq = None
+    for seq in seqs_sorted:
+        if last_seq is not None and seq != last_seq + 1:
+            messages.append(
+                f"Trip_id {trip_id}: stop_sequence does not increment by one ({last_seq} -> {seq})"
+            )
+        last_seq = seq
+    return messages
+
+
+def make_signature(
+    item: Tuple[str, List[Tuple[int, str, str, str]]]
+) -> Tuple[str, Tuple[Tuple[int, str, str, str], ...]]:
+    """Build a canonical signature for a trip from its ordered stop events.
+
+    args:
+        item: Pair of trip_id and raw stop event rows.
+
+    returns:
+        Pair of trip_id and sorted immutable event signature.
+    """
+    trip_id, rows = item
+    normalized = tuple(sorted(rows, key=lambda value: value[0]))
+    return trip_id, normalized

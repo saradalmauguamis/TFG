@@ -2,29 +2,39 @@
 
 ## Setup
 
+Use the commands below for your operating system.
+
 ### 1. Create Virtual Environment
 
-```powershell
-python -m venv .venv
+```bash
+# macOS / Linux
+python3 -m venv .venv
+
+# Windows (PowerShell)
+py -3 -m venv .venv
 ```
 
 ### 2. Activate Virtual Environment
 
-```powershell
-.\.venv\Scripts\activate
+```bash
+# macOS / Linux
+source .venv/bin/activate
+
+# Windows (PowerShell)
+.\.venv\Scripts\Activate.ps1
 ```
 
 ### 3. Install Dependencies
 
-```powershell
-pip install -r requirements.txt
+```bash
+python -m pip install -r requirements.txt
 ```
 
 ### 4. Install Pre-commit Hook
 
-```powershell
-.\.venv\Scripts\python.exe -m pip install pre-commit
-.\.venv\Scripts\python.exe -m pre-commit install
+```bash
+python -m pip install pre-commit
+pre-commit install
 ```
 
 ## Pre-commit Checks
@@ -42,12 +52,12 @@ Pre-commit runs automatically on every `git commit`. It checks:
 
 To check all files before committing:
 
-```powershell
-.\.venv\Scripts\pre-commit.exe run --all-files
+```bash
+pre-commit run --all-files
 ```
 
 To check only staged files:
 
-```powershell
-.\.venv\Scripts\pre-commit.exe run
+```bash
+pre-commit run
 ```
