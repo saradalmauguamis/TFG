@@ -115,8 +115,8 @@ def main() -> int:
         for p in removed:
             print("  -", p)
     print("\nUpdate requirements with (from repo root):")
-    print("  .\\.venv\\Scripts\\Activate.ps1    # Windows PowerShell")
-    print("  pip freeze > requirements.txt")
+    print("  activate the virtual environment for your OS")
+    print("  python -m pip freeze > requirements.txt")
     return 1
 
 

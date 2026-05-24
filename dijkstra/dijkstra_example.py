@@ -6,7 +6,7 @@ from time import perf_counter
 from typing import Dict, List, Optional, Tuple
 
 Node = str
-Weight = int  # IMPORTANT!
+Weight = int  # IMPORTANT! <-- change later if it's necessary
 Graph = Dict[Node, Dict[Node, Weight]]
 INF = 10**18
 
