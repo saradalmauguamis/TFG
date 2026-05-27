@@ -6,7 +6,7 @@ from time import perf_counter
 from typing import Dict, List, Optional, Tuple
 
 Node = str
-Weight = int  # IMPORTANT!
+Weight = int  # IMPORTANT! <-- change later if it's necessary
 Graph = Dict[Node, Dict[Node, Weight]]
 INF = 10**18
 
@@ -239,6 +239,23 @@ def build_example_graph(num_example: int) -> Graph:
 def main() -> None:
     """Run Dijkstra's algorithm on multiple example graphs and display results."""
 
+    examples = [(1, "a", "b"), (2, "v1", "v9"), (3, "v0", "v4"), (4, "A", "K")]
+    graph: Graph
+    start: float
+    dist: Dict[Node, int]
+    parent: Dict[Node, Optional[Node]]
+    iterations: int
+    path: List[Node]
+    elapsed_ms: float
+    cut_iterations: int
+    cut_elapsed_ms: float
+    nodes: List[Node]
+    width: int
+    value: int
+    shown: int | str
+    total: int
+    shown_total: int | str
+
     print(
         "Disclaimer: Execution time comparisons provide only a rough reference and"
         " should not be taken as precise benchmarks. Key factors affecting timings:"
@@ -248,8 +265,6 @@ def main() -> None:
         "  • When iterations match, normal Dijkstra computes ALL distances, while"
         " cut_dijkstra computes only distances needed to reach the target"
     )
-
-    examples = [(1, "a", "b"), (2, "v1", "v9"), (3, "v0", "v4"), (4, "A", "K")]
 
     for num_example, source, target in examples:
         print("\n\n" + "=" * 50)
