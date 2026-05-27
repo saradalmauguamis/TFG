@@ -26,43 +26,13 @@ if _PROJECT_ROOT not in sys.path:
 from data_validation.gtfs_utils import (  # noqa: E402
     STOP_TIMES_CLEANED_FILE,
     check_missing_files,
+    format_seconds,
     read_dict_rows,
+    SECONDS_PER_DAY,
+    parse_time_to_seconds,
 )
 
-
-SECONDS_PER_DAY = 24 * 60 * 60
 TOP_PAIRS_TO_PRINT = 10
-
-
-def parse_gtfs_time(value: str) -> int:
-    """Convert a GTFS HH:MM:SS time string to seconds.
-
-    args:
-            value: Time text in HH:MM:SS format.
-
-    returns:
-            Total seconds represented by the input time.
-    """
-
-    hours_text, minutes_text, seconds_text = value.strip().split(":")
-    return int(hours_text) * 3600 + int(minutes_text) * 60 + int(seconds_text)
-
-
-def format_seconds(value: float) -> str:
-    """Format a duration in seconds as HH:MM:SS with optional sign.
-
-    args:
-            value: Duration in seconds.
-
-    returns:
-            Formatted duration string.
-    """
-
-    sign = "-" if value < 0 else ""
-    rounded = int(round(abs(value)))
-    hours, remainder = divmod(rounded, 3600)
-    minutes, seconds = divmod(remainder, 60)
-    return f"{sign}{hours:02d}:{minutes:02d}:{seconds:02d}"
 
 
 def build_directed_pair_samples(
@@ -115,7 +85,9 @@ def build_directed_pair_samples(
         if not current_departure or not next_arrival:
             continue
 
-        travel_time = parse_gtfs_time(next_arrival) - parse_gtfs_time(current_departure)
+        travel_time = parse_time_to_seconds(next_arrival) - parse_time_to_seconds(
+            current_departure
+        )
         # Handle day rollover (e.g. 23:59:50 -> 00:00:10 gives -86380, then +86400 = 20).
         while travel_time < 0:
             travel_time += SECONDS_PER_DAY
@@ -199,6 +171,9 @@ def print_summary(
 
 def main() -> None:
     """Run the between-platforms analysis."""
+
+    pair_samples: Dict[Tuple[str, str], List[int]] = {}
+    ranked_pairs: List[Tuple[float, Tuple[str, str], float, float]] = []
 
     check_missing_files([STOP_TIMES_CLEANED_FILE])
 

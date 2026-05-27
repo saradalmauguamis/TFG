@@ -1,4 +1,6 @@
-subway_stop_ids = {
+# Ordered sequence of route_short_name and stop_id for those lines
+# If this order is followed, direction_id=0 and the inverse order corresponds to direction_id=1
+subway_route_names_stop_ids = {
     "L1": {
         "1.111",
         "1.112",
@@ -176,4 +178,19 @@ subway_stop_ids = {
     "L10N": {"1.930", "1.932", "1.933", "1.934", "1.935", "1.936"},
     "L11": {"1.1136", "1.1137", "1.1138", "1.1139", "1.1140"},
     "FM": {"1.9901", "1.9902"},
+}
+
+# Mapping between route_short_name and route_id in routes.txt
+subway_routes_names_ids = {
+    "L1": "1.1.1",
+    "L2": "1.2.1",
+    "L3": "1.3.1",
+    "L4": "1.4.1",
+    "L5": "1.5.1",
+    "L9S": "1.91.1",
+    "L9N": "1.94.1",
+    "L10S": "1.101.1",
+    "L10N": "1.104.1",
+    "L11": "1.11.1",
+    "FM": "1.99.1",
 }
