@@ -2,7 +2,7 @@ import sys
 from pathlib import Path
 from typing import Any, Dict, List, Set
 
-from basics import subway_stop_ids
+from basics import subway_route_names_stop_ids
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
 if str(REPO_ROOT) not in sys.path:
@@ -23,7 +23,7 @@ PATHWAYS_FILE = Path(GTFS_PATHWAYS_FILE)
 SHOW_ENTRANCES = True
 
 
-def build_expanded_index(
+def build_expanded_dictionary(
     stops_file: Path, pathways_file: Path, stop_ids_by_line: Dict[str, Set[str]]
 ) -> Dict[str, Dict[str, List[Dict[str, Any]]]]:
     """Build a per-line expanded index with names and entrances.
@@ -38,15 +38,23 @@ def build_expanded_index(
         a list of stop records. Each stop record contains `stop_id`, `name` and
         `entrances` (a list of dicts with `id` and `name`).
     """
+    expanded: Dict[str, Dict[str, List[Dict[str, Any]]]] = {}
+    stops_list: List[Dict[str, Any]] = []
+    line_name: str
+    ids: Set[str]
+    stop_id: str
+    name: str
+    entrance_ids: List[str]
+    entrances: List[Dict[str, str]]
+
     stop_names = load_stop_names(str(stops_file))
     _, platform_to_entrances, _ = build_graph_and_coverage(
         load_pathway_ids(str(pathways_file))
     )
 
     # Build expanded per-line structure
-    expanded: Dict[str, Dict[str, List[Dict[str, Any]]]] = {}
     for line_name, ids in stop_ids_by_line.items():
-        stops_list: List[Dict[str, Any]] = []
+        stops_list = []
         for stop_id in sorted(ids):
             name = stop_names.get(stop_id, "")
             entrance_ids = sorted(platform_to_entrances.get(stop_id, set()))
@@ -67,9 +75,14 @@ def print_expanded_line(
 
     args:
         line_name: Line label (e.g. "L1") to print.
-        line_data: Expanded per-line dict returned by `build_expanded_index`.
+        line_data: Expanded per-line dict returned by `build_expanded_dictionary`.
         show_entrances: Whether to print entrance rows beneath each platform stop.
     """
+    stops: List[Dict[str, Any]] = []
+    stop: Dict[str, Any]
+    ent_id: str = ""
+    ent_name: str = ""
+
     print("\n\n" + "=" * 50)
     print(f"{line_name}")
     print("=" * 50)
@@ -90,15 +103,19 @@ def print_expanded_line(
 
 def main() -> None:
     """Print grouped Barcelona subway stops and, optionally, entrances."""
+    expanded: Dict[str, Dict[str, List[Dict[str, Any]]]]
+
     check_missing_files([str(STOPS_FILE), str(PATHWAYS_FILE)])
 
     print("Printing stops and optional entrances of each line of Barcelona subway")
-    expanded = build_expanded_index(STOPS_FILE, PATHWAYS_FILE, subway_stop_ids)
+    expanded = build_expanded_dictionary(
+        STOPS_FILE, PATHWAYS_FILE, subway_route_names_stop_ids
+    )
 
-    for line_name in subway_stop_ids:
+    for route_name in subway_route_names_stop_ids:
         print_expanded_line(
-            line_name=line_name,
-            line_data=expanded.get(line_name, {}),
+            line_name=route_name,
+            line_data=expanded.get(route_name, {}),
             show_entrances=SHOW_ENTRANCES,
         )
 

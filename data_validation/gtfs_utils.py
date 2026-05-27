@@ -36,6 +36,7 @@ __all__ = [
     "TRIPS_FILE",
     "TRIPS_CLEANED_FILE",
     "ROUTES_FILE",
+    "SECONDS_PER_DAY",
     # Regex / Patterns
     "PW_PAIR",
     # CSV / file helpers
@@ -47,8 +48,12 @@ __all__ = [
     "load_pathway_ids",
     "load_route_ids",
     "load_trip_ids",
+    "load_trip_ids_by_route",
     "load_from_stop_ids",
     "load_to_stop_ids",
+    "parse_time_to_seconds",
+    "format_seconds",
+    "seconds_to_hms",
     # Pathway / transfer helpers
     "iter_pathway_pairs",
     "load_transfer_pairs",
@@ -61,6 +66,10 @@ __all__ = [
     # Validation helpers
     "check_trip",
     "make_signature",
+    # Additional helpers for route/trip sequence checks
+    "collect_trip_stop_ids",
+    "build_expected_adjacency",
+    "is_contiguous_subsequence",
 ]
 
 
@@ -77,6 +86,7 @@ STOP_TIMES_CLEANED_FILE = os.path.join(BASE, "stop_times_cleaned.txt")
 TRIPS_FILE = os.path.join(BASE, "trips.txt")
 TRIPS_CLEANED_FILE = os.path.join(BASE, "trips_cleaned.txt")
 ROUTES_FILE = os.path.join(BASE, "routes.txt")
+SECONDS_PER_DAY = 24 * 60 * 60
 
 
 # -----------------------------
@@ -211,6 +221,35 @@ def load_trip_ids(file_path: str) -> Set[str]:
     return trip_ids
 
 
+def load_trip_ids_by_route(file_path: str, route_id: str) -> Dict[int, Set[str]]:
+    """Return all trip_ids for a route, grouped by direction_id.
+
+    args:
+        file_path: Input trips file path.
+        route_id: Route identifier to filter trips.
+
+    returns:
+        Dictionary mapping direction_id values to sets of trip_ids.
+    """
+    trip_ids: Dict[int, Set[str]] = {0: set(), 1: set()}
+    for row in read_dict_rows(file_path):
+        if row.get("route_id") != route_id:
+            continue
+        trip_id = row.get("trip_id", "").strip()
+        if not trip_id:
+            continue
+        direction_text = row.get("direction_id", "").strip()
+        if not direction_text:
+            continue
+        try:
+            direction_id = int(direction_text)
+        except ValueError:
+            continue
+        if direction_id in trip_ids:
+            trip_ids[direction_id].add(trip_id)
+    return trip_ids
+
+
 def load_from_stop_ids(file_path: str) -> Set[str]:
     """Return the set of from_stop_id values from a file.
 
@@ -226,6 +265,53 @@ def load_from_stop_ids(file_path: str) -> Set[str]:
         if stop_id:
             stop_ids.add(stop_id)
     return stop_ids
+
+
+def parse_time_to_seconds(value: str) -> int:
+    """Convert a GTFS HH:MM:SS time string to seconds.
+
+    args:
+        value: Time text in HH:MM:SS format.
+
+    returns:
+        Total seconds represented by the input time.
+    """
+    hours_text, minutes_text, seconds_text = value.strip().split(":")
+    return int(hours_text) * 3600 + int(minutes_text) * 60 + int(seconds_text)
+
+
+def format_seconds(value: float) -> str:
+    """Format a duration in seconds as HH:MM:SS with optional sign.
+
+    args:
+        value: Duration in seconds.
+
+    returns:
+        Formatted duration string.
+    """
+    sign = "-" if value < 0 else ""
+    rounded = int(round(abs(value)))
+    hours, remainder = divmod(rounded, 3600)
+    minutes, seconds = divmod(remainder, 60)
+    return f"{sign}{hours:02d}:{minutes:02d}:{seconds:02d}"
+
+
+def seconds_to_hms(value: float) -> str:
+    """Format a duration in seconds as M:SS or H:MM:SS.
+
+    args:
+        value: Duration in seconds.
+
+    returns:
+        Formatted duration string.
+    """
+    rounded = int(round(value))
+    hours, remainder = divmod(abs(rounded), 3600)
+    minutes, seconds = divmod(remainder, 60)
+    prefix = "-" if rounded < 0 else ""
+    if hours:
+        return f"{prefix}{hours:d}:{minutes:02d}:{seconds:02d}"
+    return f"{prefix}{minutes:d}:{seconds:02d}"
 
 
 def load_to_stop_ids(file_path: str) -> Set[str]:
@@ -462,3 +548,76 @@ def make_signature(
     trip_id, rows = item
     normalized = tuple(sorted(rows, key=lambda value: value[0]))
     return trip_id, normalized
+
+
+# -----------------------------
+# Additional helpers for route/trip sequence checks
+# -----------------------------
+def collect_trip_stop_ids(file_path: str, trip_ids: Set[str]) -> Dict[str, List[str]]:
+    """Collect ordered stop_id lists for trips in `trip_ids` from a stop_times file.
+
+    args:
+        file_path: Path to stop_times (cleaned) file.
+        trip_ids: Set of trip_id strings to collect.
+
+    returns:
+        Mapping trip_id -> ordered list of stop_id (sorted by stop_sequence).
+    """
+    rows_by_trip: Dict[str, List[Tuple[int, str]]] = {}
+    result: Dict[str, List[str]] = {}
+
+    for r in read_dict_rows(file_path):
+        tid = r.get("trip_id", "").strip()
+        if tid not in trip_ids:
+            continue
+        seq_s = r.get("stop_sequence", "").strip()
+        sid = r.get("stop_id", "").strip()
+        try:
+            seq = int(seq_s)
+        except Exception:
+            seq = 10**9
+        rows_by_trip.setdefault(tid, []).append((seq, sid))
+
+    for tid, rows in rows_by_trip.items():
+        rows.sort(key=lambda x: x[0])
+        result[tid] = [sid for _, sid in rows]
+    return result
+
+
+def build_expected_adjacency(route_stop_ids: List[str]) -> Dict[str, str]:
+    """Build a forward adjacency map from a canonical ordered stop list.
+
+    For route_stop_ids = [s0, s1, s2] returns {s0: s1, s1: s2}.
+
+    args:
+        route_stop_ids: Ordered list of stop_id strings for the route.
+
+    returns:
+        Mapping from stop_id to the next stop_id along the route.
+    """
+    adj: Dict[str, str] = {}
+    for a, b in zip(route_stop_ids, route_stop_ids[1:]):
+        adj[a] = b
+    return adj
+
+
+def is_contiguous_subsequence(seq: List[str], full: List[str]) -> bool:
+    """Return True if `seq` appears as a contiguous subsequence inside `full`.
+
+    args:
+        seq: Candidate subsequence list.
+        full: Full list to search within.
+
+    returns:
+        True if `seq` is a contiguous subsequence of `full`, else False.
+    """
+    n = len(seq)
+    m = len(full)
+    if n == 0:
+        return True
+    if n > m:
+        return False
+    for i in range(m - n + 1):
+        if full[i : i + n] == seq:
+            return True
+    return False

@@ -30,10 +30,11 @@ def read_requirements(path: Path) -> List[str]:
     returns:
         List of package requirement strings (non-empty, non-comment lines).
     """
+    lines: List[str] = []
+    text: Optional[str] = None
     if not path.exists():
         return []
     # Try common encodings: utf-8, utf-8-sig (BOM), then latin-1 as a fallback.
-    text: Optional[str] = None
     for enc in ("utf-8", "utf-8-sig", "latin-1"):
         try:
             text = path.read_text(encoding=enc)
@@ -48,7 +49,7 @@ def read_requirements(path: Path) -> List[str]:
         except Exception:
             return []
 
-    lines: List[str] = [
+    lines = [
         line.strip()
         for line in text.splitlines()
         if line.strip() and not line.lstrip().startswith("#")
@@ -86,6 +87,13 @@ def main() -> int:
     returns:
         Exit code: 0 if requirements match or .venv not found, 1 if mismatch detected.
     """
+    frozen = None
+    frozen_list: List[str] = []
+    set_req: set[str] = set()
+    set_frozen: set[str] = set()
+    added: List[str] = []
+    removed: List[str] = []
+
     reqs: List[str] = read_requirements(REQ_FILE)
     if not VENV_PY.exists():
         print(
@@ -98,7 +106,7 @@ def main() -> int:
         print("Failed to obtain pip freeze output. Skipping.")
         return 0
     # frozen is Optional[List[str]]; at this point it's not None
-    frozen_list: List[str] = frozen
+    frozen_list = frozen
     if frozen_list == reqs:
         return 0
     set_req = set(reqs)
