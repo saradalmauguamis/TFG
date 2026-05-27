@@ -1,6 +1,0 @@
-- id: check-function-docstrings
-  name: Check function docstrings
-  entry: python scripts/check_docstrings.py
-  language: python
-  types: [python]
-  description: "Ensure all functions have docstrings with args:, returns:, and description"
