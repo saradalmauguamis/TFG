@@ -10,7 +10,7 @@ if str(REPO_ROOT) not in sys.path:
 
 from data_validation.gtfs_utils import (  # noqa: E402
     PATHWAYS_FILE as GTFS_PATHWAYS_FILE,
-    STOPS_FILE as GTFS_STOPS_FILE,
+    STOPS_SUBWAY_FILE as GTFS_STOPS_FILE,
     build_graph_and_coverage,
     check_missing_files,
     load_pathway_ids,
@@ -29,7 +29,7 @@ def build_expanded_dictionary(
     """Build a per-line expanded index with names and entrances.
 
     args:
-        stops_file: Path to `stops.txt`.
+        stops_file: Path to `stops_subway.txt`.
         pathways_file: Path to `pathways.txt`.
         stop_ids_by_line: Mapping of line label to platform stop IDs.
 

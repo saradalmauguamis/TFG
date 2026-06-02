@@ -28,14 +28,22 @@ __all__ = [
     "read_dict_rows",
     # Constants / paths
     "BASE",
+    "ORIGINAL_BASE",
+    "SUBWAY_BASE",
+    "DUPLICATED_TRIPS_BASE",
     "PATHWAYS_FILE",
-    "TRANSFERS_FILE",
-    "STOPS_FILE",
-    "STOP_TIMES_FILE",
-    "STOP_TIMES_CLEANED_FILE",
-    "TRIPS_FILE",
-    "TRIPS_CLEANED_FILE",
+    "ROUTES_ORIGINAL_FILE",
     "ROUTES_FILE",
+    "STOP_TIMES_ORIGINAL_FILE",
+    "STOP_TIMES_SUBWAY_FILE",
+    "STOP_TIMES_FILE",
+    "STOPS_ORIGINAL_FILE",
+    "STOPS_FILE",
+    "TRANSFERS_FILE",
+    "TRIPS_ORIGINAL_FILE",
+    "TRIPS_SUBWAY_FILE",
+    "TRIPS_FILE",
+    "TRIP_IDS_TO_ELIMINATE_FILE",
     "SECONDS_PER_DAY",
     # Regex / Patterns
     "PW_PAIR",
@@ -51,6 +59,7 @@ __all__ = [
     "load_trip_ids_by_route",
     "load_from_stop_ids",
     "load_to_stop_ids",
+    "load_nonempty_lines",
     "parse_time_to_seconds",
     "format_seconds",
     "seconds_to_hms",
@@ -76,16 +85,55 @@ __all__ = [
 # -----------------------------
 # Constants / paths
 # -----------------------------
+
 _DEFAULT_DATA_DIR = Path(__file__).resolve().parents[1] / ".src" / "gtfs" / "data"
 BASE = str(Path(os.environ.get("GTFS_DATA_DIR", str(_DEFAULT_DATA_DIR))).resolve())
-PATHWAYS_FILE = os.path.join(BASE, "pathways.txt")
-TRANSFERS_FILE = os.path.join(BASE, "transfers.txt")
-STOPS_FILE = os.path.join(BASE, "stops.txt")
-STOP_TIMES_FILE = os.path.join(BASE, "stop_times.txt")
-STOP_TIMES_CLEANED_FILE = os.path.join(BASE, "stop_times_cleaned.txt")
-TRIPS_FILE = os.path.join(BASE, "trips.txt")
-TRIPS_CLEANED_FILE = os.path.join(BASE, "trips_cleaned.txt")
-ROUTES_FILE = os.path.join(BASE, "routes.txt")
+
+_DEFAULT_ORIGINAL_DATA_DIR = _DEFAULT_DATA_DIR / "0_original"
+ORIGINAL_BASE = str(
+    Path(
+        os.environ.get("GTFS_ORIGINAL_DATA_DIR", str(_DEFAULT_ORIGINAL_DATA_DIR))
+    ).resolve()
+)
+
+_DEFAULT_SUBWAY_DATA_DIR = _DEFAULT_DATA_DIR / "1_subway"
+SUBWAY_BASE = str(
+    Path(
+        os.environ.get("GTFS_SUBWAY_DATA_DIR", str(_DEFAULT_SUBWAY_DATA_DIR))
+    ).resolve()
+)
+
+_DEFAULT_DUPLICATED_TRIPS_DATA_DIR = _DEFAULT_DATA_DIR / "2_duplicated_trips"
+DUPLICATED_TRIPS_BASE = str(
+    Path(
+        os.environ.get(
+            "GTFS_DUPLICATED_TRIPS_DATA_DIR", str(_DEFAULT_DUPLICATED_TRIPS_DATA_DIR)
+        )
+    ).resolve()
+)
+
+PATHWAYS_FILE = os.path.join(ORIGINAL_BASE, "pathways.txt")
+
+ROUTES_ORIGINAL_FILE = os.path.join(ORIGINAL_BASE, "routes.txt")
+ROUTES_FILE = os.path.join(SUBWAY_BASE, "routes_subway.txt")
+
+STOP_TIMES_ORIGINAL_FILE = os.path.join(ORIGINAL_BASE, "stop_times.txt")
+STOP_TIMES_SUBWAY_FILE = os.path.join(SUBWAY_BASE, "stop_times_subway.txt")
+STOP_TIMES_FILE = os.path.join(DUPLICATED_TRIPS_BASE, "stop_times_cleaned.txt")
+
+STOPS_ORIGINAL_FILE = os.path.join(ORIGINAL_BASE, "stops.txt")
+STOPS_FILE = os.path.join(SUBWAY_BASE, "stops_subway.txt")
+
+TRANSFERS_FILE = os.path.join(ORIGINAL_BASE, "transfers.txt")
+
+TRIPS_ORIGINAL_FILE = os.path.join(ORIGINAL_BASE, "trips.txt")
+TRIPS_SUBWAY_FILE = os.path.join(SUBWAY_BASE, "trips_subway.txt")
+TRIPS_FILE = os.path.join(DUPLICATED_TRIPS_BASE, "trips_cleaned.txt")
+
+TRIP_IDS_TO_ELIMINATE_FILE = os.path.join(
+    DUPLICATED_TRIPS_BASE, "trip_ids_to_eliminate.txt"
+)
+
 SECONDS_PER_DAY = 24 * 60 * 60
 
 
@@ -329,6 +377,24 @@ def load_to_stop_ids(file_path: str) -> Set[str]:
         if stop_id:
             stop_ids.add(stop_id)
     return stop_ids
+
+
+def load_nonempty_lines(file_path: str) -> Set[str]:
+    """Return the set of non-empty stripped lines from a text file.
+
+    args:
+        file_path: Input plain-text file path.
+
+    returns:
+        Unique non-empty lines.
+    """
+    values: Set[str] = set()
+    with open(file_path, "r", encoding="utf-8") as file_handle:
+        for line in file_handle:
+            value = line.strip()
+            if value:
+                values.add(value)
+    return values
 
 
 # -----------------------------

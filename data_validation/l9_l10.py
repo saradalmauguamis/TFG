@@ -6,11 +6,12 @@ and a direction.
 
 This script scans all matching trips for each route+direction and measures the
 time between two consecutive platform stops (departure at the first stop and
-arrival at the second) from `stop_times_cleaned.txt`. It averages those times
+arrival at the second) from `stop_times_subway_cleaned.txt`. It averages those times
 per line, direction and platform pair and prints comparisons between L9 and L10.
 It also prints the number of samples and standard deviation for each average.
 
-Files are expected under the repository at `../.src/gtfs/data/` relative to this file.
+The cleaned inputs are expected under the repository at `../.src/gtfs/data/` relative to this file.
+Raw GTFS source files live under `../.src/gtfs/data/0_original/`.
 """
 
 from __future__ import annotations
@@ -27,9 +28,10 @@ REPO_ROOT = pathlib.Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(REPO_ROOT))
 
 from data_validation.gtfs_utils import (  # noqa: E402
-    STOP_TIMES_CLEANED_FILE,
+    BASE,
     SECONDS_PER_DAY,
-    TRIPS_CLEANED_FILE,
+    STOP_TIMES_FILE,
+    TRIPS_FILE,
     check_missing_files,
     load_trip_ids_by_route,
     parse_time_to_seconds,
@@ -70,10 +72,10 @@ def collect_pair_samples_for_line(
     if not route_id:
         return {pair: [] for pair in pairs}
 
-    trip_ids_by_direction = load_trip_ids_by_route(TRIPS_CLEANED_FILE, route_id)
+    trip_ids_by_direction = load_trip_ids_by_route(TRIPS_FILE, route_id)
     relevant_trip_ids = trip_ids_by_direction.get(direction_id, set())
 
-    for row in read_dict_rows(STOP_TIMES_CLEANED_FILE):
+    for row in read_dict_rows(STOP_TIMES_FILE):
         trip_id = row.get("trip_id", "")
         if trip_id not in relevant_trip_ids:
             continue
@@ -212,13 +214,24 @@ def print_section(
             print()
 
 
-def compute_and_print():
-    """Run the L9/L10 shared-platform comparison and print the results."""
+def main() -> None:
+    """Print travel-time comparisons for the shared platforms in L9 and L10."""
     section_data = (
         ("South", lines_south, south_pairs),
         ("North", lines_north, north_pairs),
     )
-    check_missing_files([TRIPS_CLEANED_FILE, STOP_TIMES_CLEANED_FILE])
+    check_missing_files([TRIPS_FILE, STOP_TIMES_FILE])
+
+    print(
+        f"Disclaimer: for coherence we will consider the next files from {pathlib.Path(BASE)}:"
+    )
+    print(
+        f" - {pathlib.Path(TRIPS_FILE).name} from {pathlib.Path(TRIPS_FILE).parent.name}"
+    )
+    print(
+        f" - {pathlib.Path(STOP_TIMES_FILE).name} from {pathlib.Path(STOP_TIMES_FILE).parent.name}"
+    )
+
     for index, (section_name, line_names, pairs) in enumerate(section_data):
         if index:
             print()
@@ -226,4 +239,4 @@ def compute_and_print():
 
 
 if __name__ == "__main__":
-    compute_and_print()
+    main()
