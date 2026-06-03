@@ -25,13 +25,13 @@ if str(PROJECT_ROOT) not in sys.path:
 
 from data_validation.checks.commons import add_project_root_to_path  # noqa: E402
 from data_validation.gtfs_utils import (  # noqa: E402
-    BASE,
     STOP_TIMES_SUBWAY_FILE,
     STOP_TIMES_FILE,
     TRIP_IDS_TO_ELIMINATE_FILE,
     TRIPS_SUBWAY_FILE,
     TRIPS_FILE,
     check_missing_files,
+    print_file_disclaimer,
     load_nonempty_lines,
 )
 
@@ -90,12 +90,7 @@ def main() -> None:
 
     check_missing_files([trip_ids_path, stop_times_input, trips_input])
 
-    print(
-        f"Disclaimer: for coherence we will consider the next files from {Path(BASE)}:"
-    )
-    print(f" - {Path(trip_ids_path).name} from {Path(trip_ids_path).parent.name}")
-    print(f" - {Path(stop_times_input).name} from {Path(stop_times_input).parent.name}")
-    print(f" - {Path(trips_input).name} from {Path(trips_input).parent.name}")
+    print_file_disclaimer([trip_ids_path, stop_times_input, trips_input])
 
     eliminated_trip_ids = load_nonempty_lines(trip_ids_path)
     print(f"\nTrip_id to eliminate: {len(eliminated_trip_ids)}")

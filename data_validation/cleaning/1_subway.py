@@ -13,9 +13,12 @@ import sys
 from pathlib import Path
 from typing import Tuple
 
+PROJECT_ROOT = Path(__file__).resolve().parents[2]
+if str(PROJECT_ROOT) not in sys.path:
+    sys.path.insert(0, str(PROJECT_ROOT))
+
 from data_validation.checks.commons import add_project_root_to_path  # noqa: E402
-from data_validation.gtfs_utils import (
-    BASE,
+from data_validation.gtfs_utils import (  # noqa: E402
     ORIGINAL_BASE,
     ROUTES_ORIGINAL_FILE,
     STOP_TIMES_ORIGINAL_FILE,
@@ -23,13 +26,9 @@ from data_validation.gtfs_utils import (
     TRIPS_ORIGINAL_FILE,
     _DEFAULT_SUBWAY_DATA_DIR,
     check_missing_files,
-)  # noqa: E402
+    print_file_disclaimer,
+)
 from scripts.utils import sniff_dialect  # noqa: E402
-
-
-PROJECT_ROOT = Path(__file__).resolve().parents[2]
-if str(PROJECT_ROOT) not in sys.path:
-    sys.path.insert(0, str(PROJECT_ROOT))
 
 
 PROJECT_ROOT = add_project_root_to_path()
@@ -149,11 +148,7 @@ def main() -> None:
 
     check_missing_files([str(path) for path in source_paths])
 
-    print(
-        f"Disclaimer: for coherence we will consider the next files from {Path(BASE)}:"
-    )
-    for source_path in source_paths:
-        print(f" - {Path(source_path).name} from {Path(source_path).parent.name}")
+    print_file_disclaimer(source_paths)
 
     destination_dir.mkdir(parents=True, exist_ok=True)
 

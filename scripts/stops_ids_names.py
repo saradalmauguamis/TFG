@@ -9,16 +9,16 @@ if str(REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(REPO_ROOT))
 
 from data_validation.gtfs_utils import (  # noqa: E402
-    PATHWAYS_FILE as GTFS_PATHWAYS_FILE,
-    STOPS_SUBWAY_FILE as GTFS_STOPS_FILE,
+    PATHWAYS_FILE,
+    STOPS_FILE,
     build_graph_and_coverage,
     check_missing_files,
     load_pathway_ids,
     load_stop_names,
 )
 
-STOPS_FILE = Path(GTFS_STOPS_FILE)
-PATHWAYS_FILE = Path(GTFS_PATHWAYS_FILE)
+STOPS_FILE = Path(STOPS_FILE)
+PATHWAYS_FILE = Path(PATHWAYS_FILE)
 
 SHOW_ENTRANCES = True
 

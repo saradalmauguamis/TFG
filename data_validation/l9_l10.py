@@ -28,11 +28,11 @@ REPO_ROOT = pathlib.Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(REPO_ROOT))
 
 from data_validation.gtfs_utils import (  # noqa: E402
-    BASE,
     SECONDS_PER_DAY,
     STOP_TIMES_FILE,
     TRIPS_FILE,
     check_missing_files,
+    print_file_disclaimer,
     load_trip_ids_by_route,
     parse_time_to_seconds,
     read_dict_rows,
@@ -222,15 +222,7 @@ def main() -> None:
     )
     check_missing_files([TRIPS_FILE, STOP_TIMES_FILE])
 
-    print(
-        f"Disclaimer: for coherence we will consider the next files from {pathlib.Path(BASE)}:"
-    )
-    print(
-        f" - {pathlib.Path(TRIPS_FILE).name} from {pathlib.Path(TRIPS_FILE).parent.name}"
-    )
-    print(
-        f" - {pathlib.Path(STOP_TIMES_FILE).name} from {pathlib.Path(STOP_TIMES_FILE).parent.name}"
-    )
+    print_file_disclaimer([TRIPS_FILE, STOP_TIMES_FILE])
 
     for index, (section_name, line_names, pairs) in enumerate(section_data):
         if index:

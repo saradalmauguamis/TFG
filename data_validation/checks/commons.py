@@ -77,6 +77,7 @@ def ordered_subway_stops(route_name: str) -> List[str]:
         route_name: Canonical route name (e.g. 'L1').
 
     returns:
-        Ordered list of stop identifiers for the given route.
+        Ordered list of stop identifiers for the given route, in the canonical
+        direction (direction_id=0). Reverse for direction_id=1.
     """
-    return ordered_stop_ids(basics.subway_route_names_stop_ids.get(route_name, set()))
+    return list(basics.subway_route_names_stop_ids.get(route_name, []))
