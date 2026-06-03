@@ -7,13 +7,15 @@ repos:
         name: Check function docstrings
         entry: python hooks/check_docstrings.py
         language: python
-        types: [python]
+        files: \.(py|ipynb)$
+        types: [file]
         description: "Ensure all functions have docstrings with args:, returns:, and description"
       - id: check-local-variable-placement
         name: Check local variable placement
         entry: python hooks/check_local_variable_placement.py
         language: python
-        types: [python]
+        files: \.(py|ipynb)$
+        types: [file]
         description: "Ensure function-local assignments are declared at the top of the function"
       - id: check-requirements-updated
         name: Ensure requirements.txt matches .venv pip freeze
