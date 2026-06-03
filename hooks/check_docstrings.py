@@ -2,9 +2,13 @@
 
 import ast
 import io
+import os
 import sys
 import tokenize
-from typing import List, Optional
+from typing import List, Optional, Set
+
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+from notebook_utils import extract_notebook_code_cells  # noqa: E402
 
 MAX_DOCSTRING_LINE_LENGTH = 100
 
@@ -182,6 +186,85 @@ def _check_comment_lengths(source: str, filename: str) -> List[str]:
     return errors
 
 
+def _check_code_line_lengths(source: str, tree: ast.AST, filename: str) -> List[str]:
+    """Check that non-comment, non-docstring code lines stay within max length.
+
+    args:
+        source: Source code to scan.
+        tree: Parsed AST of the source.
+        filename: Path or label used in error messages.
+
+    returns:
+        Validation errors for long code lines.
+    """
+    errors: List[str] = []
+    comment_lines: Set[int] = set()
+    docstring_lines: Set[int] = set()
+
+    for token in tokenize.generate_tokens(io.StringIO(source).readline):
+        if token.type == tokenize.COMMENT:
+            comment_lines.add(token.start[0])
+    for node in ast.walk(tree):
+        if isinstance(
+            node, (ast.FunctionDef, ast.AsyncFunctionDef, ast.ClassDef, ast.Module)
+        ):
+            if (
+                node.body
+                and isinstance(node.body[0], ast.Expr)
+                and isinstance(node.body[0].value, ast.Constant)
+            ):
+                start = node.body[0].lineno
+                end = getattr(node.body[0], "end_lineno", start)
+                for lineno in range(start, end + 1):
+                    docstring_lines.add(lineno)
+
+    for i, line in enumerate(source.splitlines(), start=1):
+        if i in comment_lines or i in docstring_lines:
+            continue
+        if len(line) > MAX_DOCSTRING_LINE_LENGTH:
+            errors.append(
+                f"{filename}:{i}: Code line exceeds {MAX_DOCSTRING_LINE_LENGTH} characters"
+            )
+
+    return errors
+
+
+def check_notebook_file(filename: str) -> bool:
+    """Check a Jupyter notebook for docstring compliance and line length.
+
+    args:
+        filename: Path to a .ipynb file to validate.
+
+    returns:
+        True when all cells pass checks, otherwise False.
+    """
+    all_passed = True
+    try:
+        cells = extract_notebook_code_cells(filename)
+    except (KeyError, ValueError) as e:
+        print(f"{filename}: Could not parse notebook: {e}")
+        return False
+
+    for cell_position, source in cells:
+        cell_label = f"{filename} [cell {cell_position}]"
+        try:
+            tree = ast.parse(source, filename=cell_label)
+        except SyntaxError:
+            continue
+
+        checker = DocstringChecker(cell_label)
+        checker.visit(tree)
+        checker.errors.extend(_check_comment_lengths(source, cell_label))
+        checker.errors.extend(_check_code_line_lengths(source, tree, cell_label))
+
+        if checker.errors:
+            for error in checker.errors:
+                print(error)
+            all_passed = False
+
+    return all_passed
+
+
 def main() -> int:
     """Run validation on all file paths provided by pre-commit.
 
@@ -195,6 +278,9 @@ def main() -> int:
     for filename in sys.argv[1:]:
         if filename.endswith(".py"):
             if not check_file(filename):
+                all_passed = False
+        elif filename.endswith(".ipynb"):
+            if not check_notebook_file(filename):
                 all_passed = False
 
     return 0 if all_passed else 1
