@@ -49,6 +49,7 @@ __all__ = [
     "PW_PAIR",
     # CSV / file helpers
     "check_missing_files",
+    "print_file_disclaimer",
     "get_first_nonempty",
     # Loaders / parsers
     "load_stop_ids",
@@ -146,6 +147,29 @@ PW_PAIR = re.compile(r"^PW\.(?P<a>[^_]+)_(?P<b>[^\s]+)$")
 # -----------------------------
 # CSV / file helpers
 # -----------------------------
+def print_file_disclaimer(
+    paths: List[str | Path | Tuple[str | Path, str]],
+) -> None:
+    """Print the disclaimer header and the name/parent of each path.
+
+    Each entry can be a plain path or a (path, label) tuple. When a label is
+    given the line reads " - filename as 'label' from parent".
+
+    args:
+        paths: Sequence of paths or (path, label) tuples to include in the disclaimer.
+    """
+    print(
+        f"Disclaimer: for coherence we will consider the next files from {Path(BASE)}:"
+    )
+    for entry in paths:
+        if isinstance(entry, tuple):
+            path, label = entry
+            print(f" - {Path(path).name} as '{label}' from {Path(path).parent.name}")
+        else:
+            print(f" - {Path(entry).name} from {Path(entry).parent.name}")
+    print("\n")
+
+
 def check_missing_files(list_of_files: List[str]) -> None:
     """Verify that all files exist, raising an exception if any are missing.
 

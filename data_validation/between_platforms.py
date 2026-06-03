@@ -12,7 +12,6 @@ prints the pairs with the largest absolute differences.
 
 from __future__ import annotations
 
-import pathlib
 import sys
 from collections import defaultdict
 from pathlib import Path
@@ -25,9 +24,9 @@ if _PROJECT_ROOT not in sys.path:
     sys.path.insert(0, _PROJECT_ROOT)
 
 from data_validation.gtfs_utils import (  # noqa: E402
-    BASE,
     STOP_TIMES_FILE,
     check_missing_files,
+    print_file_disclaimer,
     format_seconds,
     read_dict_rows,
     SECONDS_PER_DAY,
@@ -177,12 +176,7 @@ def main() -> None:
 
     check_missing_files([STOP_TIMES_FILE])
 
-    print(
-        f"Disclaimer: for coherence we will consider the next files from {pathlib.Path(BASE)}:"
-    )
-    print(
-        f" - {pathlib.Path(STOP_TIMES_FILE).name} from {pathlib.Path(STOP_TIMES_FILE).parent.name}"
-    )
+    print_file_disclaimer([STOP_TIMES_FILE])
 
     pair_samples = build_directed_pair_samples(STOP_TIMES_FILE)
     ranked_pairs = summarize_directional_gaps(pair_samples)
