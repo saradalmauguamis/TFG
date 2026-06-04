@@ -137,7 +137,7 @@ def clean_file(source_path: Path, destination_dir: Path) -> Tuple[int, int, int,
 
 
 def main() -> None:
-    """Run the cleaning pipeline for all configured source files.
+    """Run the processing pipeline for all configured source files.
 
     This implementation reads the original GTFS files from `ORIGINAL_BASE`
     and writes filtered subway extracts into a `subway` directory under
