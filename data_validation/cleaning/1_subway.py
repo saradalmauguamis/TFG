@@ -158,7 +158,7 @@ def main() -> None:
         )
         print(
             f"\n    -{source_path.name}: total={total_rows}, removed={removed_rows}, "
-            f"kept={kept_rows} -> {output_path}"
+            f"kept={kept_rows} -> {output_path.relative_to(PROJECT_ROOT)}"
         )
 
     return None

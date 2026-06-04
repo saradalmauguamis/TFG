@@ -31,12 +31,15 @@ __all__ = [
     "ORIGINAL_BASE",
     "SUBWAY_BASE",
     "DUPLICATED_TRIPS_BASE",
+    "STOP_SEQUENCE_BASE",
     "PATHWAYS_FILE",
     "ROUTES_ORIGINAL_FILE",
     "ROUTES_FILE",
     "STOP_TIMES_ORIGINAL_FILE",
     "STOP_TIMES_SUBWAY_FILE",
+    "STOP_TIMES_CLEANED_FILE",
     "STOP_TIMES_FILE",
+    "WRONG_STOP_SEQUENCES_FILE",
     "STOPS_ORIGINAL_FILE",
     "STOPS_FILE",
     "TRANSFERS_FILE",
@@ -113,6 +116,15 @@ DUPLICATED_TRIPS_BASE = str(
     ).resolve()
 )
 
+_DEFAULT_STOP_SEQUENCE_DATA_DIR = _DEFAULT_DATA_DIR / "3_stop_sequence"
+STOP_SEQUENCE_BASE = str(
+    Path(
+        os.environ.get(
+            "GTFS_STOP_SEQUENCE_DATA_DIR", str(_DEFAULT_STOP_SEQUENCE_DATA_DIR)
+        )
+    ).resolve()
+)
+
 PATHWAYS_FILE = os.path.join(ORIGINAL_BASE, "pathways.txt")
 
 ROUTES_ORIGINAL_FILE = os.path.join(ORIGINAL_BASE, "routes.txt")
@@ -120,7 +132,10 @@ ROUTES_FILE = os.path.join(SUBWAY_BASE, "routes_subway.txt")
 
 STOP_TIMES_ORIGINAL_FILE = os.path.join(ORIGINAL_BASE, "stop_times.txt")
 STOP_TIMES_SUBWAY_FILE = os.path.join(SUBWAY_BASE, "stop_times_subway.txt")
-STOP_TIMES_FILE = os.path.join(DUPLICATED_TRIPS_BASE, "stop_times_cleaned.txt")
+STOP_TIMES_CLEANED_FILE = os.path.join(DUPLICATED_TRIPS_BASE, "stop_times_cleaned.txt")
+STOP_TIMES_FILE = os.path.join(STOP_SEQUENCE_BASE, "stop_times_sequence.txt")
+
+WRONG_STOP_SEQUENCES_FILE = os.path.join(STOP_SEQUENCE_BASE, "wrong_stop_sequences.txt")
 
 STOPS_ORIGINAL_FILE = os.path.join(ORIGINAL_BASE, "stops.txt")
 STOPS_FILE = os.path.join(SUBWAY_BASE, "stops_subway.txt")
@@ -134,6 +149,7 @@ TRIPS_FILE = os.path.join(DUPLICATED_TRIPS_BASE, "trips_cleaned.txt")
 TRIP_IDS_TO_ELIMINATE_FILE = os.path.join(
     DUPLICATED_TRIPS_BASE, "trip_ids_to_eliminate.txt"
 )
+
 
 SECONDS_PER_DAY = 24 * 60 * 60
 
@@ -159,14 +175,15 @@ def print_file_disclaimer(
         paths: Sequence of paths or (path, label) tuples to include in the disclaimer.
     """
     print(
-        f"Disclaimer: for coherence we will consider the next files from {Path(BASE)}:"
+        "Disclaimer: for coherence we will consider the next file(s) from "
+        f"{Path(BASE).relative_to(_PROJECT_ROOT)}:"
     )
     for entry in paths:
         if isinstance(entry, tuple):
             path, label = entry
-            print(f" - {Path(path).name} as '{label}' from {Path(path).parent.name}")
+            print(f" - {Path(path).name} as '{label}' from /{Path(path).parent.name}")
         else:
-            print(f" - {Path(entry).name} from {Path(entry).parent.name}")
+            print(f" - {Path(entry).name} from /{Path(entry).parent.name}")
     print("\n")
 
 
@@ -183,7 +200,7 @@ def check_missing_files(list_of_files: List[str]) -> None:
     if missing_files:
         print("The following files were not found:")
         for path in missing_files:
-            print(" -", path)
+            print(" -", Path(path).relative_to(_PROJECT_ROOT))
         raise FileNotFoundError(f"Missing {len(missing_files)} required file(s).")
 
 
