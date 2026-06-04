@@ -26,7 +26,7 @@ if str(PROJECT_ROOT) not in sys.path:
 from data_validation.checks.commons import add_project_root_to_path  # noqa: E402
 from data_validation.gtfs_utils import (  # noqa: E402
     STOP_TIMES_SUBWAY_FILE,
-    STOP_TIMES_FILE,
+    STOP_TIMES_CLEANED_FILE,
     TRIP_IDS_TO_ELIMINATE_FILE,
     TRIPS_SUBWAY_FILE,
     TRIPS_FILE,
@@ -85,7 +85,7 @@ def main() -> None:
     stop_times_input = STOP_TIMES_SUBWAY_FILE
     trips_input = TRIPS_SUBWAY_FILE
     eliminated_trip_ids = set()
-    stop_times_output = STOP_TIMES_FILE
+    stop_times_output = STOP_TIMES_CLEANED_FILE
     trips_output = TRIPS_FILE
 
     check_missing_files([trip_ids_path, stop_times_input, trips_input])
@@ -104,7 +104,7 @@ def main() -> None:
         )
         print(
             f"\n    - {Path(input_path).name}: total={total_rows}, removed={removed_rows}, "
-            f"kept={kept_rows} -> {saved_path}"
+            f"kept={kept_rows} -> {Path(saved_path).relative_to(PROJECT_ROOT)}"
         )
 
     return None
