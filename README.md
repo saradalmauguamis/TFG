@@ -45,8 +45,11 @@ Pre-commit runs automatically on every `git commit`. It checks:
 - ✅ YAML and JSON syntax
 - ✅ Python code with Black (formatting)
 - ✅ Python linting with Flake8
-- ✅ Function docstrings and descriptions
+- ✅ Function docstrings: required description, `args:`, and `returns:` sections (`.py` and `.ipynb`)
+- ✅ Line length in comments and code (`.ipynb` cells, complements Flake8 for notebooks)
+- ✅ Local variable declarations at the top of functions (`.py` and `.ipynb`)
 - ✅ `requirements.txt` matches `.venv` (pre-commit check)
+- ✅ Notebook outputs stripped before committing (`nbstripout`)
 
 ### Run Pre-commit Manually
 

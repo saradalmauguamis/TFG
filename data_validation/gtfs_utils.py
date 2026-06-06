@@ -28,19 +28,31 @@ __all__ = [
     "read_dict_rows",
     # Constants / paths
     "BASE",
+    "ORIGINAL_BASE",
+    "SUBWAY_BASE",
+    "DUPLICATED_TRIPS_BASE",
+    "STOP_SEQUENCE_BASE",
     "PATHWAYS_FILE",
-    "TRANSFERS_FILE",
-    "STOPS_FILE",
-    "STOP_TIMES_FILE",
-    "STOP_TIMES_CLEANED_FILE",
-    "TRIPS_FILE",
-    "TRIPS_CLEANED_FILE",
+    "ROUTES_ORIGINAL_FILE",
     "ROUTES_FILE",
+    "STOP_TIMES_ORIGINAL_FILE",
+    "STOP_TIMES_SUBWAY_FILE",
+    "STOP_TIMES_CLEANED_FILE",
+    "STOP_TIMES_FILE",
+    "WRONG_STOP_SEQUENCES_FILE",
+    "STOPS_ORIGINAL_FILE",
+    "STOPS_FILE",
+    "TRANSFERS_FILE",
+    "TRIPS_ORIGINAL_FILE",
+    "TRIPS_SUBWAY_FILE",
+    "TRIPS_FILE",
+    "TRIP_IDS_TO_ELIMINATE_FILE",
     "SECONDS_PER_DAY",
     # Regex / Patterns
     "PW_PAIR",
     # CSV / file helpers
     "check_missing_files",
+    "print_file_disclaimer",
     "get_first_nonempty",
     # Loaders / parsers
     "load_stop_ids",
@@ -51,6 +63,7 @@ __all__ = [
     "load_trip_ids_by_route",
     "load_from_stop_ids",
     "load_to_stop_ids",
+    "load_nonempty_lines",
     "parse_time_to_seconds",
     "format_seconds",
     "seconds_to_hms",
@@ -70,22 +83,76 @@ __all__ = [
     "collect_trip_stop_ids",
     "build_expected_adjacency",
     "is_contiguous_subsequence",
+    # Stop ID helpers
+    "ordered_stop_ids",
 ]
 
 
 # -----------------------------
 # Constants / paths
 # -----------------------------
+
 _DEFAULT_DATA_DIR = Path(__file__).resolve().parents[1] / ".src" / "gtfs" / "data"
 BASE = str(Path(os.environ.get("GTFS_DATA_DIR", str(_DEFAULT_DATA_DIR))).resolve())
-PATHWAYS_FILE = os.path.join(BASE, "pathways.txt")
-TRANSFERS_FILE = os.path.join(BASE, "transfers.txt")
-STOPS_FILE = os.path.join(BASE, "stops.txt")
-STOP_TIMES_FILE = os.path.join(BASE, "stop_times.txt")
-STOP_TIMES_CLEANED_FILE = os.path.join(BASE, "stop_times_cleaned.txt")
-TRIPS_FILE = os.path.join(BASE, "trips.txt")
-TRIPS_CLEANED_FILE = os.path.join(BASE, "trips_cleaned.txt")
-ROUTES_FILE = os.path.join(BASE, "routes.txt")
+
+_DEFAULT_ORIGINAL_DATA_DIR = _DEFAULT_DATA_DIR / "0_original"
+ORIGINAL_BASE = str(
+    Path(
+        os.environ.get("GTFS_ORIGINAL_DATA_DIR", str(_DEFAULT_ORIGINAL_DATA_DIR))
+    ).resolve()
+)
+
+_DEFAULT_SUBWAY_DATA_DIR = _DEFAULT_DATA_DIR / "1_subway"
+SUBWAY_BASE = str(
+    Path(
+        os.environ.get("GTFS_SUBWAY_DATA_DIR", str(_DEFAULT_SUBWAY_DATA_DIR))
+    ).resolve()
+)
+
+_DEFAULT_DUPLICATED_TRIPS_DATA_DIR = _DEFAULT_DATA_DIR / "2_duplicated_trips"
+DUPLICATED_TRIPS_BASE = str(
+    Path(
+        os.environ.get(
+            "GTFS_DUPLICATED_TRIPS_DATA_DIR", str(_DEFAULT_DUPLICATED_TRIPS_DATA_DIR)
+        )
+    ).resolve()
+)
+
+_DEFAULT_STOP_SEQUENCE_DATA_DIR = _DEFAULT_DATA_DIR / "3_stop_sequence"
+STOP_SEQUENCE_BASE = str(
+    Path(
+        os.environ.get(
+            "GTFS_STOP_SEQUENCE_DATA_DIR", str(_DEFAULT_STOP_SEQUENCE_DATA_DIR)
+        )
+    ).resolve()
+)
+
+PATHWAYS_FILE = os.path.join(ORIGINAL_BASE, "pathways.txt")
+
+ROUTES_ORIGINAL_FILE = os.path.join(ORIGINAL_BASE, "routes.txt")
+ROUTES_FILE = os.path.join(SUBWAY_BASE, "routes_subway.txt")
+
+STOP_TIMES_ORIGINAL_FILE = os.path.join(ORIGINAL_BASE, "stop_times.txt")
+STOP_TIMES_SUBWAY_FILE = os.path.join(SUBWAY_BASE, "stop_times_subway.txt")
+STOP_TIMES_CLEANED_FILE = os.path.join(DUPLICATED_TRIPS_BASE, "stop_times_cleaned.txt")
+STOP_TIMES_FILE = os.path.join(STOP_SEQUENCE_BASE, "stop_times_sequence.txt")
+
+WRONG_STOP_SEQUENCES_FILE = os.path.join(STOP_SEQUENCE_BASE, "wrong_stop_sequences.txt")
+
+STOPS_ORIGINAL_FILE = os.path.join(ORIGINAL_BASE, "stops.txt")
+STOPS_FILE = os.path.join(SUBWAY_BASE, "stops_subway.txt")
+
+TRANSFERS_FILE = os.path.join(ORIGINAL_BASE, "transfers.txt")
+
+TRIPS_ORIGINAL_FILE = os.path.join(ORIGINAL_BASE, "trips.txt")
+TRIPS_SUBWAY_FILE = os.path.join(SUBWAY_BASE, "trips_subway.txt")
+TRIPS_FILE = os.path.join(DUPLICATED_TRIPS_BASE, "trips_cleaned.txt")
+
+TRIP_IDS_TO_ELIMINATE_FILE = os.path.join(
+    DUPLICATED_TRIPS_BASE, "trip_ids_to_eliminate.txt"
+)
+
+
 SECONDS_PER_DAY = 24 * 60 * 60
 
 
@@ -98,6 +165,30 @@ PW_PAIR = re.compile(r"^PW\.(?P<a>[^_]+)_(?P<b>[^\s]+)$")
 # -----------------------------
 # CSV / file helpers
 # -----------------------------
+def print_file_disclaimer(
+    paths: List[str | Path | Tuple[str | Path, str]],
+) -> None:
+    """Print the disclaimer header and the name/parent of each path.
+
+    Each entry can be a plain path or a (path, label) tuple. When a label is
+    given the line reads " - filename as 'label' from parent".
+
+    args:
+        paths: Sequence of paths or (path, label) tuples to include in the disclaimer.
+    """
+    print(
+        "Disclaimer: for coherence we will consider the next file(s) from "
+        f"{Path(BASE).relative_to(_PROJECT_ROOT)}:"
+    )
+    for entry in paths:
+        if isinstance(entry, tuple):
+            path, label = entry
+            print(f" - {Path(path).name} as '{label}' from /{Path(path).parent.name}")
+        else:
+            print(f" - {Path(entry).name} from /{Path(entry).parent.name}")
+    print("\n")
+
+
 def check_missing_files(list_of_files: List[str]) -> None:
     """Verify that all files exist, raising an exception if any are missing.
 
@@ -111,7 +202,7 @@ def check_missing_files(list_of_files: List[str]) -> None:
     if missing_files:
         print("The following files were not found:")
         for path in missing_files:
-            print(" -", path)
+            print(" -", Path(path).relative_to(_PROJECT_ROOT))
         raise FileNotFoundError(f"Missing {len(missing_files)} required file(s).")
 
 
@@ -329,6 +420,24 @@ def load_to_stop_ids(file_path: str) -> Set[str]:
         if stop_id:
             stop_ids.add(stop_id)
     return stop_ids
+
+
+def load_nonempty_lines(file_path: str) -> Set[str]:
+    """Return the set of non-empty stripped lines from a text file.
+
+    args:
+        file_path: Input plain-text file path.
+
+    returns:
+        Unique non-empty lines.
+    """
+    values: Set[str] = set()
+    with open(file_path, "r", encoding="utf-8") as file_handle:
+        for line in file_handle:
+            value = line.strip()
+            if value:
+                values.add(value)
+    return values
 
 
 # -----------------------------
@@ -621,3 +730,35 @@ def is_contiguous_subsequence(seq: List[str], full: List[str]) -> bool:
         if full[i : i + n] == seq:
             return True
     return False
+
+
+# -----------------------------
+# Stop ID helpers
+# -----------------------------
+def _stop_sort_key(stop_id: str) -> Tuple[int, str]:
+    """Return a sort key for a stop ID, ordering numerically by the suffix after the first dot.
+
+    args:
+        stop_id: Stop identifier string, possibly with a dot-separated numeric suffix.
+
+    returns:
+        Tuple of (numeric suffix, original stop_id) for stable numeric ordering.
+    """
+    _, _, suffix = stop_id.partition(".")
+    try:
+        return int(suffix), stop_id
+    except Exception:
+        return 10**9, stop_id
+
+
+def ordered_stop_ids(stop_ids: Iterable[str]) -> List[str]:
+    """Return stop identifiers sorted by their numeric suffix.
+
+    args:
+        stop_ids: Iterable of stop identifier strings.
+
+    returns:
+        List of cleaned and sorted stop identifier strings.
+    """
+    cleaned = [sid.strip() for sid in stop_ids if sid and sid.strip()]
+    return sorted(cleaned, key=_stop_sort_key)

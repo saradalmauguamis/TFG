@@ -1,8 +1,12 @@
 """Check that function-local variable assignments are declared at the top of functions."""
 
 import ast
+import os
 import sys
 from typing import List, Set
+
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+from notebook_utils import extract_notebook_code_cells  # noqa: E402
 
 
 class LocalVariablePlacementChecker(ast.NodeVisitor):
@@ -137,6 +141,40 @@ def check_file(filename: str) -> bool:
     return True
 
 
+def check_notebook_file(filename: str) -> bool:
+    """Check a Jupyter notebook for function-local variable placement.
+
+    args:
+        filename: Path to a .ipynb file to validate.
+
+    returns:
+        True when all cells pass checks, otherwise False.
+    """
+    all_passed = True
+    try:
+        cells = extract_notebook_code_cells(filename)
+    except (KeyError, ValueError) as e:
+        print(f"{filename}: Could not parse notebook: {e}")
+        return False
+
+    for cell_position, source in cells:
+        cell_label = f"{filename} [cell {cell_position}]"
+        try:
+            tree = ast.parse(source, filename=cell_label)
+        except SyntaxError:
+            continue
+
+        checker = LocalVariablePlacementChecker(cell_label)
+        checker.visit(tree)
+
+        if checker.errors:
+            for error in checker.errors:
+                print(error)
+            all_passed = False
+
+    return all_passed
+
+
 def main() -> int:
     """Run validation on all file paths provided by pre-commit.
 
@@ -149,6 +187,9 @@ def main() -> int:
     for filename in sys.argv[1:]:
         if filename.endswith(".py"):
             if not check_file(filename):
+                all_passed = False
+        elif filename.endswith(".ipynb"):
+            if not check_notebook_file(filename):
                 all_passed = False
 
     return 0 if all_passed else 1
