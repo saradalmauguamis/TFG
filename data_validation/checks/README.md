@@ -21,7 +21,11 @@
   - Do trips follow the canonical stop order for their route?
     → produces `wrong_stop_sequences.txt` in `.src/gtfs/data/3_stop_sequence` → used by `data_validation/processing/3_stop_sequence.py`
   - After the sequence fix, do the bad pairs show non-consecutive sequence numbers? *(verification)*
-  - Which stops have the same arrival and departure time? *(work in progress)*
+  - Which stops have `arrival_time == departure_time`?
+  - For partial `arrival == departure` stops: mean and stdev of door time (departure − arrival).
+  - Per-line mean and stdev of door time, excluding `arrival == departure` rows.
+  - Writes `doors.txt` in `.src/gtfs/data/4_doors/` with one row per `(stop_id, line)` that has any `arrival == departure` occurrence.
+    → used by `data_validation/processing/4_doors_time.py`
 
 - `4_trips_checks.ipynb`: trip metadata pairing checks.
   - Are `direction_id` and `trip_headsign` correctly paired per route?

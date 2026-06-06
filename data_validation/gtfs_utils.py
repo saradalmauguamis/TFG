@@ -2,7 +2,7 @@ import os
 import re
 import sys
 from pathlib import Path
-from typing import Dict, Iterable, List, Set, Tuple
+from typing import Dict, Iterable, List, Optional, Set, Tuple
 
 # Ensure the project root is on sys.path so that shared scripts can be imported.
 _PROJECT_ROOT = str(Path(__file__).resolve().parents[1])
@@ -27,19 +27,29 @@ __all__ = [
     "sniff_dialect",
     "read_dict_rows",
     # Constants / paths
+    "_DEFAULT_DATA_DIR",
     "BASE",
+    "_DEFAULT_ORIGINAL_DATA_DIR",
     "ORIGINAL_BASE",
+    "_DEFAULT_SUBWAY_DATA_DIR",
     "SUBWAY_BASE",
+    "_DEFAULT_DUPLICATED_TRIPS_DATA_DIR",
     "DUPLICATED_TRIPS_BASE",
+    "_DEFAULT_STOP_SEQUENCE_DATA_DIR",
     "STOP_SEQUENCE_BASE",
+    "_DEFAULT_DOORS_DATA_DIR",
+    "DOORS_BASE",
     "PATHWAYS_FILE",
     "ROUTES_ORIGINAL_FILE",
     "ROUTES_FILE",
     "STOP_TIMES_ORIGINAL_FILE",
     "STOP_TIMES_SUBWAY_FILE",
     "STOP_TIMES_CLEANED_FILE",
+    # "STOP_TIMES_SEQUENCE_FILE",
     "STOP_TIMES_FILE",
+    "STOP_TIMES_DOORS_FILE",
     "WRONG_STOP_SEQUENCES_FILE",
+    "DOORS_FILE",
     "STOPS_ORIGINAL_FILE",
     "STOPS_FILE",
     "TRANSFERS_FILE",
@@ -83,8 +93,8 @@ __all__ = [
     "collect_trip_stop_ids",
     "build_expected_adjacency",
     "is_contiguous_subsequence",
-    # Stop ID helpers
-    "ordered_stop_ids",
+    "load_trip_sequence_bounds",
+    "load_trip_to_line",
 ]
 
 
@@ -127,6 +137,11 @@ STOP_SEQUENCE_BASE = str(
     ).resolve()
 )
 
+_DEFAULT_DOORS_DATA_DIR = _DEFAULT_DATA_DIR / "4_doors"
+DOORS_BASE = str(
+    Path(os.environ.get("GTFS_DOORS_DATA_DIR", str(_DEFAULT_DOORS_DATA_DIR))).resolve()
+)
+
 PATHWAYS_FILE = os.path.join(ORIGINAL_BASE, "pathways.txt")
 
 ROUTES_ORIGINAL_FILE = os.path.join(ORIGINAL_BASE, "routes.txt")
@@ -136,8 +151,12 @@ STOP_TIMES_ORIGINAL_FILE = os.path.join(ORIGINAL_BASE, "stop_times.txt")
 STOP_TIMES_SUBWAY_FILE = os.path.join(SUBWAY_BASE, "stop_times_subway.txt")
 STOP_TIMES_CLEANED_FILE = os.path.join(DUPLICATED_TRIPS_BASE, "stop_times_cleaned.txt")
 STOP_TIMES_FILE = os.path.join(STOP_SEQUENCE_BASE, "stop_times_sequence.txt")
+STOP_TIMES_DOORS_FILE = os.path.join(DOORS_BASE, "stop_times_doors.txt")
+# STOP_TIMES_SEQUENCE_FILE = os.path.join(STOP_SEQUENCE_BASE, "stop_times_sequence.txt")
+# STOP_TIMES_FILE = os.path.join(DOORS_BASE, "stop_times_doors.txt")
 
 WRONG_STOP_SEQUENCES_FILE = os.path.join(STOP_SEQUENCE_BASE, "wrong_stop_sequences.txt")
+DOORS_FILE = os.path.join(DOORS_BASE, "doors.txt")
 
 STOPS_ORIGINAL_FILE = os.path.join(ORIGINAL_BASE, "stops.txt")
 STOPS_FILE = os.path.join(SUBWAY_BASE, "stops_subway.txt")
@@ -243,11 +262,14 @@ def load_stop_ids(file_path: str) -> Set[str]:
     return stop_ids
 
 
-def load_stop_names(file_path: str) -> Dict[str, str]:
+def load_stop_names(
+    file_path: str, stop_ids: Optional[Set[str]] = None
+) -> Dict[str, str]:
     """Return a mapping of stop_id to stop_name.
 
     args:
         file_path: Input stops file path.
+        stop_ids: If provided, only return entries for these stop_id values.
 
     returns:
         Dictionary keyed by stop_id with stop_name values.
@@ -255,9 +277,11 @@ def load_stop_names(file_path: str) -> Dict[str, str]:
     stop_names: Dict[str, str] = {}
     for row in read_dict_rows(file_path):
         stop_id = row.get("stop_id", "").strip()
-        stop_name = row.get("stop_name", "").strip()
-        if stop_id:
-            stop_names[stop_id] = stop_name
+        if not stop_id:
+            continue
+        if stop_ids is not None and stop_id not in stop_ids:
+            continue
+        stop_names[stop_id] = row.get("stop_name", "").strip()
     return stop_names
 
 
@@ -732,33 +756,50 @@ def is_contiguous_subsequence(seq: List[str], full: List[str]) -> bool:
     return False
 
 
-# -----------------------------
-# Stop ID helpers
-# -----------------------------
-def _stop_sort_key(stop_id: str) -> Tuple[int, str]:
-    """Return a sort key for a stop ID, ordering numerically by the suffix after the first dot.
+def load_trip_to_line(file_path: str, rid_to_name: Dict[str, str]) -> Dict[str, str]:
+    """Return a mapping of trip_id to subway line name.
 
     args:
-        stop_id: Stop identifier string, possibly with a dot-separated numeric suffix.
+        file_path: Path to the trips file.
+        rid_to_name: Mapping from route_id to line name (e.g. {"1.1.1": "L1"}).
 
     returns:
-        Tuple of (numeric suffix, original stop_id) for stable numeric ordering.
+        Mapping from trip_id to line name for subway trips only.
     """
-    _, _, suffix = stop_id.partition(".")
-    try:
-        return int(suffix), stop_id
-    except Exception:
-        return 10**9, stop_id
+    trip_to_line: Dict[str, str] = {}
+    for row in read_dict_rows(file_path):
+        trip_id = row.get("trip_id", "").strip()
+        route_id = row.get("route_id", "").strip()
+        line = rid_to_name.get(route_id)
+        if trip_id and line:
+            trip_to_line[trip_id] = line
+    return trip_to_line
 
 
-def ordered_stop_ids(stop_ids: Iterable[str]) -> List[str]:
-    """Return stop identifiers sorted by their numeric suffix.
+def load_trip_sequence_bounds(
+    file_path: str, trip_ids: Set[str]
+) -> Dict[str, Tuple[int, int]]:
+    """Return the min and max stop_sequence for each trip_id.
 
     args:
-        stop_ids: Iterable of stop identifier strings.
+        file_path: Path to the stop_times file.
+        trip_ids: Set of trip_id values to include.
 
     returns:
-        List of cleaned and sorted stop identifier strings.
+        Mapping from trip_id to (min_seq, max_seq).
     """
-    cleaned = [sid.strip() for sid in stop_ids if sid and sid.strip()]
-    return sorted(cleaned, key=_stop_sort_key)
+    bounds: Dict[str, Tuple[int, int]] = {}
+    for row in read_dict_rows(file_path):
+        trip_id = row.get("trip_id", "").strip()
+        if trip_id not in trip_ids:
+            continue
+        try:
+            seq = int(row.get("stop_sequence", "").strip())
+        except Exception:
+            continue
+        if trip_id not in bounds:
+            bounds[trip_id] = (seq, seq)
+        else:
+            lo, hi = bounds[trip_id]
+            bounds[trip_id] = (min(lo, seq), max(hi, seq))
+    return bounds
