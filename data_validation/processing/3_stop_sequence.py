@@ -36,7 +36,7 @@ if str(PROJECT_ROOT) not in sys.path:
 from data_validation.gtfs_utils import (  # noqa: E402
     _PROJECT_ROOT,
     STOP_TIMES_CLEANED_FILE,
-    STOP_TIMES_FILE,
+    STOP_TIMES_SEQUENCE_FILE,
     WRONG_STOP_SEQUENCES_FILE,
     check_missing_files,
     print_file_disclaimer,
@@ -166,12 +166,12 @@ def main() -> None:
     )
 
     total, modified, unmodified = write_adjusted_stop_times(
-        STOP_TIMES_CLEANED_FILE, STOP_TIMES_FILE, break_points_by_trip
+        STOP_TIMES_CLEANED_FILE, STOP_TIMES_SEQUENCE_FILE, break_points_by_trip
     )
     print(
         f"\n    {Path(STOP_TIMES_CLEANED_FILE).name}: total_rows={total},"
         f" modified_rows={modified}, unmodified_rows={unmodified}"
-        f" -> {Path(STOP_TIMES_FILE).relative_to(_PROJECT_ROOT)}"
+        f" -> {Path(STOP_TIMES_SEQUENCE_FILE).relative_to(_PROJECT_ROOT)}"
     )
 
 

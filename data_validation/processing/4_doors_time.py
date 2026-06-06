@@ -27,7 +27,7 @@ import scripts.basics as basics  # noqa: E402
 from data_validation.gtfs_utils import (  # noqa: E402
     _PROJECT_ROOT,
     DOORS_FILE,
-    STOP_TIMES_DOORS_FILE,
+    STOP_TIMES_SEQUENCE_FILE,
     STOP_TIMES_FILE,
     TRIPS_FILE,
     check_missing_files,
@@ -157,11 +157,11 @@ def main() -> None:
     total = 0
     modified = 0
 
-    check_missing_files([DOORS_FILE, STOP_TIMES_FILE, TRIPS_FILE])
+    check_missing_files([DOORS_FILE, STOP_TIMES_SEQUENCE_FILE, TRIPS_FILE])
     print_file_disclaimer(
         [
             (DOORS_FILE, "doors"),
-            (STOP_TIMES_FILE, "stop_times"),
+            (STOP_TIMES_SEQUENCE_FILE, "stop_times_sequence"),
             (TRIPS_FILE, "trips"),
         ]
     )
@@ -171,15 +171,19 @@ def main() -> None:
 
     rid_to_name = {rid: name for name, rid in basics.subway_routes_names_ids.items()}
     trip_to_line = load_trip_to_line(TRIPS_FILE, rid_to_name)
-    trip_bounds = load_trip_sequence_bounds(STOP_TIMES_FILE, set(trip_to_line))
+    trip_bounds = load_trip_sequence_bounds(STOP_TIMES_SEQUENCE_FILE, set(trip_to_line))
 
     total, modified = apply_door_times(
-        STOP_TIMES_FILE, STOP_TIMES_DOORS_FILE, trip_to_line, trip_bounds, door_seconds
+        STOP_TIMES_SEQUENCE_FILE,
+        STOP_TIMES_FILE,
+        trip_to_line,
+        trip_bounds,
+        door_seconds,
     )
     print(
-        f"\n    {Path(STOP_TIMES_FILE).name}: total_rows={total},"
+        f"\n    {Path(STOP_TIMES_SEQUENCE_FILE).name}: total_rows={total},"
         f" modified_rows={modified}, unmodified_rows={total - modified}"
-        f" -> {Path(STOP_TIMES_DOORS_FILE).relative_to(_PROJECT_ROOT)}"
+        f" -> {Path(STOP_TIMES_FILE).relative_to(_PROJECT_ROOT)}"
     )
 
 
