@@ -45,9 +45,8 @@ __all__ = [
     "STOP_TIMES_ORIGINAL_FILE",
     "STOP_TIMES_SUBWAY_FILE",
     "STOP_TIMES_CLEANED_FILE",
-    # "STOP_TIMES_SEQUENCE_FILE",
+    "STOP_TIMES_SEQUENCE_FILE",
     "STOP_TIMES_FILE",
-    "STOP_TIMES_DOORS_FILE",
     "WRONG_STOP_SEQUENCES_FILE",
     "DOORS_FILE",
     "STOPS_ORIGINAL_FILE",
@@ -150,10 +149,10 @@ ROUTES_FILE = os.path.join(SUBWAY_BASE, "routes_subway.txt")
 STOP_TIMES_ORIGINAL_FILE = os.path.join(ORIGINAL_BASE, "stop_times.txt")
 STOP_TIMES_SUBWAY_FILE = os.path.join(SUBWAY_BASE, "stop_times_subway.txt")
 STOP_TIMES_CLEANED_FILE = os.path.join(DUPLICATED_TRIPS_BASE, "stop_times_cleaned.txt")
-STOP_TIMES_FILE = os.path.join(STOP_SEQUENCE_BASE, "stop_times_sequence.txt")
-STOP_TIMES_DOORS_FILE = os.path.join(DOORS_BASE, "stop_times_doors.txt")
-# STOP_TIMES_SEQUENCE_FILE = os.path.join(STOP_SEQUENCE_BASE, "stop_times_sequence.txt")
-# STOP_TIMES_FILE = os.path.join(DOORS_BASE, "stop_times_doors.txt")
+# STOP_TIMES_FILE = os.path.join(STOP_SEQUENCE_BASE, "stop_times_sequence.txt")
+# STOP_TIMES_DOORS_FILE = os.path.join(DOORS_BASE, "stop_times_doors.txt")
+STOP_TIMES_SEQUENCE_FILE = os.path.join(STOP_SEQUENCE_BASE, "stop_times_sequence.txt")
+STOP_TIMES_FILE = os.path.join(DOORS_BASE, "stop_times_doors.txt")
 
 WRONG_STOP_SEQUENCES_FILE = os.path.join(STOP_SEQUENCE_BASE, "wrong_stop_sequences.txt")
 DOORS_FILE = os.path.join(DOORS_BASE, "doors.txt")
