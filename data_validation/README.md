@@ -14,7 +14,7 @@ data_validation/
 │   ├── 1_subway.py
 │   ├── 2_duplicated_trips.py
 │   ├── 3_stop_sequence.py
-│   ├── 4_terminal_stops.py
+│   ├── 4_doors_time.py
 │   └── 5_L9_L10_data_duplication.py
 └── analysis/
     ├── between_platforms.py
@@ -47,7 +47,7 @@ Scripts that transform raw GTFS files into cleaned, stage-by-stage outputs.
 - `1_subway.py` — extract subway-only rows
 - `2_duplicated_trips.py` — remove duplicated trips
 - `3_stop_sequence.py` — fix stop_sequence gaps
-- `4_terminal_stops.py` — add terminal stop times *(work in progress)*
+- `4_doors_time.py` — add door-open times to terminal stops
 - `5_L9_L10_data_duplication.py` — resolve L9/L10 duplication *(work in progress)*
 
 ---
