@@ -33,7 +33,6 @@ PROJECT_ROOT = Path(__file__).resolve().parents[2]
 if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT))
 
-from data_validation.checks.commons import add_project_root_to_path  # noqa: E402
 from data_validation.gtfs_utils import (  # noqa: E402
     _PROJECT_ROOT,
     STOP_TIMES_CLEANED_FILE,
@@ -42,8 +41,6 @@ from data_validation.gtfs_utils import (  # noqa: E402
     check_missing_files,
     print_file_disclaimer,
 )
-
-PROJECT_ROOT = add_project_root_to_path()
 
 
 def load_break_points(file_path: str) -> Dict[str, List[int]]:

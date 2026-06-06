@@ -1,7 +1,5 @@
 # Split Data Checks
 
-- `commons.py`: shared imports, path bootstrap, and reusable helpers.
-
 - `1_file_connection_checks.ipynb`: file relationship checks.
   - All `stop_id` from `pathways` and `stop_times` exist in `stops`?
   - All `route_id` from `trips` exist in `routes`?

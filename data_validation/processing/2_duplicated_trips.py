@@ -23,7 +23,6 @@ PROJECT_ROOT = Path(__file__).resolve().parents[2]
 if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT))
 
-from data_validation.checks.commons import add_project_root_to_path  # noqa: E402
 from data_validation.gtfs_utils import (  # noqa: E402
     STOP_TIMES_SUBWAY_FILE,
     STOP_TIMES_CLEANED_FILE,
@@ -34,8 +33,6 @@ from data_validation.gtfs_utils import (  # noqa: E402
     print_file_disclaimer,
     load_nonempty_lines,
 )
-
-PROJECT_ROOT = add_project_root_to_path()
 
 
 def write_cleaned_file(

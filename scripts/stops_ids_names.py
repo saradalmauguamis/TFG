@@ -1,6 +1,6 @@
 import sys
 from pathlib import Path
-from typing import Any, Dict, List, Set
+from typing import Any, Dict, List
 
 from basics import subway_route_names_stop_ids
 
@@ -24,14 +24,14 @@ SHOW_ENTRANCES = True
 
 
 def build_expanded_dictionary(
-    stops_file: Path, pathways_file: Path, stop_ids_by_line: Dict[str, Set[str]]
+    stops_file: Path, pathways_file: Path, stop_ids_by_line: Dict[str, List[str]]
 ) -> Dict[str, Dict[str, List[Dict[str, Any]]]]:
     """Build a per-line expanded index with names and entrances.
 
     args:
         stops_file: Path to `stops_subway.txt`.
         pathways_file: Path to `pathways.txt`.
-        stop_ids_by_line: Mapping of line label to platform stop IDs.
+        stop_ids_by_line: Mapping of line label to platform stop IDs in order.
 
     returns:
         Mapping where each line label maps to a dict with key `stops` whose value is
@@ -41,7 +41,7 @@ def build_expanded_dictionary(
     expanded: Dict[str, Dict[str, List[Dict[str, Any]]]] = {}
     stops_list: List[Dict[str, Any]] = []
     line_name: str
-    ids: Set[str]
+    ids: List[str]
     stop_id: str
     name: str
     entrance_ids: List[str]
@@ -55,7 +55,7 @@ def build_expanded_dictionary(
     # Build expanded per-line structure
     for line_name, ids in stop_ids_by_line.items():
         stops_list = []
-        for stop_id in sorted(ids):
+        for stop_id in ids:
             name = stop_names.get(stop_id, "")
             entrance_ids = sorted(platform_to_entrances.get(stop_id, set()))
             entrances = [

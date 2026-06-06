@@ -49,6 +49,7 @@ Pre-commit runs automatically on every `git commit`. It checks:
 - ✅ Line length in comments and code (`.ipynb` cells, complements Flake8 for notebooks)
 - ✅ Local variable declarations at the top of functions (`.py` and `.ipynb`)
 - ✅ `requirements.txt` matches `.venv` (pre-commit check)
+- ✅ Notebook outputs stripped before committing (`nbstripout`)
 
 ### Run Pre-commit Manually
 

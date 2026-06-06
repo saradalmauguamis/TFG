@@ -40,6 +40,12 @@ repos:
       - id: check-merge-conflict
       - id: debug-statements
 
+  # Strip notebook outputs before committing
+  - repo: https://github.com/kynan/nbstripout
+    rev: 0.9.1
+    hooks:
+      - id: nbstripout
+
   # Python code formatting with Black
   - repo: https://github.com/psf/black
     rev: 24.1.1
