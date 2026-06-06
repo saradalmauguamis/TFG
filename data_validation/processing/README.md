@@ -44,7 +44,24 @@ Also reads `wrong_stop_sequences.txt` from `.src/gtfs/data/3_stop_sequence`, pro
 
 ---
 
-### `4_terminal_stops.py` — add terminal stop times *(work in progress)*
+### `4_doors_time.py` — add door-open times to terminal stops
+
+`.src/gtfs/data/3_stop_sequence` → `.src/gtfs/data/4_doors`
+
+| Input | Output |
+|---|---|
+| `stop_times_sequence.txt` | `stop_times_doors.txt` |
+
+Also reads `doors.txt` and `trips_cleaned.txt`, produced by `data_validation/checks/3_stop_times_checks.ipynb` and `2_duplicated_trips.py` respectively.
+
+For every row where `arrival_time == departure_time` at a terminal stop, the script adjusts the synthetic timestamp using the door-open duration from `doors.txt` (keyed by `stop_id` and line):
+- first stop (min `stop_sequence`): `arrival_time = departure_time − door_seconds`
+- last stop (max `stop_sequence`): `departure_time = arrival_time + door_seconds`
+
+`door_seconds` in `doors.txt` is assigned per `(stop_id, line)` by the notebook:
+- partial stops (only some trips have `arr == dep`): per-stop mean of the non-zero-dwell trips
+- canonical terminal stops (all trips have `arr == dep`): line mean door time
+- FM line (no observed door times): mean across all other lines as fallback
 
 ### `5_L9_L10_data_duplication.py` — resolve L9/L10 duplication *(work in progress)*
 
@@ -53,11 +70,11 @@ Also reads `wrong_stop_sequences.txt` from `.src/gtfs/data/3_stop_sequence`, pro
 ## File transformation summary
 
 ```
-0_original           1_subway                2_duplicated_trips      3_stop_sequence
+0_original           1_subway                2_duplicated_trips      3_stop_sequence         4_doors
 
 pathways
 routes               routes_subway
-stop_times           stop_times_subway       stop_times_cleaned      stop_times_sequence
+stop_times           stop_times_subway       stop_times_cleaned      stop_times_sequence     stop_times_doors
 stops                stops_subway
 transfers
 trips                trips_subway            trips_cleaned
