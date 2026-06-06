@@ -66,13 +66,19 @@ def pip_freeze(python_exec: Path) -> Optional[List[str]]:
     returns:
         List of package strings from pip freeze output, or None if execution fails.
     """
+    result = None
     try:
-        out = subprocess.check_output(
-            [str(python_exec), "-m", "pip", "freeze"], stderr=subprocess.STDOUT
+        result = subprocess.run(
+            [str(python_exec), "-m", "pip", "freeze"],
+            capture_output=True,
+            check=False,
+            text=True,
         )
-        return [
-            line.decode("utf-8").strip() for line in out.splitlines() if line.strip()
-        ]
+        if result.returncode != 0:
+            print(f"Could not run pip freeze using {python_exec}:")
+            print(result.stderr.strip())
+            return None
+        return [line.strip() for line in result.stdout.splitlines() if line.strip()]
     except Exception as e:
         print(f"Could not run pip freeze using {python_exec}: {e}")
         return None

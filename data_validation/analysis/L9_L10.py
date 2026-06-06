@@ -5,12 +5,13 @@ shared platforms of L9 and L10 is the same, given a consecutive pair of stops
 and a direction.
 
 This script scans all matching trips for each route+direction and measures the
-time between two consecutive platform stops (departure at the first stop and
-arrival at the second) from `stop_times_cleaned.txt`. It averages those times
+time between two consecutive platform stops (arrival at the first stop and
+arrival at the second) from `stop_times_subway_cleaned.txt`. It averages those times
 per line, direction and platform pair and prints comparisons between L9 and L10.
 It also prints the number of samples and standard deviation for each average.
 
-Files are expected under the repository at `../.src/gtfs/data/` relative to this file.
+The cleaned inputs are expected under the repository at `../.src/gtfs/data/` relative to this file.
+Raw GTFS source files live under `../.src/gtfs/data/0_original/`.
 """
 
 from __future__ import annotations
@@ -23,14 +24,15 @@ from typing import DefaultDict, Dict, List, Optional, Set, Tuple
 
 # Ensure repository root is on sys.path so `scripts` package imports work when the
 # script is executed directly (for example via a virtualenv python binary).
-REPO_ROOT = pathlib.Path(__file__).resolve().parents[1]
+REPO_ROOT = pathlib.Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(REPO_ROOT))
 
 from data_validation.gtfs_utils import (  # noqa: E402
-    STOP_TIMES_CLEANED_FILE,
     SECONDS_PER_DAY,
-    TRIPS_CLEANED_FILE,
+    STOP_TIMES_FILE,
+    TRIPS_FILE,
     check_missing_files,
+    print_file_disclaimer,
     load_trip_ids_by_route,
     parse_time_to_seconds,
     read_dict_rows,
@@ -70,10 +72,10 @@ def collect_pair_samples_for_line(
     if not route_id:
         return {pair: [] for pair in pairs}
 
-    trip_ids_by_direction = load_trip_ids_by_route(TRIPS_CLEANED_FILE, route_id)
+    trip_ids_by_direction = load_trip_ids_by_route(TRIPS_FILE, route_id)
     relevant_trip_ids = trip_ids_by_direction.get(direction_id, set())
 
-    for row in read_dict_rows(STOP_TIMES_CLEANED_FILE):
+    for row in read_dict_rows(STOP_TIMES_FILE):
         trip_id = row.get("trip_id", "")
         if trip_id not in relevant_trip_ids:
             continue
@@ -99,18 +101,18 @@ def collect_pair_samples_for_line(
     for rows in trip_rows.values():  # Implicit for each trip_id of trip_rows
         rows.sort(key=lambda item: item[0])
         for current_row, next_row in zip(rows, rows[1:]):
-            current_sequence, current_stop_id, _, current_departure = current_row
+            current_sequence, current_stop_id, current_arrival, _ = current_row
             next_sequence, next_stop_id, next_arrival, _ = next_row
             if next_sequence != current_sequence + 1:
                 continue
             pair = (current_stop_id, next_stop_id)
             if pair not in pair_set:
                 continue
-            if not current_departure or not next_arrival:
+            if not current_arrival or not next_arrival:
                 continue
 
             travel_time = parse_time_to_seconds(next_arrival) - parse_time_to_seconds(
-                current_departure
+                current_arrival
             )
             while travel_time < 0:  # Case of passing midnight, add 24h until positive
                 travel_time += SECONDS_PER_DAY
@@ -212,13 +214,16 @@ def print_section(
             print()
 
 
-def compute_and_print():
-    """Run the L9/L10 shared-platform comparison and print the results."""
+def main() -> None:
+    """Print travel-time comparisons for the shared platforms in L9 and L10."""
     section_data = (
         ("South", lines_south, south_pairs),
         ("North", lines_north, north_pairs),
     )
-    check_missing_files([TRIPS_CLEANED_FILE, STOP_TIMES_CLEANED_FILE])
+    check_missing_files([TRIPS_FILE, STOP_TIMES_FILE])
+
+    print_file_disclaimer([TRIPS_FILE, STOP_TIMES_FILE])
+
     for index, (section_name, line_names, pairs) in enumerate(section_data):
         if index:
             print()
@@ -226,4 +231,4 @@ def compute_and_print():
 
 
 if __name__ == "__main__":
-    compute_and_print()
+    main()
