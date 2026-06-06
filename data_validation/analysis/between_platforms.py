@@ -2,12 +2,12 @@
 
 The script uses stop_times_cleaned.txt.
 
+The aim of this script is to determine whether it is necessary a directed graph.
+
 For each directed adjacent pair of stops ``(a, b)``, the script computes the
-average travel time from the departure time at ``a`` to the arrival time at
+average travel time from the arrival time at ``a`` to the arrival time at
 ``b``. It then compares that average with the reverse direction ``(b, a)`` and
 prints the pairs with the largest absolute differences.
-
-The aim of this script is to determine whether it is necessary a directed graph.
 """
 
 from __future__ import annotations
@@ -72,7 +72,7 @@ def build_directed_pair_samples(
     rows.sort(key=lambda item: (item[0], item[1]))
 
     for current_row, next_row in zip(rows, rows[1:]):
-        current_trip_id, current_sequence, current_stop_id, _, current_departure = (
+        current_trip_id, current_sequence, current_stop_id, current_arrival, _ = (
             current_row
         )
         next_trip_id, next_sequence, next_stop_id, next_arrival, _ = next_row
@@ -81,11 +81,11 @@ def build_directed_pair_samples(
             continue
         if next_sequence != current_sequence + 1:
             continue
-        if not current_departure or not next_arrival:
+        if not current_arrival or not next_arrival:
             continue
 
         travel_time = parse_time_to_seconds(next_arrival) - parse_time_to_seconds(
-            current_departure
+            current_arrival
         )
         # Handle day rollover (e.g. 23:59:50 -> 00:00:10 gives -86380, then +86400 = 20).
         while travel_time < 0:

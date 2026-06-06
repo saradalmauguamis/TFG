@@ -83,6 +83,8 @@ __all__ = [
     "collect_trip_stop_ids",
     "build_expected_adjacency",
     "is_contiguous_subsequence",
+    # Stop ID helpers
+    "ordered_stop_ids",
 ]
 
 
@@ -728,3 +730,35 @@ def is_contiguous_subsequence(seq: List[str], full: List[str]) -> bool:
         if full[i : i + n] == seq:
             return True
     return False
+
+
+# -----------------------------
+# Stop ID helpers
+# -----------------------------
+def _stop_sort_key(stop_id: str) -> Tuple[int, str]:
+    """Return a sort key for a stop ID, ordering numerically by the suffix after the first dot.
+
+    args:
+        stop_id: Stop identifier string, possibly with a dot-separated numeric suffix.
+
+    returns:
+        Tuple of (numeric suffix, original stop_id) for stable numeric ordering.
+    """
+    _, _, suffix = stop_id.partition(".")
+    try:
+        return int(suffix), stop_id
+    except Exception:
+        return 10**9, stop_id
+
+
+def ordered_stop_ids(stop_ids: Iterable[str]) -> List[str]:
+    """Return stop identifiers sorted by their numeric suffix.
+
+    args:
+        stop_ids: Iterable of stop identifier strings.
+
+    returns:
+        List of cleaned and sorted stop identifier strings.
+    """
+    cleaned = [sid.strip() for sid in stop_ids if sid and sid.strip()]
+    return sorted(cleaned, key=_stop_sort_key)
