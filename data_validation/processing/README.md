@@ -28,7 +28,7 @@ Rows whose first column starts with `2.` (bus network) are removed.
 | `stop_times_subway.txt` | `stop_times_cleaned.txt` |
 | `trips_subway.txt` | `trips_cleaned.txt` |
 
-Also reads `trip_ids_to_eliminate.txt` from `.src/gtfs/data/2_duplicated_trips`, produced by `data_validation/checks/3_stop_times_checks.ipynb`.
+Also reads `trip_ids_to_eliminate.txt` from `.src/gtfs/data/2_duplicated_trips`, produced by `data_validation/checks/stop_times_checks.ipynb`.
 
 ---
 
@@ -40,7 +40,7 @@ Also reads `trip_ids_to_eliminate.txt` from `.src/gtfs/data/2_duplicated_trips`,
 |---|---|
 | `stop_times_cleaned.txt` | `stop_times_sequence.txt` |
 
-Also reads `wrong_stop_sequences.txt` from `.src/gtfs/data/3_stop_sequence`, produced by `data_validation/checks/3_stop_times_checks.ipynb`.
+Also reads `wrong_stop_sequences.txt` from `.src/gtfs/data/3_stop_sequence`, produced by `data_validation/checks/stop_times_checks.ipynb`.
 
 For each trip, `wrong_stop_sequences.txt` lists the breaks where two consecutive stops are not adjacent in the canonical route order (as `seq_a`/`seq_b` pairs). For every such break, the script opens a gap: the breaking stop and every stop after it in that trip have their `stop_sequence` incremented by one. Breaks accumulate, i.e., a stop that comes after two break points ends up with its original sequence plus two. This lets downstream graph builders distinguish physically non-adjacent stops from adjacent ones, without changing arrival/departure times.
 
@@ -54,7 +54,7 @@ For each trip, `wrong_stop_sequences.txt` lists the breaks where two consecutive
 |---|---|
 | `stop_times_sequence.txt` | `stop_times_doors.txt` |
 
-Also reads `doors.txt` and `trips_cleaned.txt`, produced by `data_validation/checks/3_stop_times_checks.ipynb` and `2_duplicated_trips.py` respectively.
+Also reads `doors.txt` and `trips_cleaned.txt`, produced by `data_validation/checks/stop_times_checks.ipynb` and `2_duplicated_trips.py` respectively.
 
 For every row where `arrival_time == departure_time` at a terminal stop, the script adjusts the synthetic timestamp using the door-open duration from `doors.txt` (keyed by `stop_id` and line):
 - first stop (min `stop_sequence`): `arrival_time = departure_time − door_seconds`
