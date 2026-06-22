@@ -2,7 +2,7 @@
 
 This script reads `wrong_stop_sequences.txt` from `STOP_SEQUENCE_BASE`, produced
 by running the canonical stop-sequence check in
-`data_validation/checks/3_stop_times_checks.ipynb`, and uses it to adjust
+`data_validation/checks/stop_times_checks.ipynb`, and uses it to adjust
 stop_sequence values in `stop_times_cleaned.txt`.
 
 For each break in a trip (two consecutive stops not adjacent in the canonical
