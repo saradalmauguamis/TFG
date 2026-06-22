@@ -40,6 +40,8 @@ from data_validation.gtfs_utils import (  # noqa: E402
     WRONG_STOP_SEQUENCES_FILE,
     check_missing_files,
     print_file_disclaimer,
+    read_dict_rows,
+    read_header,
 )
 
 
@@ -54,18 +56,16 @@ def load_break_points(file_path: str) -> Dict[str, List[int]]:
         where a gap must be opened).
     """
     break_points: Dict[str, List[int]] = defaultdict(list)
-    with open(file_path, "r", encoding="utf-8", newline="") as fh:
-        reader = csv.DictReader(fh)
-        for row in reader:
-            trip_id = row.get("trip_id", "").strip()
-            seq_b_text = row.get("seq_b", "").strip()
-            if not trip_id or not seq_b_text:
-                continue
-            try:
-                seq_b = int(seq_b_text)
-            except ValueError:
-                continue
-            break_points[trip_id].append(seq_b)
+    for row in read_dict_rows(file_path):
+        trip_id = row.get("trip_id", "")
+        seq_b_text = row.get("seq_b", "")
+        if not trip_id or not seq_b_text:
+            continue
+        try:
+            seq_b = int(seq_b_text)
+        except ValueError:
+            continue
+        break_points[trip_id].append(seq_b)
 
     return {tid: sorted(seqs) for tid, seqs in break_points.items()}
 
@@ -107,36 +107,30 @@ def write_adjusted_stop_times(
     total_rows = 0
     modified_rows = 0
     rows_out: list[dict[str, str]] = []
+    fieldnames = read_header(input_path)
 
     Path(output_path).parent.mkdir(parents=True, exist_ok=True)
 
-    with open(input_path, "r", encoding="utf-8-sig", newline="") as fh:
-        reader = csv.DictReader(fh)
-        if reader.fieldnames is None:
-            raise RuntimeError(f"{Path(input_path).name} has no header.")
-        fieldnames = list(reader.fieldnames)
-
-        for row in reader:
-            total_rows += 1
-            trip_id = (row.get("trip_id") or "").strip()
-            break_points = break_points_by_trip.get(trip_id)
-            if not break_points:
-                rows_out.append(row)
-                continue
-
-            seq_text = (row.get("stop_sequence") or "").strip()
-            try:
-                original_seq = int(seq_text)
-            except ValueError:
-                rows_out.append(row)
-                continue
-
-            new_seq = adjusted_sequence(original_seq, break_points)
-            if new_seq != original_seq:
-                row = dict(row)
-                row["stop_sequence"] = str(new_seq)
-                modified_rows += 1
+    for row in read_dict_rows(input_path):
+        total_rows += 1
+        trip_id = row.get("trip_id", "")
+        break_points = break_points_by_trip.get(trip_id)
+        if not break_points:
             rows_out.append(row)
+            continue
+
+        seq_text = row.get("stop_sequence", "")
+        try:
+            original_seq = int(seq_text)
+        except ValueError:
+            rows_out.append(row)
+            continue
+
+        new_seq = adjusted_sequence(original_seq, break_points)
+        if new_seq != original_seq:
+            row["stop_sequence"] = str(new_seq)
+            modified_rows += 1
+        rows_out.append(row)
 
     with open(output_path, "w", encoding="utf-8", newline="") as fh:
         writer = csv.DictWriter(fh, fieldnames=fieldnames)

@@ -25,15 +25,17 @@ if _PROJECT_ROOT not in sys.path:
 
 from data_validation.gtfs_utils import (  # noqa: E402
     STOP_TIMES_FILE,
+    STOPS_FILE,
     check_missing_files,
     print_file_disclaimer,
     format_seconds,
+    load_stop_names,
     read_dict_rows,
     SECONDS_PER_DAY,
     parse_time_to_seconds,
 )
 
-TOP_PAIRS_TO_PRINT = 10
+TOP_PAIRS_TO_PRINT = 156
 
 
 def build_directed_pair_samples(
@@ -139,12 +141,14 @@ def summarize_directional_gaps(
 
 
 def print_summary(
-    ranked_pairs: Sequence[Tuple[float, Tuple[str, str], float, float]]
+    ranked_pairs: Sequence[Tuple[float, Tuple[str, str], float, float]],
+    stop_names: Dict[str, str],
 ) -> None:
     """Print a summary for the ranked directional gaps.
 
     args:
             ranked_pairs: Ranked reciprocal pairs with directional averages and gaps.
+            stop_names: Mapping from stop_id to stop_name.
     """
 
     print(
@@ -160,10 +164,13 @@ def print_summary(
     for index, (difference, pair, average_ab, average_ba) in enumerate(
         ranked_pairs[:TOP_PAIRS_TO_PRINT], start=1
     ):
+        a, b = pair
+        name_a = stop_names.get(a, a)
+        name_b = stop_names.get(b, b)
         print(
-            f"{index}. ({pair[0]}, {pair[1]}) - "
-            f"|w_a_b - w_b_a| = {difference:.2f}s ({format_seconds(difference)}), "
-            f"w_a_b = {average_ab:.2f}s ({format_seconds(average_ab)}), "
+            f"{index}. {a} ({name_a}) <-> {b} ({name_b})\n"
+            f"     |w_a_b - w_b_a| = {difference:.2f}s ({format_seconds(difference)})\n"
+            f"     w_a_b = {average_ab:.2f}s ({format_seconds(average_ab)}), "
             f"w_b_a = {average_ba:.2f}s ({format_seconds(average_ba)})"
         )
 
@@ -173,14 +180,18 @@ def main() -> None:
 
     pair_samples: Dict[Tuple[str, str], List[int]] = {}
     ranked_pairs: List[Tuple[float, Tuple[str, str], float, float]] = []
+    relevant_stop_ids: Set[str] = set()
+    stop_names: Dict[str, str] = {}
 
-    check_missing_files([STOP_TIMES_FILE])
+    check_missing_files([STOP_TIMES_FILE, STOPS_FILE])
 
-    print_file_disclaimer([STOP_TIMES_FILE])
+    print_file_disclaimer([STOP_TIMES_FILE, STOPS_FILE])
 
     pair_samples = build_directed_pair_samples(STOP_TIMES_FILE)
+    relevant_stop_ids = {stop_id for pair in pair_samples for stop_id in pair}
+    stop_names = load_stop_names(STOPS_FILE, relevant_stop_ids)
     ranked_pairs = summarize_directional_gaps(pair_samples)
-    print_summary(ranked_pairs)
+    print_summary(ranked_pairs, stop_names)
 
 
 if __name__ == "__main__":

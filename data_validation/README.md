@@ -2,6 +2,8 @@
 
 Pipeline for validating, processing, and analysing the GTFS subway data.
 
+See [`WORKFLOW.md`](WORKFLOW.md) for the end-to-end run order across notebooks and scripts.
+
 ```
 data_validation/
 ├── gtfs_utils.py

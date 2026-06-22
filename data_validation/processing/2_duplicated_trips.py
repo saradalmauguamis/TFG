@@ -32,6 +32,8 @@ from data_validation.gtfs_utils import (  # noqa: E402
     check_missing_files,
     print_file_disclaimer,
     load_nonempty_lines,
+    read_dict_rows,
+    read_header,
 )
 
 
@@ -54,18 +56,13 @@ def write_cleaned_file(
     kept_rows: list[dict[str, str]] = []
     removed_rows = 0
 
-    with open(input_path, "r", encoding="utf-8-sig", newline="") as input_handle:
-        reader = csv.DictReader(input_handle)
-        if reader.fieldnames is None:
-            raise RuntimeError(f"{Path(input_path).name} has no header.")
-        fieldnames = list(reader.fieldnames)
-
-        for row in reader:
-            total_rows += 1
-            trip_id = (row.get("trip_id") or "").strip()
-            if trip_id in eliminated_trip_ids:
-                continue
-            kept_rows.append(row)
+    fieldnames = read_header(input_path)
+    for row in read_dict_rows(input_path):
+        total_rows += 1
+        trip_id = row.get("trip_id", "")
+        if trip_id in eliminated_trip_ids:
+            continue
+        kept_rows.append(row)
 
     with open(output_path, "w", encoding="utf-8", newline="") as output_handle:
         writer = csv.DictWriter(output_handle, fieldnames=fieldnames)

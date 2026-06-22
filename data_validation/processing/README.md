@@ -6,7 +6,7 @@ Each script is a self-contained step that reads from one data stage and writes t
 
 ### `1_subway.py` — extract subway-only rows
 
-`.src/gtfs/data/0_original` → `.src/gtfs/data/1_subway`
+`.src/gtfs/data/0_raw` → `.src/gtfs/data/1_subway`
 
 | Input | Output |
 |---|---|
@@ -42,11 +42,13 @@ Also reads `trip_ids_to_eliminate.txt` from `.src/gtfs/data/2_duplicated_trips`,
 
 Also reads `wrong_stop_sequences.txt` from `.src/gtfs/data/3_stop_sequence`, produced by `data_validation/checks/3_stop_times_checks.ipynb`.
 
+For each trip, `wrong_stop_sequences.txt` lists the breaks where two consecutive stops are not adjacent in the canonical route order (as `seq_a`/`seq_b` pairs). For every such break, the script opens a gap: the breaking stop and every stop after it in that trip have their `stop_sequence` incremented by one. Breaks accumulate, i.e., a stop that comes after two break points ends up with its original sequence plus two. This lets downstream graph builders distinguish physically non-adjacent stops from adjacent ones, without changing arrival/departure times.
+
 ---
 
 ### `4_doors_time.py` — add door-open times to terminal stops
 
-`.src/gtfs/data/3_stop_sequence` → `.src/gtfs/data/4_doors`
+`.src/gtfs/data/3_stop_sequence` → `.src/gtfs/data/4_doors_time`
 
 | Input | Output |
 |---|---|
@@ -59,8 +61,8 @@ For every row where `arrival_time == departure_time` at a terminal stop, the scr
 - last stop (max `stop_sequence`): `departure_time = arrival_time + door_seconds`
 
 `door_seconds` in `doors.txt` is assigned per `(stop_id, line)` by the notebook:
-- partial stops (only some trips have `arr == dep`): per-stop mean of the non-zero-dwell trips
-- canonical terminal stops (all trips have `arr == dep`): line mean door time
+- partial stops (only some trips have `arrival_time == deparature_time`): per-stop mean of the non-zero-dwell trips
+- canonical terminal stops (all trips have `arrival_time == deparature_time`): line mean door time
 - FM line (no observed door times): mean across all other lines as fallback
 
 ### `5_L9_L10_data_duplication.py` — resolve L9/L10 duplication *(work in progress)*
@@ -70,7 +72,7 @@ For every row where `arrival_time == departure_time` at a terminal stop, the scr
 ## File transformation summary
 
 ```
-0_original           1_subway                2_duplicated_trips      3_stop_sequence         4_doors
+0_raw                1_subway                2_duplicated_trips      3_stop_sequence         4_doors_time
 
 pathways
 routes               routes_subway

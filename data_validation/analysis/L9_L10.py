@@ -11,7 +11,7 @@ per line, direction and platform pair and prints comparisons between L9 and L10.
 It also prints the number of samples and standard deviation for each average.
 
 The cleaned inputs are expected under the repository at `../.src/gtfs/data/` relative to this file.
-Raw GTFS source files live under `../.src/gtfs/data/0_original/`.
+Raw GTFS source files live under `../.src/gtfs/data/0_raw/`.
 """
 
 from __future__ import annotations
@@ -30,9 +30,11 @@ sys.path.insert(0, str(REPO_ROOT))
 from data_validation.gtfs_utils import (  # noqa: E402
     SECONDS_PER_DAY,
     STOP_TIMES_FILE,
+    STOPS_FILE,
     TRIPS_FILE,
     check_missing_files,
     print_file_disclaimer,
+    load_stop_names,
     load_trip_ids_by_route,
     parse_time_to_seconds,
     read_dict_rows,
@@ -152,7 +154,10 @@ def average_times_for_line(
 
 
 def print_section(
-    section_name: str, line_names: Tuple[str, str], pairs: List[Tuple[str, str]]
+    section_name: str,
+    line_names: Tuple[str, str],
+    pairs: List[Tuple[str, str]],
+    stop_names: Dict[str, str],
 ) -> None:
     """Print the comparison table for one section.
 
@@ -160,6 +165,7 @@ def print_section(
             section_name: Section label to print.
             line_names: Two line names to compare.
             pairs: Base stop pairs for the section.
+            stop_names: Mapping from stop_id to stop_name.
     """
     # Mapping: line name --> {(stop_a, stop_b): (avg_seconds, count, stdev) or None}
     line_pair_avgs: Dict[
@@ -178,6 +184,8 @@ def print_section(
 
         for pair in directed_pairs:
             a, b = pair
+            name_a = stop_names.get(a, a)
+            name_b = stop_names.get(b, b)
             rec1 = line_pair_avgs[line_names[0]].get(pair)
             rec2 = line_pair_avgs[line_names[1]].get(pair)
             diff = (
@@ -185,7 +193,7 @@ def print_section(
                 if rec1 is not None and rec2 is not None
                 else None
             )
-            print(f"  {a} -> {b}")
+            print(f"  {a} ({name_a}) -> {b} ({name_b})")
             # Line 1
             if rec1 is None:
                 print(f"    {line_names[0]:<5} {'N/A':>8} (N/A)")
@@ -220,14 +228,22 @@ def main() -> None:
         ("South", lines_south, south_pairs),
         ("North", lines_north, north_pairs),
     )
-    check_missing_files([TRIPS_FILE, STOP_TIMES_FILE])
+    all_pairs: List[Tuple[str, str]] = []
+    relevant_stop_ids: Set[str] = set()
+    stop_names: Dict[str, str] = {}
 
-    print_file_disclaimer([TRIPS_FILE, STOP_TIMES_FILE])
+    check_missing_files([TRIPS_FILE, STOP_TIMES_FILE, STOPS_FILE])
+
+    print_file_disclaimer([TRIPS_FILE, STOP_TIMES_FILE, STOPS_FILE])
+
+    all_pairs = [pair for _, _, pairs in section_data for pair in pairs]
+    relevant_stop_ids = {stop_id for pair in all_pairs for stop_id in pair}
+    stop_names = load_stop_names(STOPS_FILE, relevant_stop_ids)
 
     for index, (section_name, line_names, pairs) in enumerate(section_data):
         if index:
             print()
-        print_section(section_name, line_names, pairs)
+        print_section(section_name, line_names, pairs, stop_names)
 
 
 if __name__ == "__main__":
