@@ -15,17 +15,22 @@
   - There is a pathway between each pair of platforms of the same stop?
 
 - `3_stop_times_checks.ipynb`: stop_times consistency and sequence checks.
-  - Are there trips with identical stop_times content? (duplicates)
-    → produces `trip_ids_to_eliminate.txt` in `src/gtfs/data/2_duplicated_trips` → used by `data_validation/processing/2_duplicated_trips.py`
-  - Does `stop_sequence` increment by one for all trips?
-  - Do trips follow the canonical stop order for their route?
-    → produces `wrong_stop_sequences.txt` in `.src/gtfs/data/3_stop_sequence` → used by `data_validation/processing/3_stop_sequence.py`
-  - After the sequence fix, do the bad pairs show non-consecutive sequence numbers? *(verification)*
-  - Which stops have `arrival_time == departure_time`?
-  - For partial `arrival == departure` stops: mean and stdev of door time (departure − arrival).
-  - Per-line mean and stdev of door time, excluding `arrival == departure` rows.
-  - Writes `doors.txt` in `.src/gtfs/data/4_doors/` with one row per `(stop_id, line)` that has any `arrival == departure` occurrence.
-    → used by `data_validation/processing/4_doors_time.py`
+  - **Duplicate full trip_id blocs in stop_times**
+    - Are there trips with identical stop_times content? (duplicates)
+      → produces `trip_ids_to_eliminate.txt` in `src/gtfs/data/2_duplicated_trips` → used by `data_validation/processing/2_duplicated_trips.py`
+  - **Does stop_sequence increment by one?**
+    - Does `stop_sequence` increment by one for all trips?
+  - **The canonical stop sequence is followed correctly?**
+    - Do trips follow the canonical stop order for their route?
+      → produces `wrong_stop_sequences.txt` in `.src/gtfs/data/3_stop_sequence` → used by `data_validation/processing/3_stop_sequence.py`
+    - After the sequence fix, do the bad pairs show non-consecutive sequence numbers? *(verification)*
+  - **Cases when arrival_time and departure_time is the same**
+    - Which stops have `arrival_time == departure_time`?
+    - For partial `arrival == departure` stops: mean and stdev of door time (departure − arrival).
+    - Per-line mean and stdev of door time, excluding `arrival == departure` rows.
+    - Writes `doors.txt` in `.src/gtfs/data/4_doors_time/` with one row per `(stop_id, line)` that has any `arrival == departure` occurrence.
+      → used by `data_validation/processing/4_doors_time.py`
+    - After the door-time fix, does any stop still have `arrival_time == departure_time`? *(verification)*
 
 - `4_trips_checks.ipynb`: trip metadata pairing checks.
   - Are `direction_id` and `trip_headsign` correctly paired per route?

@@ -1,6 +1,17 @@
 import csv
 from pathlib import Path
-from typing import Dict, Iterable, Union
+from typing import Dict, Iterable, List, Union
+
+
+class _DefaultDialect(csv.Dialect):
+    """Comma-delimited fallback dialect used when sniffing fails."""
+
+    delimiter = ","
+    quotechar = '"'
+    doublequote = True
+    skipinitialspace = False
+    lineterminator = "\n"
+    quoting = csv.QUOTE_MINIMAL
 
 
 def sniff_dialect(file_path: Union[str, Path]) -> type[csv.Dialect]:
@@ -18,16 +29,25 @@ def sniff_dialect(file_path: Union[str, Path]) -> type[csv.Dialect]:
             sample = file_handle.read(65536)
         return csv.Sniffer().sniff(sample, delimiters=",;\t")
     except Exception:
-
-        class _DefaultDialect(csv.Dialect):
-            delimiter = ","
-            quotechar = '"'
-            doublequote = True
-            skipinitialspace = False
-            lineterminator = "\n"
-            quoting = csv.QUOTE_MINIMAL
-
         return _DefaultDialect
+
+
+def read_header(file_path: Union[str, Path]) -> List[str]:
+    """Return lowercase, stripped header field names for a CSV file.
+
+    args:
+        file_path: Path to the CSV file.
+
+    returns:
+        Header field names in file order.
+    """
+    file_path = Path(file_path)
+    dialect = sniff_dialect(file_path)
+    with file_path.open("r", encoding="utf-8-sig", newline="") as file_handle:
+        reader = csv.DictReader(file_handle, dialect=dialect)
+        if reader.fieldnames is None:
+            raise RuntimeError(f"File {file_path.name} has no header.")
+        return [name.lower().strip() for name in reader.fieldnames]
 
 
 def read_dict_rows(file_path: Union[str, Path]) -> Iterable[Dict[str, str]]:

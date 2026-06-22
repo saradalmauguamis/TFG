@@ -14,7 +14,7 @@ if _PROJECT_ROOT not in sys.path:
 # Module setup
 # -----------------------------
 
-from scripts.utils import read_dict_rows, sniff_dialect  # noqa: E402
+from scripts.utils import read_dict_rows, read_header, sniff_dialect  # noqa: E402
 
 
 # -----------------------------
@@ -26,11 +26,12 @@ __all__ = [
     # Shared CSV helpers
     "sniff_dialect",
     "read_dict_rows",
+    "read_header",
     # Constants / paths
     "_DEFAULT_DATA_DIR",
     "BASE",
-    "_DEFAULT_ORIGINAL_DATA_DIR",
-    "ORIGINAL_BASE",
+    "_DEFAULT_RAW_DATA_DIR",
+    "RAW_BASE",
     "_DEFAULT_SUBWAY_DATA_DIR",
     "SUBWAY_BASE",
     "_DEFAULT_DUPLICATED_TRIPS_DATA_DIR",
@@ -40,19 +41,19 @@ __all__ = [
     "_DEFAULT_DOORS_DATA_DIR",
     "DOORS_BASE",
     "PATHWAYS_FILE",
-    "ROUTES_ORIGINAL_FILE",
+    "ROUTES_RAW_FILE",
     "ROUTES_FILE",
-    "STOP_TIMES_ORIGINAL_FILE",
+    "STOP_TIMES_RAW_FILE",
     "STOP_TIMES_SUBWAY_FILE",
     "STOP_TIMES_CLEANED_FILE",
     "STOP_TIMES_SEQUENCE_FILE",
     "STOP_TIMES_FILE",
     "WRONG_STOP_SEQUENCES_FILE",
     "DOORS_FILE",
-    "STOPS_ORIGINAL_FILE",
+    "STOPS_RAW_FILE",
     "STOPS_FILE",
     "TRANSFERS_FILE",
-    "TRIPS_ORIGINAL_FILE",
+    "TRIPS_RAW_FILE",
     "TRIPS_SUBWAY_FILE",
     "TRIPS_FILE",
     "TRIP_IDS_TO_ELIMINATE_FILE",
@@ -94,6 +95,8 @@ __all__ = [
     "is_contiguous_subsequence",
     "load_trip_sequence_bounds",
     "load_trip_to_line",
+    "build_stop_to_lines",
+    "format_stop_label",
 ]
 
 
@@ -104,11 +107,9 @@ __all__ = [
 _DEFAULT_DATA_DIR = Path(__file__).resolve().parents[1] / ".src" / "gtfs" / "data"
 BASE = str(Path(os.environ.get("GTFS_DATA_DIR", str(_DEFAULT_DATA_DIR))).resolve())
 
-_DEFAULT_ORIGINAL_DATA_DIR = _DEFAULT_DATA_DIR / "0_original"
-ORIGINAL_BASE = str(
-    Path(
-        os.environ.get("GTFS_ORIGINAL_DATA_DIR", str(_DEFAULT_ORIGINAL_DATA_DIR))
-    ).resolve()
+_DEFAULT_RAW_DATA_DIR = _DEFAULT_DATA_DIR / "0_raw"
+RAW_BASE = str(
+    Path(os.environ.get("GTFS_RAW_DATA_DIR", str(_DEFAULT_RAW_DATA_DIR))).resolve()
 )
 
 _DEFAULT_SUBWAY_DATA_DIR = _DEFAULT_DATA_DIR / "1_subway"
@@ -136,17 +137,17 @@ STOP_SEQUENCE_BASE = str(
     ).resolve()
 )
 
-_DEFAULT_DOORS_DATA_DIR = _DEFAULT_DATA_DIR / "4_doors"
+_DEFAULT_DOORS_DATA_DIR = _DEFAULT_DATA_DIR / "4_doors_time"
 DOORS_BASE = str(
     Path(os.environ.get("GTFS_DOORS_DATA_DIR", str(_DEFAULT_DOORS_DATA_DIR))).resolve()
 )
 
-PATHWAYS_FILE = os.path.join(ORIGINAL_BASE, "pathways.txt")
+PATHWAYS_FILE = os.path.join(RAW_BASE, "pathways.txt")
 
-ROUTES_ORIGINAL_FILE = os.path.join(ORIGINAL_BASE, "routes.txt")
+ROUTES_RAW_FILE = os.path.join(RAW_BASE, "routes.txt")
 ROUTES_FILE = os.path.join(SUBWAY_BASE, "routes_subway.txt")
 
-STOP_TIMES_ORIGINAL_FILE = os.path.join(ORIGINAL_BASE, "stop_times.txt")
+STOP_TIMES_RAW_FILE = os.path.join(RAW_BASE, "stop_times.txt")
 STOP_TIMES_SUBWAY_FILE = os.path.join(SUBWAY_BASE, "stop_times_subway.txt")
 STOP_TIMES_CLEANED_FILE = os.path.join(DUPLICATED_TRIPS_BASE, "stop_times_cleaned.txt")
 # STOP_TIMES_FILE = os.path.join(STOP_SEQUENCE_BASE, "stop_times_sequence.txt")
@@ -157,12 +158,12 @@ STOP_TIMES_FILE = os.path.join(DOORS_BASE, "stop_times_doors.txt")
 WRONG_STOP_SEQUENCES_FILE = os.path.join(STOP_SEQUENCE_BASE, "wrong_stop_sequences.txt")
 DOORS_FILE = os.path.join(DOORS_BASE, "doors.txt")
 
-STOPS_ORIGINAL_FILE = os.path.join(ORIGINAL_BASE, "stops.txt")
+STOPS_RAW_FILE = os.path.join(RAW_BASE, "stops.txt")
 STOPS_FILE = os.path.join(SUBWAY_BASE, "stops_subway.txt")
 
-TRANSFERS_FILE = os.path.join(ORIGINAL_BASE, "transfers.txt")
+TRANSFERS_FILE = os.path.join(RAW_BASE, "transfers.txt")
 
-TRIPS_ORIGINAL_FILE = os.path.join(ORIGINAL_BASE, "trips.txt")
+TRIPS_RAW_FILE = os.path.join(RAW_BASE, "trips.txt")
 TRIPS_SUBWAY_FILE = os.path.join(SUBWAY_BASE, "trips_subway.txt")
 TRIPS_FILE = os.path.join(DUPLICATED_TRIPS_BASE, "trips_cleaned.txt")
 
@@ -384,14 +385,21 @@ def load_from_stop_ids(file_path: str) -> Set[str]:
 def parse_time_to_seconds(value: str) -> int:
     """Convert a GTFS HH:MM:SS time string to seconds.
 
+    Supports negative times (e.g. ``-00:00:21``) produced by the door-time
+    pipeline for stops that depart before the reference midnight.
+
     args:
-        value: Time text in HH:MM:SS format.
+        value: Time text in ``[-]HH:MM:SS`` format.
 
     returns:
-        Total seconds represented by the input time.
+        Total seconds represented by the input time (negative if prefixed with ``-``).
     """
-    hours_text, minutes_text, seconds_text = value.strip().split(":")
-    return int(hours_text) * 3600 + int(minutes_text) * 60 + int(seconds_text)
+    stripped = value.strip()
+    negative = stripped.startswith("-")
+    unsigned = stripped[1:] if negative else stripped
+    hours_text, minutes_text, seconds_text = unsigned.split(":")
+    total = int(hours_text) * 3600 + int(minutes_text) * 60 + int(seconds_text)
+    return -total if negative else total
 
 
 def format_seconds(value: float) -> str:
@@ -773,6 +781,49 @@ def load_trip_to_line(file_path: str, rid_to_name: Dict[str, str]) -> Dict[str, 
         if trip_id and line:
             trip_to_line[trip_id] = line
     return trip_to_line
+
+
+def build_stop_to_lines(
+    route_names_stop_ids: Dict[str, List[str]]
+) -> Dict[str, List[str]]:
+    """Invert a route name -> stop_id list mapping into stop_id -> line names.
+
+    Lines are appended in the iteration order of `route_names_stop_ids`, so a
+    stop present in multiple lines keeps that canonical order (e.g. L9S before L10S).
+
+    args:
+        route_names_stop_ids: Mapping from line name to its ordered stop_id list,
+            e.g. `scripts.basics.subway_route_names_stop_ids`.
+
+    returns:
+        Mapping from stop_id to the list of line names it belongs to.
+    """
+    stop_to_lines: Dict[str, List[str]] = {}
+    for line_name, stop_ids in route_names_stop_ids.items():
+        for stop_id in stop_ids:
+            lines = stop_to_lines.setdefault(stop_id, [])
+            if line_name not in lines:
+                lines.append(line_name)
+    return stop_to_lines
+
+
+def format_stop_label(
+    stop_id: str, stop_name: str, stop_to_lines: Dict[str, List[str]]
+) -> str:
+    """Prefix a stop name with its line(s), e.g. "L9S-L10S-Torrassa".
+
+    args:
+        stop_id: Platform stop_id to look up.
+        stop_name: Stop name to prefix.
+        stop_to_lines: Mapping from stop_id to line names, from `build_stop_to_lines`.
+
+    returns:
+        "{line1}-{line2}-...-{stop_name}", or plain `stop_name` if no lines are found.
+    """
+    lines = stop_to_lines.get(stop_id)
+    if not lines:
+        return stop_name
+    return f"{'-'.join(lines)}-{stop_name}"
 
 
 def load_trip_sequence_bounds(
