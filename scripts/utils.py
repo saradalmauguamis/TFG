@@ -1,6 +1,6 @@
 import csv
 from pathlib import Path
-from typing import Dict, Iterable, List, Union
+from typing import Dict, Iterable, List, Sequence, Union
 
 
 class _DefaultDialect(csv.Dialect):
@@ -77,3 +77,24 @@ def read_dict_rows(file_path: Union[str, Path]) -> Iterable[Dict[str, str]]:
                 normalized_value = (value if value is not None else "").strip()
                 cleaned_row[normalized_key] = normalized_value
             yield cleaned_row
+
+
+def round_half_up_mean(values: Sequence[int]) -> int:
+    """Round-half-up mean of a sequence of integers, computed without floats.
+
+    Python's round() rounds half-to-even, and statistics.mean() returns a
+    float whose binary representation can drift off an exact .5 boundary.
+    Rewriting floor(total/n + 0.5) as (2*total + n) // (2*n) avoids both
+    issues by staying in exact integer arithmetic.
+
+    args:
+        values: Sequence of integers to average.
+
+    returns:
+        Round-half-up integer mean, or 0 for an empty sequence.
+    """
+    count = len(values)
+    total = sum(values)
+    if not count:
+        return 0
+    return (2 * total + count) // (2 * count)

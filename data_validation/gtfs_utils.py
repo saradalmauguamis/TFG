@@ -14,7 +14,12 @@ if _PROJECT_ROOT not in sys.path:
 # Module setup
 # -----------------------------
 
-from scripts.utils import read_dict_rows, read_header, sniff_dialect  # noqa: E402
+from scripts.utils import (  # noqa: E402
+    read_dict_rows,
+    read_header,
+    round_half_up_mean,
+    sniff_dialect,
+)
 
 
 # -----------------------------
@@ -27,6 +32,7 @@ __all__ = [
     "sniff_dialect",
     "read_dict_rows",
     "read_header",
+    "round_half_up_mean",
     # Constants / paths
     "_DEFAULT_DATA_DIR",
     "BASE",

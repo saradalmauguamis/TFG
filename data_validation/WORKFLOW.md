@@ -31,38 +31,43 @@ There are two kinds of steps here:
    Consumes `trip_ids_to_eliminate.txt` (step 2) to remove duplicate trips, writing
    `stop_times_cleaned.txt` and `trips_cleaned.txt`.
 
-4. **`checks/stop_times_checks.ipynb`** → *The canonical stop sequence is followed correctly?*
+4. **`checks/stop_times_checks.ipynb`** → *After deduplication* *(verification)*
+
+   Re-runs the same duplicate-detection check on `stop_times_cleaned.txt`/`trips_cleaned.txt`
+   (step 3); no signature should now map to 2+ trip_id. No file output.
+
+5. **`checks/stop_times_checks.ipynb`** → *The canonical stop sequence is followed correctly?*
 
    Reads `stop_times_cleaned.txt` (step 3).
    → produces `wrong_stop_sequences.txt` in `3_stop_sequence`.
 
-5. **`processing/3_stop_sequence.py`** — `2_duplicated_trips` → `3_stop_sequence`
+6. **`processing/3_stop_sequence.py`** — `2_duplicated_trips` → `3_stop_sequence`
 
-   Consumes `wrong_stop_sequences.txt` (step 4) to open sequence gaps, writing
+   Consumes `wrong_stop_sequences.txt` (step 5) to open sequence gaps, writing
    `stop_times_sequence.txt`.
 
-6. **`checks/stop_times_checks.ipynb`** → *After the sequence fix* *(verification)*
+7. **`checks/stop_times_checks.ipynb`** → *After the sequence fix* *(verification)*
 
-   Re-runs the same canonical-order check on `stop_times_sequence.txt` (step 5); bad pairs should
+   Re-runs the same canonical-order check on `stop_times_sequence.txt` (step 6); bad pairs should
    now be non-consecutive. No file output.
 
-7. **`checks/stop_times_checks.ipynb`** → *Cases when arrival_time and departure_time is the
+8. **`checks/stop_times_checks.ipynb`** → *Cases when arrival_time and departure_time is the
    same*
 
-   Reads `stop_times_sequence.txt` (step 5) and `trips_cleaned.txt` (step 3).
+   Reads `stop_times_sequence.txt` (step 6) and `trips_cleaned.txt` (step 3).
    → produces `doors.txt` in `4_doors_time`.
 
-8. **`processing/4_doors_time.py`** — `3_stop_sequence` → `4_doors_time`
+9. **`processing/4_doors_time.py`** — `3_stop_sequence` → `4_doors_time`
 
-   Consumes `doors.txt` (step 7) and `trips_cleaned.txt` (step 3) to adjust terminal-stop
+   Consumes `doors.txt` (step 8) and `trips_cleaned.txt` (step 3) to adjust terminal-stop
    timestamps, writing `stop_times_doors.txt`.
 
-9. **`checks/stop_times_checks.ipynb`** → *After the door-time fix* *(verification)*
+10. **`checks/stop_times_checks.ipynb`** → *After the door-time fix* *(verification)*
 
-   Re-runs the arrival/departure check on `stop_times_doors.txt` (step 8); no stop should still
-   have `arrival_time == departure_time`. No file output.
+    Re-runs the arrival/departure check on `stop_times_doors.txt` (step 9); no stop should still
+    have `arrival_time == departure_time`. No file output.
 
-10. **`processing/5_L9_L10_data_duplication.py`** *(work in progress)* — resolves L9/L10
+11. **`processing/5_L9_L10_data_duplication.py`** *(work in progress)* — resolves L9/L10
     duplication on top of the final `4_doors_time` output.
 
 ---

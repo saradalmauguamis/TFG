@@ -12,13 +12,14 @@ Reads: `stop_times_sequence.txt` from `.src/gtfs/data/3_stop_sequence`
 
 ---
 
-### `L9_L10.py` — L9 / L10 shared platform travel times
+### `shared_platforms.py` — L9 / L10 shared platform travel times
 
 Reads:
-- `stop_times_sequence.txt` from `.src/gtfs/data/3_stop_sequence`
+- `stop_times_doors.txt` from `.src/gtfs/data/4_doors_time`
+- `stops_subway.txt`from `.src/gtfs/data/1_subway`
 - `trips_cleaned.txt` from `.src/gtfs/data/2_duplicated_trips`
 
-> Used to decide whether it is necessary to duplicate artificially the shared stops to avoid having the same edge weight regardless of the line: compares average travel times between L9 and L10 on their shared platforms.
+> Used to decide whether it is necessary to duplicate artificially the shared stops to avoid having the same edge weight regardless of the line: compares average travel times between L9 and L10 on their shared platforms. Shared platforms are derived automatically from `subway_route_names_stop_ids` (`scripts/basics.py`), not hardcoded.
 
 Shared platforms analysed:
 
