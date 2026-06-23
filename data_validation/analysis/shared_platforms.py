@@ -4,9 +4,9 @@ The objective of this script is to determine whether the travel time between the
 shared platforms of L9 and L10 is the same, given a consecutive pair of stops
 and a direction.
 
-This script scans all matching trips for each route+direction and measures the
-time between two consecutive platform stops (arrival at the first stop and
-arrival at the second) from `stop_times_subway_cleaned.txt`. It averages those times
+This script scans `stop_times_doors.txt` once for all matching trips across every
+route+direction and measures the time between two consecutive platform stops
+(arrival at the first stop and arrival at the second). It averages those times
 per line, direction and platform pair and prints comparisons between L9 and L10.
 It also prints the number of samples and standard deviation for each average.
 
@@ -18,9 +18,7 @@ from __future__ import annotations
 
 import pathlib
 import sys
-from collections import defaultdict
-from statistics import mean, stdev
-from typing import DefaultDict, Dict, List, Optional, Set, Tuple
+from typing import Dict, List, Optional, Set, Tuple
 
 # Ensure repository root is on sys.path so `scripts` package imports work when the
 # script is executed directly (for example via a virtualenv python binary).
@@ -28,16 +26,15 @@ REPO_ROOT = pathlib.Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(REPO_ROOT))
 
 from data_validation.gtfs_utils import (  # noqa: E402
-    SECONDS_PER_DAY,
     STOP_TIMES_FILE,
     STOPS_FILE,
     TRIPS_FILE,
+    average_times_for_pairs,
     check_missing_files,
     print_file_disclaimer,
+    collect_pair_samples_by_trip_group,
     load_stop_names,
     load_trip_ids_by_route,
-    parse_time_to_seconds,
-    read_dict_rows,
     seconds_to_hms,
 )
 from scripts.basics import (  # noqa: E402
@@ -47,6 +44,9 @@ from scripts.basics import (  # noqa: E402
 
 lines_south = ("L9S", "L10S")
 lines_north = ("L9N", "L10N")
+
+GroupKey = Tuple[str, int]  # (line_short_name, direction_id)
+SectionData = Tuple[str, Tuple[str, str], List[Tuple[str, str]]]
 
 
 def shared_platform_pairs(line_a: str, line_b: str) -> List[Tuple[str, str]]:
@@ -66,109 +66,36 @@ def shared_platform_pairs(line_a: str, line_b: str) -> List[Tuple[str, str]]:
     return list(zip(shared, shared[1:]))
 
 
-def collect_pair_samples_for_line(
-    line_short_name: str,
-    direction_id: int,
-    pairs: List[Tuple[str, str]],
-) -> Dict[Tuple[str, str], List[int]]:
-    """Collect travel-time samples for one line, direction, and stop pairs.
+def build_trip_groups(
+    section_data: Tuple[SectionData, ...],
+) -> Tuple[Dict[str, GroupKey], Dict[GroupKey, List[Tuple[str, str]]]]:
+    """Map every relevant trip to its (line, direction) group and its pairs.
 
     args:
-            line_short_name: Short name of the line, such as L9S.
-            direction_id: Direction to inspect.
-            pairs: Directed stop pairs to keep.
+            section_data: Per-section (name, line_names, pairs_dir0) tuples.
 
     returns:
-            Dictionary mapping each requested pair to its travel-time samples.
+            Tuple of (trip_id -> group key, group key -> directed stop pairs),
+            so a single stop_times scan can serve every line and direction.
     """
-    route_id = subway_routes_names_ids.get(line_short_name)
-    pair_set = set(pairs)
-    target_stop_ids = {stop_id for pair in pairs for stop_id in pair}
-    samples: DefaultDict[Tuple[str, str], List[int]] = defaultdict(list)
-    trip_rows: DefaultDict[str, List[Tuple[int, str, str, str]]] = defaultdict(list)
-    trip_ids_by_direction: Dict[int, Set[str]] = {}
-    relevant_trip_ids: Set[str] = set()
+    trip_id_to_group: Dict[str, GroupKey] = {}
+    group_pairs: Dict[GroupKey, List[Tuple[str, str]]] = {}
 
-    if not route_id:
-        return {pair: [] for pair in pairs}
-
-    trip_ids_by_direction = load_trip_ids_by_route(TRIPS_FILE, route_id)
-    relevant_trip_ids = trip_ids_by_direction.get(direction_id, set())
-
-    for row in read_dict_rows(STOP_TIMES_FILE):
-        trip_id = row.get("trip_id", "")
-        if trip_id not in relevant_trip_ids:
-            continue
-
-        stop_id = row.get("stop_id", "")
-        sequence_text = row.get("stop_sequence", "")
-        arrival_time = row.get("arrival_time", "")
-        departure_time = row.get("departure_time", "")
-        if not stop_id or not sequence_text:
-            continue
-        if stop_id not in target_stop_ids:
-            continue
-
-        try:
-            stop_sequence = int(sequence_text)
-        except ValueError:
-            continue
-
-        trip_rows[trip_id].append(
-            (stop_sequence, stop_id, arrival_time, departure_time)
-        )
-
-    for rows in trip_rows.values():  # Implicit for each trip_id of trip_rows
-        rows.sort(key=lambda item: item[0])
-        for current_row, next_row in zip(rows, rows[1:]):
-            current_sequence, current_stop_id, current_arrival, _ = current_row
-            next_sequence, next_stop_id, next_arrival, _ = next_row
-            if next_sequence != current_sequence + 1:
+    for _, line_names, pairs_dir0 in section_data:
+        pairs_dir1 = [(b, a) for a, b in pairs_dir0]
+        for line_name in line_names:
+            route_id = subway_routes_names_ids.get(line_name)
+            if not route_id:
                 continue
-            pair = (current_stop_id, next_stop_id)
-            if pair not in pair_set:
-                continue
-            if not current_arrival or not next_arrival:
-                continue
+            trip_ids_by_direction = load_trip_ids_by_route(TRIPS_FILE, route_id)
+            for trip_id in trip_ids_by_direction.get(0, set()):
+                trip_id_to_group[trip_id] = (line_name, 0)
+            for trip_id in trip_ids_by_direction.get(1, set()):
+                trip_id_to_group[trip_id] = (line_name, 1)
+            group_pairs[(line_name, 0)] = pairs_dir0
+            group_pairs[(line_name, 1)] = pairs_dir1
 
-            travel_time = parse_time_to_seconds(next_arrival) - parse_time_to_seconds(
-                current_arrival
-            )
-            while travel_time < 0:  # Case of passing midnight, add 24h until positive
-                travel_time += SECONDS_PER_DAY
-            samples[pair].append(travel_time)
-
-    return {pair: samples.get(pair, []) for pair in pairs}
-
-
-def average_times_for_line(
-    line_short_name: str,
-    direction_id: int,
-    pairs: List[Tuple[str, str]],
-) -> Dict[Tuple[str, str], Optional[Tuple[float, int, float]]]:
-    """Return average travel time per directed pair for one line and direction.
-
-    args:
-            line_short_name: Short name of the line, such as L9S.
-            direction_id: Direction to inspect.
-            pairs: Directed stop pairs to average.
-
-    returns:
-            Dictionary mapping each pair to its average travel time, sample count,
-            and standard deviation, or None.
-    """
-    pair_samples = collect_pair_samples_for_line(line_short_name, direction_id, pairs)
-    # Return tuple (mean_seconds, count, stdev) or None when no samples
-    results: Dict[Tuple[str, str], Optional[Tuple[float, int, float]]] = {}
-    for pair, samples in pair_samples.items():
-        if not samples:
-            results[pair] = None
-            continue
-        count = len(samples)
-        avg = mean(samples)
-        std = stdev(samples) if count > 1 else 0.0
-        results[pair] = (avg, count, std)
-    return results
+    return trip_id_to_group, group_pairs
 
 
 def print_section(
@@ -176,6 +103,9 @@ def print_section(
     line_names: Tuple[str, str],
     pairs: List[Tuple[str, str]],
     stop_names: Dict[str, str],
+    avg_by_group: Dict[
+        GroupKey, Dict[Tuple[str, str], Optional[Tuple[float, int, float]]]
+    ],
 ) -> None:
     """Print the comparison table for one section.
 
@@ -184,28 +114,19 @@ def print_section(
             line_names: Two line names to compare.
             pairs: Base stop pairs for the section.
             stop_names: Mapping from stop_id to stop_name.
+            avg_by_group: Precomputed averages keyed by (line_name, direction_id).
     """
-    # Mapping: line name --> {(stop_a, stop_b): (avg_seconds, count, stdev) or None}
-    line_pair_avgs: Dict[
-        str, Dict[Tuple[str, str], Optional[Tuple[float, int, float]]]
-    ] = {}
-    directed_pairs: List[Tuple[str, str]] = []
-
     print(f"-------{section_name}-------")
     for direction in (0, 1):
         print(f"Direction_id={direction}---")
         directed_pairs = pairs if direction == 0 else [(b, a) for a, b in pairs]
-        for line_name in line_names:
-            line_pair_avgs[line_name] = average_times_for_line(
-                line_name, direction, directed_pairs
-            )
 
         for pair in directed_pairs:
             a, b = pair
             name_a = stop_names.get(a, a)
             name_b = stop_names.get(b, b)
-            rec1 = line_pair_avgs[line_names[0]].get(pair)
-            rec2 = line_pair_avgs[line_names[1]].get(pair)
+            rec1 = avg_by_group.get((line_names[0], direction), {}).get(pair)
+            rec2 = avg_by_group.get((line_names[1], direction), {}).get(pair)
             diff = (
                 abs(rec1[0] - rec2[0])
                 if rec1 is not None and rec2 is not None
@@ -242,26 +163,39 @@ def print_section(
 
 def main() -> None:
     """Print travel-time comparisons for the shared platforms in L9 and L10."""
-    section_data = (
+    section_data: Tuple[SectionData, ...] = (
         ("South", lines_south, shared_platform_pairs(*lines_south)),
         ("North", lines_north, shared_platform_pairs(*lines_north)),
     )
-    all_pairs: List[Tuple[str, str]] = []
-    relevant_stop_ids: Set[str] = set()
-    stop_names: Dict[str, str] = {}
+    all_pairs = None
+    relevant_stop_ids = None
+    stop_names = None
+    trip_id_to_group = None
+    group_pairs = None
+    samples_by_group = None
+    avg_by_group = None
 
     check_missing_files([TRIPS_FILE, STOP_TIMES_FILE, STOPS_FILE])
 
     print_file_disclaimer([TRIPS_FILE, STOP_TIMES_FILE, STOPS_FILE])
 
     all_pairs = [pair for _, _, pairs in section_data for pair in pairs]
-    relevant_stop_ids = {stop_id for pair in all_pairs for stop_id in pair}
+    relevant_stop_ids: Set[str] = {stop_id for pair in all_pairs for stop_id in pair}
     stop_names = load_stop_names(STOPS_FILE, relevant_stop_ids)
+
+    trip_id_to_group, group_pairs = build_trip_groups(section_data)
+    samples_by_group = collect_pair_samples_by_trip_group(
+        STOP_TIMES_FILE, trip_id_to_group, group_pairs
+    )
+    avg_by_group = {
+        group: average_times_for_pairs(samples)
+        for group, samples in samples_by_group.items()
+    }
 
     for index, (section_name, line_names, pairs) in enumerate(section_data):
         if index:
             print()
-        print_section(section_name, line_names, pairs, stop_names)
+        print_section(section_name, line_names, pairs, stop_names, avg_by_group)
 
 
 if __name__ == "__main__":

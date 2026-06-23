@@ -1,8 +1,10 @@
 import os
 import re
 import sys
+from collections import defaultdict
 from pathlib import Path
-from typing import Dict, Iterable, List, Optional, Set, Tuple
+from statistics import mean, stdev
+from typing import DefaultDict, Dict, Hashable, Iterable, List, Optional, Set, Tuple
 
 # Ensure the project root is on sys.path so that shared scripts can be imported.
 _PROJECT_ROOT = str(Path(__file__).resolve().parents[1])
@@ -103,6 +105,9 @@ __all__ = [
     "load_trip_to_line",
     "build_stop_to_lines",
     "format_stop_label",
+    # Directed pair travel-time helpers
+    "collect_pair_samples_by_trip_group",
+    "average_times_for_pairs",
 ]
 
 
@@ -859,3 +864,112 @@ def load_trip_sequence_bounds(
             lo, hi = bounds[trip_id]
             bounds[trip_id] = (min(lo, seq), max(hi, seq))
     return bounds
+
+
+# -----------------------------
+# Directed pair travel-time helpers
+# -----------------------------
+def collect_pair_samples_by_trip_group(
+    stop_times_file: str,
+    trip_id_to_group: Dict[str, Hashable],
+    group_pairs: Dict[Hashable, List[Tuple[str, str]]],
+) -> Dict[Hashable, Dict[Tuple[str, str], List[int]]]:
+    """Collect travel-time samples for several trip groups in one file pass.
+
+    Each trip belongs to exactly one group (for example a (line, direction_id)
+    pair), so several route/direction breakdowns can share a single scan of a
+    potentially large stop_times file instead of one scan per group.
+
+    args:
+        stop_times_file: Path to the stop_times file to scan.
+        trip_id_to_group: Mapping from trip_id to its group key. Trips absent
+            from this mapping are skipped.
+        group_pairs: Mapping from group key to the directed stop pairs
+            relevant to that group; non-consecutive or unmatched adjacencies
+            are ignored.
+
+    returns:
+        Mapping from group key to {pair: observed travel times in seconds},
+        with every pair from group_pairs present (possibly with an empty list).
+    """
+    group_pair_sets = {group: set(pairs) for group, pairs in group_pairs.items()}
+    group_stop_ids = {
+        group: {stop_id for pair in pairs for stop_id in pair}
+        for group, pairs in group_pairs.items()
+    }
+    trip_rows: DefaultDict[str, List[Tuple[int, str, str]]] = defaultdict(list)
+    samples: Dict[Hashable, DefaultDict[Tuple[str, str], List[int]]] = {
+        group: defaultdict(list) for group in group_pairs
+    }
+
+    for row in read_dict_rows(stop_times_file):
+        trip_id = row.get("trip_id", "")
+        group = trip_id_to_group.get(trip_id)
+        if group is None:
+            continue
+
+        stop_id = row.get("stop_id", "")
+        sequence_text = row.get("stop_sequence", "")
+        arrival_time = row.get("arrival_time", "")
+        if not stop_id or not sequence_text:
+            continue
+        if stop_id not in group_stop_ids[group]:
+            continue
+
+        try:
+            stop_sequence = int(sequence_text)
+        except ValueError:
+            continue
+
+        trip_rows[trip_id].append((stop_sequence, stop_id, arrival_time))
+
+    for trip_id, rows in trip_rows.items():
+        group = trip_id_to_group[trip_id]
+        pair_set = group_pair_sets[group]
+        rows.sort(key=lambda item: item[0])
+        for current_row, next_row in zip(rows, rows[1:]):
+            current_sequence, current_stop_id, current_arrival = current_row
+            next_sequence, next_stop_id, next_arrival = next_row
+            if next_sequence != current_sequence + 1:
+                continue
+            pair = (current_stop_id, next_stop_id)
+            if pair not in pair_set:
+                continue
+            if not current_arrival or not next_arrival:
+                continue
+
+            travel_time = parse_time_to_seconds(next_arrival) - parse_time_to_seconds(
+                current_arrival
+            )
+            while travel_time < 0:  # Case of passing midnight, add 24h until positive
+                travel_time += SECONDS_PER_DAY
+            samples[group][pair].append(travel_time)
+
+    return {
+        group: {pair: samples[group].get(pair, []) for pair in pairs}
+        for group, pairs in group_pairs.items()
+    }
+
+
+def average_times_for_pairs(
+    pair_samples: Dict[Tuple[str, str], List[int]]
+) -> Dict[Tuple[str, str], Optional[Tuple[float, int, float]]]:
+    """Return average travel time, sample count and stdev per directed pair.
+
+    args:
+        pair_samples: Mapping of directed stop pairs to travel-time samples.
+
+    returns:
+        Mapping from each pair to (mean_seconds, count, stdev), or None when
+        no samples were observed for that pair.
+    """
+    results: Dict[Tuple[str, str], Optional[Tuple[float, int, float]]] = {}
+    for pair, samples in pair_samples.items():
+        if not samples:
+            results[pair] = None
+            continue
+        count = len(samples)
+        avg = mean(samples)
+        std = stdev(samples) if count > 1 else 0.0
+        results[pair] = (avg, count, std)
+    return results

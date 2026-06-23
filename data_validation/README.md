@@ -19,7 +19,7 @@ data_validation/
 │   ├── 4_doors_time.py
 │   └── 5_L9_L10_data_duplication.py
 └── analysis/
-    ├── between_platforms.py
+    ├── directional_asymmetry.py
     └── shared_platforms.py
 ```
 
@@ -62,5 +62,5 @@ Scripts that transform raw GTFS files into cleaned, stage-by-stage outputs.
 
 Read-only scripts that answer specific questions to help decide graph design.
 
-- `between_platforms.py` — compare directional travel times between adjacent platforms
+- `directional_asymmetry.py` — compare directional travel times between adjacent platforms
 - `shared_platforms.py` — compare inter-platform travel times between L9 and L10

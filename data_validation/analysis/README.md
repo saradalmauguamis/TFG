@@ -4,9 +4,9 @@ Read-only scripts that answer specific research questions about the data. They p
 
 ---
 
-### `between_platforms.py` — directional travel time comparison
+### `directional_asymmetry.py` — directional travel time comparison
 
-Reads: `stop_times_sequence.txt` from `.src/gtfs/data/3_stop_sequence`
+Reads: `stop_times_doors.txt` from `.src/gtfs/data/4_doors_time`
 
 > Used to decide whether the graph needs to be directed or can be undirected: compares average a→b vs b→a travel time for each adjacent platform pair.
 
