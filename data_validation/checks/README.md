@@ -34,6 +34,7 @@ position, since it's interleaved with `processing/2_duplicated_trips.py`,
   - **Duplicate full trip_id blocs in stop_times** *(independent — only needs `1_subway`)*
     - Are there trips with identical stop_times content? (duplicates)
       → produces `trip_ids_to_eliminate.txt` in `src/gtfs/data/2_duplicated_trips` → used by `data_validation/processing/2_duplicated_trips.py`
+    - After deduplication, does any signature still map to 2+ trip_id? *(verification, needs `2_duplicated_trips`)*
   - **The canonical stop sequence is followed correctly?** *(needs `2_duplicated_trips`)*
     - Do trips follow the canonical stop order for their route?
       → produces `wrong_stop_sequences.txt` in `.src/gtfs/data/3_stop_sequence` → used by `data_validation/processing/3_stop_sequence.py`

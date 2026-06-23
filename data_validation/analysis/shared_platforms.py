@@ -40,12 +40,30 @@ from data_validation.gtfs_utils import (  # noqa: E402
     read_dict_rows,
     seconds_to_hms,
 )
-from scripts.basics import subway_routes_names_ids  # noqa: E402
+from scripts.basics import (  # noqa: E402
+    subway_route_names_stop_ids,
+    subway_routes_names_ids,
+)
 
 lines_south = ("L9S", "L10S")
 lines_north = ("L9N", "L10N")
-south_pairs = [("1.914", "1.915"), ("1.915", "1.916")]
-north_pairs = [("1.930", "1.932"), ("1.932", "1.933")]
+
+
+def shared_platform_pairs(line_a: str, line_b: str) -> List[Tuple[str, str]]:
+    """Derive consecutive directed stop pairs shared between two lines.
+
+    args:
+            line_a: Line whose stop order determines pair order.
+            line_b: Line to intersect against.
+
+    returns:
+            Consecutive stop_id pairs, ordered as in line_a, restricted to stops
+            present in both lines.
+    """
+    stops_a = subway_route_names_stop_ids.get(line_a, [])
+    stops_b = set(subway_route_names_stop_ids.get(line_b, []))
+    shared = [stop_id for stop_id in stops_a if stop_id in stops_b]
+    return list(zip(shared, shared[1:]))
 
 
 def collect_pair_samples_for_line(
@@ -225,8 +243,8 @@ def print_section(
 def main() -> None:
     """Print travel-time comparisons for the shared platforms in L9 and L10."""
     section_data = (
-        ("South", lines_south, south_pairs),
-        ("North", lines_north, north_pairs),
+        ("South", lines_south, shared_platform_pairs(*lines_south)),
+        ("North", lines_north, shared_platform_pairs(*lines_north)),
     )
     all_pairs: List[Tuple[str, str]] = []
     relevant_stop_ids: Set[str] = set()
