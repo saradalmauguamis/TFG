@@ -14,7 +14,6 @@ stop_times_doors.txt in DOORS_BASE.
 
 from __future__ import annotations
 
-import csv
 import sys
 from pathlib import Path
 from typing import Dict, Tuple
@@ -28,7 +27,7 @@ from data_validation.gtfs_utils import (  # noqa: E402
     _PROJECT_ROOT,
     DOORS_FILE,
     STOP_TIMES_SEQUENCE_FILE,
-    STOP_TIMES_FILE,
+    STOP_TIMES_DOORS_FILE,
     TRIPS_FILE,
     check_missing_files,
     print_file_disclaimer,
@@ -37,6 +36,8 @@ from data_validation.gtfs_utils import (  # noqa: E402
     parse_time_to_seconds,
     format_seconds,
     read_dict_rows,
+    read_header,
+    write_rows,
 )
 
 
@@ -88,72 +89,61 @@ def apply_door_times(
     total_rows = 0
     modified_rows = 0
     rows_out = []
+    fieldnames = read_header(input_path)
 
-    Path(output_path).parent.mkdir(parents=True, exist_ok=True)
+    for row in read_dict_rows(input_path):
+        total_rows += 1
+        arrival = row.get("arrival_time", "")
+        departure = row.get("departure_time", "")
 
-    with open(input_path, "r", encoding="utf-8-sig", newline="") as fh:
-        reader = csv.DictReader(fh)
-        if reader.fieldnames is None:
-            raise RuntimeError(f"{Path(input_path).name} has no header.")
-        fieldnames = list(reader.fieldnames)
-
-        for row in reader:
-            total_rows += 1
-            arrival = row.get("arrival_time", "").strip()
-            departure = row.get("departure_time", "").strip()
-
-            if not arrival or not departure or arrival != departure:
-                rows_out.append(row)
-                continue
-
-            trip_id = row.get("trip_id", "").strip()
-            stop_id = row.get("stop_id", "").strip()
-            line = trip_to_line.get(trip_id)
-            bounds = trip_bounds.get(trip_id)
-
-            if not line or not bounds:
-                rows_out.append(row)
-                continue
-
-            try:
-                seq = int(row.get("stop_sequence", "").strip())
-            except ValueError:
-                rows_out.append(row)
-                continue
-
-            min_seq, max_seq = bounds
-            if seq != min_seq and seq != max_seq:
-                rows_out.append(row)
-                continue
-
-            door = door_seconds.get((stop_id, line))
-            if door is None:
-                rows_out.append(row)
-                continue
-
-            row = dict(row)
-            dep_secs = parse_time_to_seconds(departure)
-            if seq == min_seq:
-                row["arrival_time"] = format_seconds(dep_secs - door)
-            else:
-                row["departure_time"] = format_seconds(dep_secs + door)
-            modified_rows += 1
+        if not arrival or not departure or arrival != departure:
             rows_out.append(row)
+            continue
 
-    with open(output_path, "w", encoding="utf-8", newline="") as fh:
-        writer = csv.DictWriter(fh, fieldnames=fieldnames)
-        writer.writeheader()
-        writer.writerows(rows_out)
+        trip_id = row.get("trip_id", "")
+        stop_id = row.get("stop_id", "")
+        line = trip_to_line.get(trip_id)
+        bounds = trip_bounds.get(trip_id)
+
+        if not line or not bounds:
+            rows_out.append(row)
+            continue
+
+        try:
+            seq = int(row.get("stop_sequence", ""))
+        except ValueError:
+            rows_out.append(row)
+            continue
+
+        min_seq, max_seq = bounds
+        if seq != min_seq and seq != max_seq:
+            rows_out.append(row)
+            continue
+
+        door = door_seconds.get((stop_id, line))
+        if door is None:
+            rows_out.append(row)
+            continue
+
+        dep_secs = parse_time_to_seconds(departure)
+        if seq == min_seq:
+            row["arrival_time"] = format_seconds(dep_secs - door)
+        else:
+            row["departure_time"] = format_seconds(dep_secs + door)
+        modified_rows += 1
+        rows_out.append(row)
+
+    write_rows(output_path, fieldnames, rows_out)
 
     return total_rows, modified_rows
 
 
 def main() -> None:
     """Apply door-open times to terminal stops and write stop_times_doors.txt."""
-    door_seconds = None
-    rid_to_name = None
-    trip_to_line = None
-    trip_bounds = None
+    door_seconds: Dict[Tuple[str, str], int] = {}
+    rid_to_name: Dict[str, str] = {}
+    trip_to_line: Dict[str, str] = {}
+    trip_bounds: Dict[str, Tuple[int, int]] = {}
     total = 0
     modified = 0
 
@@ -175,7 +165,7 @@ def main() -> None:
 
     total, modified = apply_door_times(
         STOP_TIMES_SEQUENCE_FILE,
-        STOP_TIMES_FILE,
+        STOP_TIMES_DOORS_FILE,
         trip_to_line,
         trip_bounds,
         door_seconds,
@@ -183,7 +173,7 @@ def main() -> None:
     print(
         f"\n    {Path(STOP_TIMES_SEQUENCE_FILE).name}: total_rows={total},"
         f" modified_rows={modified}, unmodified_rows={total - modified}"
-        f" -> {Path(STOP_TIMES_FILE).relative_to(_PROJECT_ROOT)}"
+        f" -> {Path(STOP_TIMES_DOORS_FILE).relative_to(_PROJECT_ROOT)}"
     )
 
 

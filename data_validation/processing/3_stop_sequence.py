@@ -2,7 +2,7 @@
 
 This script reads `wrong_stop_sequences.txt` from `STOP_SEQUENCE_BASE`, produced
 by running the canonical stop-sequence check in
-`data_validation/checks/3_stop_times_checks.ipynb`, and uses it to adjust
+`data_validation/checks/stop_times_checks.ipynb`, and uses it to adjust
 stop_sequence values in `stop_times_cleaned.txt`.
 
 For each break in a trip (two consecutive stops not adjacent in the canonical
@@ -23,7 +23,6 @@ The adjusted file is written as `stop_times_sequence.txt` in `STOP_SEQUENCE_BASE
 
 from __future__ import annotations
 
-import csv
 import sys
 from collections import defaultdict
 from pathlib import Path
@@ -40,6 +39,9 @@ from data_validation.gtfs_utils import (  # noqa: E402
     WRONG_STOP_SEQUENCES_FILE,
     check_missing_files,
     print_file_disclaimer,
+    read_dict_rows,
+    read_header,
+    write_rows,
 )
 
 
@@ -54,18 +56,16 @@ def load_break_points(file_path: str) -> Dict[str, List[int]]:
         where a gap must be opened).
     """
     break_points: Dict[str, List[int]] = defaultdict(list)
-    with open(file_path, "r", encoding="utf-8", newline="") as fh:
-        reader = csv.DictReader(fh)
-        for row in reader:
-            trip_id = row.get("trip_id", "").strip()
-            seq_b_text = row.get("seq_b", "").strip()
-            if not trip_id or not seq_b_text:
-                continue
-            try:
-                seq_b = int(seq_b_text)
-            except ValueError:
-                continue
-            break_points[trip_id].append(seq_b)
+    for row in read_dict_rows(file_path):
+        trip_id = row.get("trip_id", "")
+        seq_b_text = row.get("seq_b", "")
+        if not trip_id or not seq_b_text:
+            continue
+        try:
+            seq_b = int(seq_b_text)
+        except ValueError:
+            continue
+        break_points[trip_id].append(seq_b)
 
     return {tid: sorted(seqs) for tid, seqs in break_points.items()}
 
@@ -107,41 +107,30 @@ def write_adjusted_stop_times(
     total_rows = 0
     modified_rows = 0
     rows_out: list[dict[str, str]] = []
+    fieldnames = read_header(input_path)
 
-    Path(output_path).parent.mkdir(parents=True, exist_ok=True)
-
-    with open(input_path, "r", encoding="utf-8-sig", newline="") as fh:
-        reader = csv.DictReader(fh)
-        if reader.fieldnames is None:
-            raise RuntimeError(f"{Path(input_path).name} has no header.")
-        fieldnames = list(reader.fieldnames)
-
-        for row in reader:
-            total_rows += 1
-            trip_id = (row.get("trip_id") or "").strip()
-            break_points = break_points_by_trip.get(trip_id)
-            if not break_points:
-                rows_out.append(row)
-                continue
-
-            seq_text = (row.get("stop_sequence") or "").strip()
-            try:
-                original_seq = int(seq_text)
-            except ValueError:
-                rows_out.append(row)
-                continue
-
-            new_seq = adjusted_sequence(original_seq, break_points)
-            if new_seq != original_seq:
-                row = dict(row)
-                row["stop_sequence"] = str(new_seq)
-                modified_rows += 1
+    for row in read_dict_rows(input_path):
+        total_rows += 1
+        trip_id = row.get("trip_id", "")
+        break_points = break_points_by_trip.get(trip_id)
+        if not break_points:
             rows_out.append(row)
+            continue
 
-    with open(output_path, "w", encoding="utf-8", newline="") as fh:
-        writer = csv.DictWriter(fh, fieldnames=fieldnames)
-        writer.writeheader()
-        writer.writerows(rows_out)
+        seq_text = row.get("stop_sequence", "")
+        try:
+            original_seq = int(seq_text)
+        except ValueError:
+            rows_out.append(row)
+            continue
+
+        new_seq = adjusted_sequence(original_seq, break_points)
+        if new_seq != original_seq:
+            row["stop_sequence"] = str(new_seq)
+            modified_rows += 1
+        rows_out.append(row)
+
+    write_rows(output_path, fieldnames, rows_out)
 
     return total_rows, modified_rows, total_rows - modified_rows
 
@@ -149,7 +138,7 @@ def write_adjusted_stop_times(
 def main() -> None:
     """Adjust stop_sequence values for trips with non-adjacent canonical stops."""
 
-    break_points_by_trip = None
+    break_points_by_trip: Dict[str, List[int]] = {}
     total_bad_pairs = 0
     total = 0
     modified = 0
