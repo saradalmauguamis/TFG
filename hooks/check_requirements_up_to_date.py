@@ -66,7 +66,7 @@ def pip_freeze(python_exec: Path) -> Optional[List[str]]:
     returns:
         List of package strings from pip freeze output, or None if execution fails.
     """
-    result = None
+    result: Optional[subprocess.CompletedProcess] = None
     try:
         result = subprocess.run(
             [str(python_exec), "-m", "pip", "freeze"],
@@ -93,7 +93,7 @@ def main() -> int:
     returns:
         Exit code: 0 if requirements match or .venv not found, 1 if mismatch detected.
     """
-    frozen = None
+    frozen: Optional[List[str]] = None
     frozen_list: List[str] = []
     set_req: set[str] = set()
     set_frozen: set[str] = set()

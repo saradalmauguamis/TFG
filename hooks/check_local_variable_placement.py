@@ -3,7 +3,7 @@
 import ast
 import os
 import sys
-from typing import List, Set
+from typing import List, Optional, Set
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from notebook_utils import extract_notebook_code_cells  # noqa: E402
@@ -122,7 +122,7 @@ def check_file(filename: str) -> bool:
     returns:
         True when file passes checks, otherwise False.
     """
-    checker = None
+    checker: Optional[LocalVariablePlacementChecker] = None
     try:
         with open(filename, "r", encoding="utf-8") as file_handle:
             tree = ast.parse(file_handle.read(), filename=filename)

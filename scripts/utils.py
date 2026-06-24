@@ -98,3 +98,23 @@ def round_half_up_mean(values: Sequence[int]) -> int:
     if not count:
         return 0
     return (2 * total + count) // (2 * count)
+
+
+def write_rows(
+    output_path: Union[str, Path],
+    fieldnames: Sequence[str],
+    rows: Iterable[Dict[str, str]],
+) -> None:
+    """Write rows to a CSV file, creating the parent directory if needed.
+
+    args:
+        output_path: Destination file path.
+        fieldnames: Column order to write.
+        rows: Row dictionaries to write.
+    """
+    output_path = Path(output_path)
+    output_path.parent.mkdir(parents=True, exist_ok=True)
+    with output_path.open("w", encoding="utf-8", newline="") as file_handle:
+        writer = csv.DictWriter(file_handle, fieldnames=fieldnames)
+        writer.writeheader()
+        writer.writerows(rows)

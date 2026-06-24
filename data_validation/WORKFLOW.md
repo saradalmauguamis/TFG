@@ -1,7 +1,7 @@
 # Pipeline Workflow
 
 `checks/` and `processing/` are split by *kind* of file, not by run order. This page lists the
-actual run order, end to end, from `0_raw` to `4_doors_time`.
+actual run order, end to end, from `0_raw` to `5_shared_platforms`.
 
 There are two kinds of steps here:
 
@@ -67,8 +67,14 @@ There are two kinds of steps here:
     Re-runs the arrival/departure check on `stop_times_doors.txt` (step 9); no stop should still
     have `arrival_time == departure_time`. No file output.
 
-11. **`processing/5_L9_L10_data_duplication.py`** *(work in progress)* — resolves L9/L10
-    duplication on top of the final `4_doors_time` output.
+11. **`processing/5_shared_platforms_duplication.py`** — `4_doors_time` (+ `0_raw` pathways/transfers,
+    `1_subway` stops, `2_duplicated_trips` trips) → `5_shared_platforms`
+
+    Splits every platform shared by more than one line (detected generically from
+    `scripts/basics.py`, not hardcoded) into one stop_id per line across stops, pathways,
+    transfers, and stop_times, plus an `equivalences_shared.txt` lookup table. See
+    [`processing/README.md`](processing/README.md) for the per-file behavior. Motivated by
+    `analysis/shared_platforms.py` below.
 
 ---
 
@@ -86,6 +92,20 @@ Run anytime after step 1 of the core pipeline. None of these produce a file cons
 - **`checks/stop_times_checks.ipynb`** → *Does stop_sequence increment by one?* — reads
   `stop_times_subway.txt`/`trips_subway.txt` (`1_subway`); duplicates don't affect a trip's own
   sequence continuity, so it doesn't need step 2's deduplication.
+
+---
+
+## Decision-support analyses
+
+Read-only scripts in [`analysis/`](analysis/README.md). Unlike *Independent checks*, these need
+the pipeline through step 9 (`stop_times_doors.txt`), not just step 1 — they don't produce any
+file consumed downstream, but answer design questions for the graph build.
+
+- **`analysis/shared_platforms.py`** — reads `stop_times_doors.txt` (step 9), `stops_subway.txt`
+  (`1_subway`), `trips_cleaned.txt` (step 3). Compared travel times across lines sharing a
+  platform (e.g. L9S/L10S, L9N/L10N) and found they differ, which is what motivated step 11.
+- **`analysis/directional_asymmetry.py`** — same inputs. A separate, unrelated question: compared
+  a→b vs b→a travel times to decide the graph needs directed edges. Doesn't motivate step 11.
 
 ---
 

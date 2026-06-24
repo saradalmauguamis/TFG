@@ -14,7 +14,6 @@ stop_times_doors.txt in DOORS_BASE.
 
 from __future__ import annotations
 
-import csv
 import sys
 from pathlib import Path
 from typing import Dict, Tuple
@@ -28,7 +27,7 @@ from data_validation.gtfs_utils import (  # noqa: E402
     _PROJECT_ROOT,
     DOORS_FILE,
     STOP_TIMES_SEQUENCE_FILE,
-    STOP_TIMES_FILE,
+    STOP_TIMES_DOORS_FILE,
     TRIPS_FILE,
     check_missing_files,
     print_file_disclaimer,
@@ -38,6 +37,7 @@ from data_validation.gtfs_utils import (  # noqa: E402
     format_seconds,
     read_dict_rows,
     read_header,
+    write_rows,
 )
 
 
@@ -91,8 +91,6 @@ def apply_door_times(
     rows_out = []
     fieldnames = read_header(input_path)
 
-    Path(output_path).parent.mkdir(parents=True, exist_ok=True)
-
     for row in read_dict_rows(input_path):
         total_rows += 1
         arrival = row.get("arrival_time", "")
@@ -135,20 +133,17 @@ def apply_door_times(
         modified_rows += 1
         rows_out.append(row)
 
-    with open(output_path, "w", encoding="utf-8", newline="") as fh:
-        writer = csv.DictWriter(fh, fieldnames=fieldnames)
-        writer.writeheader()
-        writer.writerows(rows_out)
+    write_rows(output_path, fieldnames, rows_out)
 
     return total_rows, modified_rows
 
 
 def main() -> None:
     """Apply door-open times to terminal stops and write stop_times_doors.txt."""
-    door_seconds = None
-    rid_to_name = None
-    trip_to_line = None
-    trip_bounds = None
+    door_seconds: Dict[Tuple[str, str], int] = {}
+    rid_to_name: Dict[str, str] = {}
+    trip_to_line: Dict[str, str] = {}
+    trip_bounds: Dict[str, Tuple[int, int]] = {}
     total = 0
     modified = 0
 
@@ -170,7 +165,7 @@ def main() -> None:
 
     total, modified = apply_door_times(
         STOP_TIMES_SEQUENCE_FILE,
-        STOP_TIMES_FILE,
+        STOP_TIMES_DOORS_FILE,
         trip_to_line,
         trip_bounds,
         door_seconds,
@@ -178,7 +173,7 @@ def main() -> None:
     print(
         f"\n    {Path(STOP_TIMES_SEQUENCE_FILE).name}: total_rows={total},"
         f" modified_rows={modified}, unmodified_rows={total - modified}"
-        f" -> {Path(STOP_TIMES_FILE).relative_to(_PROJECT_ROOT)}"
+        f" -> {Path(STOP_TIMES_DOORS_FILE).relative_to(_PROJECT_ROOT)}"
     )
 
 

@@ -65,19 +65,36 @@ For every row where `arrival_time == departure_time` at a terminal stop, the scr
 - canonical terminal stops (all trips have `arrival_time == deparature_time`): line mean door time
 - FM line (no observed door times): mean across all other lines as fallback
 
-### `5_L9_L10_data_duplication.py` — resolve L9/L10 duplication *(work in progress)*
+### `5_shared_platforms_duplication.py` — split shared platforms into one stop_id per line
+
+`.src/gtfs/data/0_raw` + `.src/gtfs/data/1_subway` + `.src/gtfs/data/4_doors_time` → `.src/gtfs/data/5_shared_platforms`
+
+| Input | Output |
+|---|---|
+| `pathways.txt` | `pathways_shared.txt` |
+| `stop_times_doors.txt` | `stop_times_shared.txt` |
+| `stops_subway.txt` | `stops_shared.txt` |
+| `transfers.txt` | `transfers_shared.txt` |
+| — | `equivalences_shared.txt` |
+
+Also reads `trips_cleaned.txt` from `.src/gtfs/data/2_duplicated_trips` to resolve each stop_times row's trip to its line.
+
+Shared platforms (stops served by more than one line, e.g. the L9S/L10S and L9N/L10N overlaps) are detected generically from `scripts/basics.py`'s `subway_route_names_stop_ids` — no line names are hardcoded, so any future shared platform is picked up automatically. Each shared `stop_id` (e.g. `1.930`) is split into one new id per serving line (`1.9300`, `1.9301`, ...):
+
+- **STOPS / PATHWAYS / TRANSFERS**: one duplicated row per line. PATHWAYS/TRANSFERS additionally get a direct correspondence edge between every pair of a platform's new ids, using the minimum `min_transfer_time` found in `transfers.txt` as the traversal time.
+- **STOP_TIMES**: the shared `stop_id` is *replaced* (not duplicated) with the single new id matching that row's own trip's line, since a trip belongs to exactly one line.
+- **`equivalences_shared.txt`**: a lookup table of `original_stop_id, line, new_stop_id` for every split platform, so the mapping can be looked back up later.
 
 ---
 
 ## File transformation summary
 
-```
-0_raw                1_subway                2_duplicated_trips      3_stop_sequence         4_doors_time
+Each line traces one logical file across the stages where it actually exists (stages it skips are omitted, so chains have different lengths):
 
-pathways
-routes               routes_subway
-stop_times           stop_times_subway       stop_times_cleaned      stop_times_sequence     stop_times_doors
-stops                stops_subway
-transfers
-trips                trips_subway            trips_cleaned
-```
+- **pathways**: `0_raw/pathways.txt` → `5_shared_platforms/pathways_shared.txt`
+- **routes**: `0_raw/routes.txt` → `1_subway/routes_subway.txt`
+- **stop_times**: `0_raw/stop_times.txt` → `1_subway/stop_times_subway.txt` → `2_duplicated_trips/stop_times_cleaned.txt` → `3_stop_sequence/stop_times_sequence.txt` → `4_doors_time/stop_times_doors.txt` → `5_shared_platforms/stop_times_shared.txt`
+- **stops**: `0_raw/stops.txt` → `1_subway/stops_subway.txt` → `5_shared_platforms/stops_shared.txt`
+- **transfers**: `0_raw/transfers.txt` → `5_shared_platforms/transfers_shared.txt`
+- **trips**: `0_raw/trips.txt` → `1_subway/trips_subway.txt` → `2_duplicated_trips/trips_cleaned.txt`
+- **equivalences** *(new, no upstream file)*: `5_shared_platforms/equivalences_shared.txt`
