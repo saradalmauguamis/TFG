@@ -1,14 +1,18 @@
-"""Compute average inter-platform times for L9/L10 shared platforms.
+"""Compute average inter-platform times for shared platforms.
 
-The objective of this script is to determine whether the travel time between the
-shared platforms of L9 and L10 is the same, given a consecutive pair of stops
-and a direction.
+The objective of this script is to determine whether the travel time between
+a platform shared by several lines is the same for each line, given a
+consecutive pair of stops and a direction.
 
-This script scans `stop_times_doors.txt` once for all matching trips across every
-route+direction and measures the time between two consecutive platform stops
-(arrival at the first stop and arrival at the second). It averages those times
-per line, direction and platform pair and prints comparisons between L9 and L10.
-It also prints the number of samples and standard deviation for each average.
+Shared platforms are detected generically via
+`gtfs_utils.build_shared_platform_lines` (no line names are hardcoded), then
+grouped by the exact tuple of lines that serve each one. This script scans
+`stop_times_doors.txt` once for all matching trips across every route+direction
+and measures the time between two consecutive platform stops (arrival at the
+first stop and arrival at the second). It averages those times per line,
+direction and platform pair, and prints one row per line for each pair, plus
+the spread (max - min) across whichever lines have data — this generalizes to
+however many lines share a given platform, not just two.
 
 The cleaned inputs are expected under the repository at `../.src/gtfs/data/` relative to this file.
 Raw GTFS source files live under `../.src/gtfs/data/0_raw/`.
@@ -26,10 +30,11 @@ REPO_ROOT = pathlib.Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(REPO_ROOT))
 
 from data_validation.gtfs_utils import (  # noqa: E402
-    STOP_TIMES_FILE,
-    STOPS_FILE,
+    STOP_TIMES_DOORS_FILE,
+    STOPS_SUBWAY_FILE,
     TRIPS_FILE,
     average_times_for_pairs,
+    build_shared_platform_lines,
     check_missing_files,
     print_file_disclaimer,
     collect_pair_samples_by_trip_group,
@@ -42,37 +47,54 @@ from scripts.basics import (  # noqa: E402
     subway_routes_names_ids,
 )
 
-lines_south = ("L9S", "L10S")
-lines_north = ("L9N", "L10N")
-
 GroupKey = Tuple[str, int]  # (line_short_name, direction_id)
-SectionData = Tuple[str, Tuple[str, str], List[Tuple[str, str]]]
+PairRecord = Tuple[float, int, float]
 
 
-def shared_platform_pairs(line_a: str, line_b: str) -> List[Tuple[str, str]]:
-    """Derive consecutive directed stop pairs shared between two lines.
+def group_shared_stops_by_lines(
+    shared_platform_lines: Dict[str, List[str]]
+) -> Dict[Tuple[str, ...], List[str]]:
+    """Group shared stop_ids by the exact tuple of lines that serve them.
 
     args:
-            line_a: Line whose stop order determines pair order.
-            line_b: Line to intersect against.
+            shared_platform_lines: Shared stop_id -> ordered list of lines,
+                from `build_shared_platform_lines`.
 
     returns:
-            Consecutive stop_id pairs, ordered as in line_a, restricted to stops
-            present in both lines.
+            Mapping from a tuple of line names to the shared stop_ids they
+            serve together, in the route order `build_shared_platform_lines`
+            preserves.
     """
-    stops_a = subway_route_names_stop_ids.get(line_a, [])
-    stops_b = set(subway_route_names_stop_ids.get(line_b, []))
-    shared = [stop_id for stop_id in stops_a if stop_id in stops_b]
-    return list(zip(shared, shared[1:]))
+    stops_by_lines: Dict[Tuple[str, ...], List[str]] = {}
+    for stop_id, lines in shared_platform_lines.items():
+        stops_by_lines.setdefault(tuple(lines), []).append(stop_id)
+    return stops_by_lines
+
+
+def build_pairs_by_lines(
+    stops_by_lines: Dict[Tuple[str, ...], List[str]]
+) -> Dict[Tuple[str, ...], List[Tuple[str, str]]]:
+    """Turn each line group's ordered stops into consecutive directed pairs.
+
+    args:
+            stops_by_lines: Line-tuple -> ordered shared stop_ids.
+
+    returns:
+            Line-tuple -> consecutive directed stop pairs.
+    """
+    return {
+        line_names: list(zip(stop_ids, stop_ids[1:]))
+        for line_names, stop_ids in stops_by_lines.items()
+    }
 
 
 def build_trip_groups(
-    section_data: Tuple[SectionData, ...],
+    pairs_by_lines: Dict[Tuple[str, ...], List[Tuple[str, str]]]
 ) -> Tuple[Dict[str, GroupKey], Dict[GroupKey, List[Tuple[str, str]]]]:
     """Map every relevant trip to its (line, direction) group and its pairs.
 
     args:
-            section_data: Per-section (name, line_names, pairs_dir0) tuples.
+            pairs_by_lines: Line-tuple -> consecutive directed stop pairs.
 
     returns:
             Tuple of (trip_id -> group key, group key -> directed stop pairs),
@@ -81,7 +103,7 @@ def build_trip_groups(
     trip_id_to_group: Dict[str, GroupKey] = {}
     group_pairs: Dict[GroupKey, List[Tuple[str, str]]] = {}
 
-    for _, line_names, pairs_dir0 in section_data:
+    for line_names, pairs_dir0 in pairs_by_lines.items():
         pairs_dir1 = [(b, a) for a, b in pairs_dir0]
         for line_name in line_names:
             route_id = subway_routes_names_ids.get(line_name)
@@ -99,24 +121,20 @@ def build_trip_groups(
 
 
 def print_section(
-    section_name: str,
-    line_names: Tuple[str, str],
+    line_names: Tuple[str, ...],
     pairs: List[Tuple[str, str]],
     stop_names: Dict[str, str],
-    avg_by_group: Dict[
-        GroupKey, Dict[Tuple[str, str], Optional[Tuple[float, int, float]]]
-    ],
+    avg_by_group: Dict[GroupKey, Dict[Tuple[str, str], Optional[PairRecord]]],
 ) -> None:
-    """Print the comparison table for one section.
+    """Print the comparison table for one group of lines sharing platforms.
 
     args:
-            section_name: Section label to print.
-            line_names: Two line names to compare.
-            pairs: Base stop pairs for the section.
+            line_names: Lines that share this group's platforms.
+            pairs: Base stop pairs for the group.
             stop_names: Mapping from stop_id to stop_name.
             avg_by_group: Precomputed averages keyed by (line_name, direction_id).
     """
-    print(f"-------{section_name}-------")
+    print(f"-------{'/'.join(line_names)}-------")
     for direction in (0, 1):
         print(f"Direction_id={direction}---")
         directed_pairs = pairs if direction == 0 else [(b, a) for a, b in pairs]
@@ -125,77 +143,73 @@ def print_section(
             a, b = pair
             name_a = stop_names.get(a, a)
             name_b = stop_names.get(b, b)
-            rec1 = avg_by_group.get((line_names[0], direction), {}).get(pair)
-            rec2 = avg_by_group.get((line_names[1], direction), {}).get(pair)
-            diff = (
-                abs(rec1[0] - rec2[0])
-                if rec1 is not None and rec2 is not None
-                else None
-            )
+            records = {
+                line: avg_by_group.get((line, direction), {}).get(pair)
+                for line in line_names
+            }
+
             print(f"  {a} ({name_a}) -> {b} ({name_b})")
-            # Line 1
-            if rec1 is None:
-                print(f"    {line_names[0]:<5} {'N/A':>8} (N/A)")
-            else:
-                avg1, cnt1, std1 = rec1
-                time_hms = seconds_to_hms(avg1)
-                print(
-                    f"    {line_names[0]:<5} {time_hms:>8} ({avg1:.2f}s) "
-                    f"cnt={cnt1} stdev={std1:.2f}s"
-                )
-            # Line 2
-            if rec2 is None:
-                print(f"    {line_names[1]:<5} {'N/A':>8} (N/A)")
-            else:
-                avg2, cnt2, std2 = rec2
-                time_hms = seconds_to_hms(avg2)
-                print(
-                    f"    {line_names[1]:<5} {time_hms:>8} ({avg2:.2f}s) "
-                    f"cnt={cnt2} stdev={std2:.2f}s"
-                )
-            # Diff
-            if diff is None:
-                print(f"    diff  {'N/A':>8} (N/A)")
-            else:
+            for line in line_names:
+                record = records[line]
+                if record is None:
+                    print(f"    {line:<5} {'N/A':>8} (N/A)")
+                else:
+                    avg, count, std = record
+                    time_hms = seconds_to_hms(avg)
+                    print(
+                        f"    {line:<5} {time_hms:>8} ({avg:.2f}s) "
+                        f"cnt={count} stdev={std:.2f}s"
+                    )
+
+            averages = [record[0] for record in records.values() if record is not None]
+            if len(averages) >= 2:
+                diff = max(averages) - min(averages)
                 print(f"    diff  {seconds_to_hms(diff):>8} ({diff:.2f}s)")
+            else:
+                print(f"    diff  {'N/A':>8} (N/A)")
             print()
 
 
 def main() -> None:
-    """Print travel-time comparisons for the shared platforms in L9 and L10."""
-    section_data: Tuple[SectionData, ...] = (
-        ("South", lines_south, shared_platform_pairs(*lines_south)),
-        ("North", lines_north, shared_platform_pairs(*lines_north)),
-    )
-    all_pairs = None
-    relevant_stop_ids = None
-    stop_names = None
-    trip_id_to_group = None
-    group_pairs = None
-    samples_by_group = None
-    avg_by_group = None
+    """Print travel-time comparisons for every shared-platform line group."""
+    shared_platform_lines: Dict[str, List[str]] = {}
+    stops_by_lines: Dict[Tuple[str, ...], List[str]] = {}
+    pairs_by_lines: Dict[Tuple[str, ...], List[Tuple[str, str]]] = {}
+    relevant_stop_ids: Set[str] = set()
+    stop_names: Dict[str, str] = {}
+    trip_id_to_group: Dict[str, GroupKey] = {}
+    group_pairs: Dict[GroupKey, List[Tuple[str, str]]] = {}
+    samples_by_group: Dict[GroupKey, Dict[Tuple[str, str], List[int]]] = {}
+    avg_by_group: Dict[GroupKey, Dict[Tuple[str, str], Optional[PairRecord]]] = {}
+    check_missing_files([TRIPS_FILE, STOP_TIMES_DOORS_FILE, STOPS_SUBWAY_FILE])
 
-    check_missing_files([TRIPS_FILE, STOP_TIMES_FILE, STOPS_FILE])
+    print_file_disclaimer([TRIPS_FILE, STOP_TIMES_DOORS_FILE, STOPS_SUBWAY_FILE])
 
-    print_file_disclaimer([TRIPS_FILE, STOP_TIMES_FILE, STOPS_FILE])
+    shared_platform_lines = build_shared_platform_lines(subway_route_names_stop_ids)
+    stops_by_lines = group_shared_stops_by_lines(shared_platform_lines)
+    pairs_by_lines = build_pairs_by_lines(stops_by_lines)
 
-    all_pairs = [pair for _, _, pairs in section_data for pair in pairs]
-    relevant_stop_ids: Set[str] = {stop_id for pair in all_pairs for stop_id in pair}
-    stop_names = load_stop_names(STOPS_FILE, relevant_stop_ids)
+    relevant_stop_ids: Set[str] = {
+        stop_id
+        for pairs in pairs_by_lines.values()
+        for pair in pairs
+        for stop_id in pair
+    }
+    stop_names = load_stop_names(STOPS_SUBWAY_FILE, relevant_stop_ids)
 
-    trip_id_to_group, group_pairs = build_trip_groups(section_data)
+    trip_id_to_group, group_pairs = build_trip_groups(pairs_by_lines)
     samples_by_group = collect_pair_samples_by_trip_group(
-        STOP_TIMES_FILE, trip_id_to_group, group_pairs
+        STOP_TIMES_DOORS_FILE, trip_id_to_group, group_pairs
     )
     avg_by_group = {
         group: average_times_for_pairs(samples)
         for group, samples in samples_by_group.items()
     }
 
-    for index, (section_name, line_names, pairs) in enumerate(section_data):
+    for index, (line_names, pairs) in enumerate(pairs_by_lines.items()):
         if index:
             print()
-        print_section(section_name, line_names, pairs, stop_names, avg_by_group)
+        print_section(line_names, pairs, stop_names, avg_by_group)
 
 
 if __name__ == "__main__":

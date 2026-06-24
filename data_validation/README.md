@@ -17,7 +17,7 @@ data_validation/
 │   ├── 2_duplicated_trips.py
 │   ├── 3_stop_sequence.py
 │   ├── 4_doors_time.py
-│   └── 5_L9_L10_data_duplication.py
+│   └── 5_shared_platforms_duplication.py
 └── analysis/
     ├── directional_asymmetry.py
     └── shared_platforms.py
@@ -54,7 +54,7 @@ Scripts that transform raw GTFS files into cleaned, stage-by-stage outputs.
 - `2_duplicated_trips.py` — remove duplicated trips
 - `3_stop_sequence.py` — fix stop_sequence gaps
 - `4_doors_time.py` — add door-open times to terminal stops
-- `5_L9_L10_data_duplication.py` — resolve L9/L10 duplication *(work in progress)*
+- `5_shared_platforms_duplication.py` — split shared platforms into one stop_id per line
 
 ---
 
@@ -63,4 +63,4 @@ Scripts that transform raw GTFS files into cleaned, stage-by-stage outputs.
 Read-only scripts that answer specific questions to help decide graph design.
 
 - `directional_asymmetry.py` — compare directional travel times between adjacent platforms
-- `shared_platforms.py` — compare inter-platform travel times between L9 and L10
+- `shared_platforms.py` — compare inter-platform travel times across lines sharing a platform

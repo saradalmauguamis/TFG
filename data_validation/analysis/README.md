@@ -12,18 +12,20 @@ Reads: `stop_times_doors.txt` from `.src/gtfs/data/4_doors_time`
 
 ---
 
-### `shared_platforms.py` — L9 / L10 shared platform travel times
+### `shared_platforms.py` — shared-platform travel time comparison
 
 Reads:
 - `stop_times_doors.txt` from `.src/gtfs/data/4_doors_time`
 - `stops_subway.txt`from `.src/gtfs/data/1_subway`
 - `trips_cleaned.txt` from `.src/gtfs/data/2_duplicated_trips`
 
-> Used to decide whether it is necessary to duplicate artificially the shared stops to avoid having the same edge weight regardless of the line: compares average travel times between L9 and L10 on their shared platforms. Shared platforms are derived automatically from `subway_route_names_stop_ids` (`scripts/basics.py`), not hardcoded.
+> Used to decide whether it is necessary to duplicate the shared platforms so each line gets its own edge weight.
 
-Shared platforms analysed:
+Compares average travel times across whichever lines share a platform. Shared platforms are derived automatically from `subway_route_names_stop_ids` (`scripts/basics.py`), grouped by the exact set of lines serving each one — no line names are hardcoded, so this generalizes to however many lines (and platforms) end up sharing stops.
 
-**South (L9S / L10S)**
+Shared platforms currently detected:
+
+**L9S / L10S**
 
 | Stop ID | Name |
 |---|---|
@@ -31,7 +33,7 @@ Shared platforms analysed:
 | 1.915 | Torrassa |
 | 1.916 | Collblanc |
 
-**North (L9N / L10N)**
+**L9N / L10N**
 
 | Stop ID | Name |
 |---|---|

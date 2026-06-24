@@ -14,7 +14,6 @@ The filtered files are written next to the inputs as:
 
 from __future__ import annotations
 
-import csv
 import sys
 from pathlib import Path
 from typing import Set, Tuple
@@ -34,6 +33,7 @@ from data_validation.gtfs_utils import (  # noqa: E402
     load_nonempty_lines,
     read_dict_rows,
     read_header,
+    write_rows,
 )
 
 
@@ -64,10 +64,7 @@ def write_cleaned_file(
             continue
         kept_rows.append(row)
 
-    with open(output_path, "w", encoding="utf-8", newline="") as output_handle:
-        writer = csv.DictWriter(output_handle, fieldnames=fieldnames)
-        writer.writeheader()
-        writer.writerows(kept_rows)
+    write_rows(output_path, fieldnames, kept_rows)
 
     removed_rows = total_rows - len(kept_rows)
     return total_rows, removed_rows, len(kept_rows), output_path

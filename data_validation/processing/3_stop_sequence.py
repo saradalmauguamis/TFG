@@ -23,7 +23,6 @@ The adjusted file is written as `stop_times_sequence.txt` in `STOP_SEQUENCE_BASE
 
 from __future__ import annotations
 
-import csv
 import sys
 from collections import defaultdict
 from pathlib import Path
@@ -42,6 +41,7 @@ from data_validation.gtfs_utils import (  # noqa: E402
     print_file_disclaimer,
     read_dict_rows,
     read_header,
+    write_rows,
 )
 
 
@@ -109,8 +109,6 @@ def write_adjusted_stop_times(
     rows_out: list[dict[str, str]] = []
     fieldnames = read_header(input_path)
 
-    Path(output_path).parent.mkdir(parents=True, exist_ok=True)
-
     for row in read_dict_rows(input_path):
         total_rows += 1
         trip_id = row.get("trip_id", "")
@@ -132,10 +130,7 @@ def write_adjusted_stop_times(
             modified_rows += 1
         rows_out.append(row)
 
-    with open(output_path, "w", encoding="utf-8", newline="") as fh:
-        writer = csv.DictWriter(fh, fieldnames=fieldnames)
-        writer.writeheader()
-        writer.writerows(rows_out)
+    write_rows(output_path, fieldnames, rows_out)
 
     return total_rows, modified_rows, total_rows - modified_rows
 
@@ -143,7 +138,7 @@ def write_adjusted_stop_times(
 def main() -> None:
     """Adjust stop_sequence values for trips with non-adjacent canonical stops."""
 
-    break_points_by_trip = None
+    break_points_by_trip: Dict[str, List[int]] = {}
     total_bad_pairs = 0
     total = 0
     modified = 0

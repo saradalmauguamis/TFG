@@ -16,15 +16,15 @@ from __future__ import annotations
 
 import sys
 from pathlib import Path
-from typing import Dict, List, Sequence, Set, Tuple
+from typing import Dict, List, Optional, Sequence, Set, Tuple
 
 _PROJECT_ROOT = str(Path(__file__).resolve().parents[2])
 if _PROJECT_ROOT not in sys.path:
     sys.path.insert(0, _PROJECT_ROOT)
 
 from data_validation.gtfs_utils import (  # noqa: E402
-    STOP_TIMES_FILE,
-    STOPS_FILE,
+    STOP_TIMES_DOORS_FILE,
+    STOPS_SUBWAY_FILE,
     TRIPS_FILE,
     average_times_for_pairs,
     check_missing_files,
@@ -153,27 +153,27 @@ def print_ranked_pairs(
 
 def main() -> None:
     """Run the directional asymmetry analysis."""
-    relevant_stop_ids = None
-    stop_names = None
-    trip_id_to_group = None
-    group_pairs = None
-    samples_by_group = None
-    avg_by_group = None
-    ranked = None
+    relevant_stop_ids: Set[str] = set()
+    stop_names: Dict[str, str] = {}
+    trip_id_to_group: Dict[str, GroupKey] = {}
+    group_pairs: Dict[GroupKey, List[Tuple[str, str]]] = {}
+    samples_by_group: Dict[GroupKey, Dict[Tuple[str, str], List[int]]] = {}
+    avg_by_group: Dict[GroupKey, Dict[Tuple[str, str], Optional[PairRecord]]] = {}
+    ranked: List[RankedPair] = []
 
-    check_missing_files([STOP_TIMES_FILE, STOPS_FILE, TRIPS_FILE])
-    print_file_disclaimer([STOP_TIMES_FILE, STOPS_FILE, TRIPS_FILE])
+    check_missing_files([STOP_TIMES_DOORS_FILE, STOPS_SUBWAY_FILE, TRIPS_FILE])
+    print_file_disclaimer([STOP_TIMES_DOORS_FILE, STOPS_SUBWAY_FILE, TRIPS_FILE])
 
-    relevant_stop_ids: Set[str] = {
+    relevant_stop_ids = {
         stop_id
         for stop_ids in subway_route_names_stop_ids.values()
         for stop_id in stop_ids
     }
-    stop_names = load_stop_names(STOPS_FILE, relevant_stop_ids)
+    stop_names = load_stop_names(STOPS_SUBWAY_FILE, relevant_stop_ids)
 
     trip_id_to_group, group_pairs = build_trip_groups()
     samples_by_group = collect_pair_samples_by_trip_group(
-        STOP_TIMES_FILE, trip_id_to_group, group_pairs
+        STOP_TIMES_DOORS_FILE, trip_id_to_group, group_pairs
     )
     avg_by_group = {
         group: average_times_for_pairs(samples)

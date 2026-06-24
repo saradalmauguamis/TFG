@@ -21,6 +21,7 @@ from scripts.utils import (  # noqa: E402
     read_header,
     round_half_up_mean,
     sniff_dialect,
+    write_rows,
 )
 
 
@@ -35,6 +36,7 @@ __all__ = [
     "read_dict_rows",
     "read_header",
     "round_half_up_mean",
+    "write_rows",
     # Constants / paths
     "_DEFAULT_DATA_DIR",
     "BASE",
@@ -48,6 +50,9 @@ __all__ = [
     "STOP_SEQUENCE_BASE",
     "_DEFAULT_DOORS_DATA_DIR",
     "DOORS_BASE",
+    "_DEFAULT_SHARED_PLATFORMS_DATA_DIR",
+    "SHARED_PLATFORMS_BASE",
+    "PATHWAYS_RAW_FILE",
     "PATHWAYS_FILE",
     "ROUTES_RAW_FILE",
     "ROUTES_FILE",
@@ -55,16 +60,20 @@ __all__ = [
     "STOP_TIMES_SUBWAY_FILE",
     "STOP_TIMES_CLEANED_FILE",
     "STOP_TIMES_SEQUENCE_FILE",
+    "STOP_TIMES_DOORS_FILE",
     "STOP_TIMES_FILE",
-    "WRONG_STOP_SEQUENCES_FILE",
-    "DOORS_FILE",
     "STOPS_RAW_FILE",
+    "STOPS_SUBWAY_FILE",
     "STOPS_FILE",
+    "TRANSFERS_RAW_FILE",
     "TRANSFERS_FILE",
     "TRIPS_RAW_FILE",
     "TRIPS_SUBWAY_FILE",
     "TRIPS_FILE",
     "TRIP_IDS_TO_ELIMINATE_FILE",
+    "WRONG_STOP_SEQUENCES_FILE",
+    "DOORS_FILE",
+    "EQUIVALENCES_SHARED_FILE",
     "SECONDS_PER_DAY",
     # Regex / Patterns
     "PW_PAIR",
@@ -104,6 +113,7 @@ __all__ = [
     "load_trip_sequence_bounds",
     "load_trip_to_line",
     "build_stop_to_lines",
+    "build_shared_platform_lines",
     "format_stop_label",
     # Directed pair travel-time helpers
     "collect_pair_samples_by_trip_group",
@@ -153,7 +163,17 @@ DOORS_BASE = str(
     Path(os.environ.get("GTFS_DOORS_DATA_DIR", str(_DEFAULT_DOORS_DATA_DIR))).resolve()
 )
 
-PATHWAYS_FILE = os.path.join(RAW_BASE, "pathways.txt")
+_DEFAULT_SHARED_PLATFORMS_DATA_DIR = _DEFAULT_DATA_DIR / "5_shared_platforms"
+SHARED_PLATFORMS_BASE = str(
+    Path(
+        os.environ.get(
+            "GTFS_SHARED_PLATFORMS_DATA_DIR", str(_DEFAULT_SHARED_PLATFORMS_DATA_DIR)
+        )
+    ).resolve()
+)
+
+PATHWAYS_RAW_FILE = os.path.join(RAW_BASE, "pathways.txt")
+PATHWAYS_FILE = os.path.join(SHARED_PLATFORMS_BASE, "pathways_shared.txt")
 
 ROUTES_RAW_FILE = os.path.join(RAW_BASE, "routes.txt")
 ROUTES_FILE = os.path.join(SUBWAY_BASE, "routes_subway.txt")
@@ -161,18 +181,16 @@ ROUTES_FILE = os.path.join(SUBWAY_BASE, "routes_subway.txt")
 STOP_TIMES_RAW_FILE = os.path.join(RAW_BASE, "stop_times.txt")
 STOP_TIMES_SUBWAY_FILE = os.path.join(SUBWAY_BASE, "stop_times_subway.txt")
 STOP_TIMES_CLEANED_FILE = os.path.join(DUPLICATED_TRIPS_BASE, "stop_times_cleaned.txt")
-# STOP_TIMES_FILE = os.path.join(STOP_SEQUENCE_BASE, "stop_times_sequence.txt")
-# STOP_TIMES_DOORS_FILE = os.path.join(DOORS_BASE, "stop_times_doors.txt")
 STOP_TIMES_SEQUENCE_FILE = os.path.join(STOP_SEQUENCE_BASE, "stop_times_sequence.txt")
-STOP_TIMES_FILE = os.path.join(DOORS_BASE, "stop_times_doors.txt")
-
-WRONG_STOP_SEQUENCES_FILE = os.path.join(STOP_SEQUENCE_BASE, "wrong_stop_sequences.txt")
-DOORS_FILE = os.path.join(DOORS_BASE, "doors.txt")
+STOP_TIMES_DOORS_FILE = os.path.join(DOORS_BASE, "stop_times_doors.txt")
+STOP_TIMES_FILE = os.path.join(SHARED_PLATFORMS_BASE, "stop_times_shared.txt")
 
 STOPS_RAW_FILE = os.path.join(RAW_BASE, "stops.txt")
-STOPS_FILE = os.path.join(SUBWAY_BASE, "stops_subway.txt")
+STOPS_SUBWAY_FILE = os.path.join(SUBWAY_BASE, "stops_subway.txt")
+STOPS_FILE = os.path.join(SHARED_PLATFORMS_BASE, "stops_shared.txt")
 
-TRANSFERS_FILE = os.path.join(RAW_BASE, "transfers.txt")
+TRANSFERS_RAW_FILE = os.path.join(RAW_BASE, "transfers.txt")
+TRANSFERS_FILE = os.path.join(SHARED_PLATFORMS_BASE, "transfers_shared.txt")
 
 TRIPS_RAW_FILE = os.path.join(RAW_BASE, "trips.txt")
 TRIPS_SUBWAY_FILE = os.path.join(SUBWAY_BASE, "trips_subway.txt")
@@ -180,6 +198,11 @@ TRIPS_FILE = os.path.join(DUPLICATED_TRIPS_BASE, "trips_cleaned.txt")
 
 TRIP_IDS_TO_ELIMINATE_FILE = os.path.join(
     DUPLICATED_TRIPS_BASE, "trip_ids_to_eliminate.txt"
+)
+WRONG_STOP_SEQUENCES_FILE = os.path.join(STOP_SEQUENCE_BASE, "wrong_stop_sequences.txt")
+DOORS_FILE = os.path.join(DOORS_BASE, "doors.txt")
+EQUIVALENCES_SHARED_FILE = os.path.join(
+    SHARED_PLATFORMS_BASE, "equivalences_shared.txt"
 )
 
 
@@ -816,6 +839,24 @@ def build_stop_to_lines(
             if line_name not in lines:
                 lines.append(line_name)
     return stop_to_lines
+
+
+def build_shared_platform_lines(
+    route_names_stop_ids: Dict[str, List[str]]
+) -> Dict[str, List[str]]:
+    """Return shared stop_id -> ordered list of lines serving it.
+
+    args:
+        route_names_stop_ids: Mapping from line name to its ordered stop_id list,
+            e.g. `scripts.basics.subway_route_names_stop_ids`.
+
+    returns:
+        `build_stop_to_lines` restricted to stop_ids served by more than one line.
+    """
+    stop_to_lines = build_stop_to_lines(route_names_stop_ids)
+    return {
+        stop_id: lines for stop_id, lines in stop_to_lines.items() if len(lines) > 1
+    }
 
 
 def format_stop_label(
