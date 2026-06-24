@@ -1,8 +1,10 @@
 import os
 import re
 import sys
+from collections import defaultdict
 from pathlib import Path
-from typing import Dict, Iterable, List, Optional, Set, Tuple
+from statistics import mean, stdev
+from typing import DefaultDict, Dict, Hashable, Iterable, List, Optional, Set, Tuple
 
 # Ensure the project root is on sys.path so that shared scripts can be imported.
 _PROJECT_ROOT = str(Path(__file__).resolve().parents[1])
@@ -14,7 +16,13 @@ if _PROJECT_ROOT not in sys.path:
 # Module setup
 # -----------------------------
 
-from scripts.utils import read_dict_rows, sniff_dialect  # noqa: E402
+from scripts.utils import (  # noqa: E402
+    read_dict_rows,
+    read_header,
+    round_half_up_mean,
+    sniff_dialect,
+    write_rows,
+)
 
 
 # -----------------------------
@@ -26,11 +34,14 @@ __all__ = [
     # Shared CSV helpers
     "sniff_dialect",
     "read_dict_rows",
+    "read_header",
+    "round_half_up_mean",
+    "write_rows",
     # Constants / paths
     "_DEFAULT_DATA_DIR",
     "BASE",
-    "_DEFAULT_ORIGINAL_DATA_DIR",
-    "ORIGINAL_BASE",
+    "_DEFAULT_RAW_DATA_DIR",
+    "RAW_BASE",
     "_DEFAULT_SUBWAY_DATA_DIR",
     "SUBWAY_BASE",
     "_DEFAULT_DUPLICATED_TRIPS_DATA_DIR",
@@ -39,23 +50,30 @@ __all__ = [
     "STOP_SEQUENCE_BASE",
     "_DEFAULT_DOORS_DATA_DIR",
     "DOORS_BASE",
+    "_DEFAULT_SHARED_PLATFORMS_DATA_DIR",
+    "SHARED_PLATFORMS_BASE",
+    "PATHWAYS_RAW_FILE",
     "PATHWAYS_FILE",
-    "ROUTES_ORIGINAL_FILE",
+    "ROUTES_RAW_FILE",
     "ROUTES_FILE",
-    "STOP_TIMES_ORIGINAL_FILE",
+    "STOP_TIMES_RAW_FILE",
     "STOP_TIMES_SUBWAY_FILE",
     "STOP_TIMES_CLEANED_FILE",
     "STOP_TIMES_SEQUENCE_FILE",
+    "STOP_TIMES_DOORS_FILE",
     "STOP_TIMES_FILE",
-    "WRONG_STOP_SEQUENCES_FILE",
-    "DOORS_FILE",
-    "STOPS_ORIGINAL_FILE",
+    "STOPS_RAW_FILE",
+    "STOPS_SUBWAY_FILE",
     "STOPS_FILE",
+    "TRANSFERS_RAW_FILE",
     "TRANSFERS_FILE",
-    "TRIPS_ORIGINAL_FILE",
+    "TRIPS_RAW_FILE",
     "TRIPS_SUBWAY_FILE",
     "TRIPS_FILE",
     "TRIP_IDS_TO_ELIMINATE_FILE",
+    "WRONG_STOP_SEQUENCES_FILE",
+    "DOORS_FILE",
+    "EQUIVALENCES_SHARED_FILE",
     "SECONDS_PER_DAY",
     # Regex / Patterns
     "PW_PAIR",
@@ -94,6 +112,12 @@ __all__ = [
     "is_contiguous_subsequence",
     "load_trip_sequence_bounds",
     "load_trip_to_line",
+    "build_stop_to_lines",
+    "build_shared_platform_lines",
+    "format_stop_label",
+    # Directed pair travel-time helpers
+    "collect_pair_samples_by_trip_group",
+    "average_times_for_pairs",
 ]
 
 
@@ -104,11 +128,9 @@ __all__ = [
 _DEFAULT_DATA_DIR = Path(__file__).resolve().parents[1] / ".src" / "gtfs" / "data"
 BASE = str(Path(os.environ.get("GTFS_DATA_DIR", str(_DEFAULT_DATA_DIR))).resolve())
 
-_DEFAULT_ORIGINAL_DATA_DIR = _DEFAULT_DATA_DIR / "0_original"
-ORIGINAL_BASE = str(
-    Path(
-        os.environ.get("GTFS_ORIGINAL_DATA_DIR", str(_DEFAULT_ORIGINAL_DATA_DIR))
-    ).resolve()
+_DEFAULT_RAW_DATA_DIR = _DEFAULT_DATA_DIR / "0_raw"
+RAW_BASE = str(
+    Path(os.environ.get("GTFS_RAW_DATA_DIR", str(_DEFAULT_RAW_DATA_DIR))).resolve()
 )
 
 _DEFAULT_SUBWAY_DATA_DIR = _DEFAULT_DATA_DIR / "1_subway"
@@ -136,38 +158,51 @@ STOP_SEQUENCE_BASE = str(
     ).resolve()
 )
 
-_DEFAULT_DOORS_DATA_DIR = _DEFAULT_DATA_DIR / "4_doors"
+_DEFAULT_DOORS_DATA_DIR = _DEFAULT_DATA_DIR / "4_doors_time"
 DOORS_BASE = str(
     Path(os.environ.get("GTFS_DOORS_DATA_DIR", str(_DEFAULT_DOORS_DATA_DIR))).resolve()
 )
 
-PATHWAYS_FILE = os.path.join(ORIGINAL_BASE, "pathways.txt")
+_DEFAULT_SHARED_PLATFORMS_DATA_DIR = _DEFAULT_DATA_DIR / "5_shared_platforms"
+SHARED_PLATFORMS_BASE = str(
+    Path(
+        os.environ.get(
+            "GTFS_SHARED_PLATFORMS_DATA_DIR", str(_DEFAULT_SHARED_PLATFORMS_DATA_DIR)
+        )
+    ).resolve()
+)
 
-ROUTES_ORIGINAL_FILE = os.path.join(ORIGINAL_BASE, "routes.txt")
+PATHWAYS_RAW_FILE = os.path.join(RAW_BASE, "pathways.txt")
+PATHWAYS_FILE = os.path.join(SHARED_PLATFORMS_BASE, "pathways_shared.txt")
+
+ROUTES_RAW_FILE = os.path.join(RAW_BASE, "routes.txt")
 ROUTES_FILE = os.path.join(SUBWAY_BASE, "routes_subway.txt")
 
-STOP_TIMES_ORIGINAL_FILE = os.path.join(ORIGINAL_BASE, "stop_times.txt")
+STOP_TIMES_RAW_FILE = os.path.join(RAW_BASE, "stop_times.txt")
 STOP_TIMES_SUBWAY_FILE = os.path.join(SUBWAY_BASE, "stop_times_subway.txt")
 STOP_TIMES_CLEANED_FILE = os.path.join(DUPLICATED_TRIPS_BASE, "stop_times_cleaned.txt")
-# STOP_TIMES_FILE = os.path.join(STOP_SEQUENCE_BASE, "stop_times_sequence.txt")
-# STOP_TIMES_DOORS_FILE = os.path.join(DOORS_BASE, "stop_times_doors.txt")
 STOP_TIMES_SEQUENCE_FILE = os.path.join(STOP_SEQUENCE_BASE, "stop_times_sequence.txt")
-STOP_TIMES_FILE = os.path.join(DOORS_BASE, "stop_times_doors.txt")
+STOP_TIMES_DOORS_FILE = os.path.join(DOORS_BASE, "stop_times_doors.txt")
+STOP_TIMES_FILE = os.path.join(SHARED_PLATFORMS_BASE, "stop_times_shared.txt")
 
-WRONG_STOP_SEQUENCES_FILE = os.path.join(STOP_SEQUENCE_BASE, "wrong_stop_sequences.txt")
-DOORS_FILE = os.path.join(DOORS_BASE, "doors.txt")
+STOPS_RAW_FILE = os.path.join(RAW_BASE, "stops.txt")
+STOPS_SUBWAY_FILE = os.path.join(SUBWAY_BASE, "stops_subway.txt")
+STOPS_FILE = os.path.join(SHARED_PLATFORMS_BASE, "stops_shared.txt")
 
-STOPS_ORIGINAL_FILE = os.path.join(ORIGINAL_BASE, "stops.txt")
-STOPS_FILE = os.path.join(SUBWAY_BASE, "stops_subway.txt")
+TRANSFERS_RAW_FILE = os.path.join(RAW_BASE, "transfers.txt")
+TRANSFERS_FILE = os.path.join(SHARED_PLATFORMS_BASE, "transfers_shared.txt")
 
-TRANSFERS_FILE = os.path.join(ORIGINAL_BASE, "transfers.txt")
-
-TRIPS_ORIGINAL_FILE = os.path.join(ORIGINAL_BASE, "trips.txt")
+TRIPS_RAW_FILE = os.path.join(RAW_BASE, "trips.txt")
 TRIPS_SUBWAY_FILE = os.path.join(SUBWAY_BASE, "trips_subway.txt")
 TRIPS_FILE = os.path.join(DUPLICATED_TRIPS_BASE, "trips_cleaned.txt")
 
 TRIP_IDS_TO_ELIMINATE_FILE = os.path.join(
     DUPLICATED_TRIPS_BASE, "trip_ids_to_eliminate.txt"
+)
+WRONG_STOP_SEQUENCES_FILE = os.path.join(STOP_SEQUENCE_BASE, "wrong_stop_sequences.txt")
+DOORS_FILE = os.path.join(DOORS_BASE, "doors.txt")
+EQUIVALENCES_SHARED_FILE = os.path.join(
+    SHARED_PLATFORMS_BASE, "equivalences_shared.txt"
 )
 
 
@@ -384,14 +419,21 @@ def load_from_stop_ids(file_path: str) -> Set[str]:
 def parse_time_to_seconds(value: str) -> int:
     """Convert a GTFS HH:MM:SS time string to seconds.
 
+    Supports negative times (e.g. ``-00:00:21``) produced by the door-time
+    pipeline for stops that depart before the reference midnight.
+
     args:
-        value: Time text in HH:MM:SS format.
+        value: Time text in ``[-]HH:MM:SS`` format.
 
     returns:
-        Total seconds represented by the input time.
+        Total seconds represented by the input time (negative if prefixed with ``-``).
     """
-    hours_text, minutes_text, seconds_text = value.strip().split(":")
-    return int(hours_text) * 3600 + int(minutes_text) * 60 + int(seconds_text)
+    stripped = value.strip()
+    negative = stripped.startswith("-")
+    unsigned = stripped[1:] if negative else stripped
+    hours_text, minutes_text, seconds_text = unsigned.split(":")
+    total = int(hours_text) * 3600 + int(minutes_text) * 60 + int(seconds_text)
+    return -total if negative else total
 
 
 def format_seconds(value: float) -> str:
@@ -775,6 +817,67 @@ def load_trip_to_line(file_path: str, rid_to_name: Dict[str, str]) -> Dict[str, 
     return trip_to_line
 
 
+def build_stop_to_lines(
+    route_names_stop_ids: Dict[str, List[str]]
+) -> Dict[str, List[str]]:
+    """Invert a route name -> stop_id list mapping into stop_id -> line names.
+
+    Lines are appended in the iteration order of `route_names_stop_ids`, so a
+    stop present in multiple lines keeps that canonical order (e.g. L9S before L10S).
+
+    args:
+        route_names_stop_ids: Mapping from line name to its ordered stop_id list,
+            e.g. `scripts.basics.subway_route_names_stop_ids`.
+
+    returns:
+        Mapping from stop_id to the list of line names it belongs to.
+    """
+    stop_to_lines: Dict[str, List[str]] = {}
+    for line_name, stop_ids in route_names_stop_ids.items():
+        for stop_id in stop_ids:
+            lines = stop_to_lines.setdefault(stop_id, [])
+            if line_name not in lines:
+                lines.append(line_name)
+    return stop_to_lines
+
+
+def build_shared_platform_lines(
+    route_names_stop_ids: Dict[str, List[str]]
+) -> Dict[str, List[str]]:
+    """Return shared stop_id -> ordered list of lines serving it.
+
+    args:
+        route_names_stop_ids: Mapping from line name to its ordered stop_id list,
+            e.g. `scripts.basics.subway_route_names_stop_ids`.
+
+    returns:
+        `build_stop_to_lines` restricted to stop_ids served by more than one line.
+    """
+    stop_to_lines = build_stop_to_lines(route_names_stop_ids)
+    return {
+        stop_id: lines for stop_id, lines in stop_to_lines.items() if len(lines) > 1
+    }
+
+
+def format_stop_label(
+    stop_id: str, stop_name: str, stop_to_lines: Dict[str, List[str]]
+) -> str:
+    """Prefix a stop name with its line(s), e.g. "L9S-L10S-Torrassa".
+
+    args:
+        stop_id: Platform stop_id to look up.
+        stop_name: Stop name to prefix.
+        stop_to_lines: Mapping from stop_id to line names, from `build_stop_to_lines`.
+
+    returns:
+        "{line1}-{line2}-...-{stop_name}", or plain `stop_name` if no lines are found.
+    """
+    lines = stop_to_lines.get(stop_id)
+    if not lines:
+        return stop_name
+    return f"{'-'.join(lines)}-{stop_name}"
+
+
 def load_trip_sequence_bounds(
     file_path: str, trip_ids: Set[str]
 ) -> Dict[str, Tuple[int, int]]:
@@ -802,3 +905,112 @@ def load_trip_sequence_bounds(
             lo, hi = bounds[trip_id]
             bounds[trip_id] = (min(lo, seq), max(hi, seq))
     return bounds
+
+
+# -----------------------------
+# Directed pair travel-time helpers
+# -----------------------------
+def collect_pair_samples_by_trip_group(
+    stop_times_file: str,
+    trip_id_to_group: Dict[str, Hashable],
+    group_pairs: Dict[Hashable, List[Tuple[str, str]]],
+) -> Dict[Hashable, Dict[Tuple[str, str], List[int]]]:
+    """Collect travel-time samples for several trip groups in one file pass.
+
+    Each trip belongs to exactly one group (for example a (line, direction_id)
+    pair), so several route/direction breakdowns can share a single scan of a
+    potentially large stop_times file instead of one scan per group.
+
+    args:
+        stop_times_file: Path to the stop_times file to scan.
+        trip_id_to_group: Mapping from trip_id to its group key. Trips absent
+            from this mapping are skipped.
+        group_pairs: Mapping from group key to the directed stop pairs
+            relevant to that group; non-consecutive or unmatched adjacencies
+            are ignored.
+
+    returns:
+        Mapping from group key to {pair: observed travel times in seconds},
+        with every pair from group_pairs present (possibly with an empty list).
+    """
+    group_pair_sets = {group: set(pairs) for group, pairs in group_pairs.items()}
+    group_stop_ids = {
+        group: {stop_id for pair in pairs for stop_id in pair}
+        for group, pairs in group_pairs.items()
+    }
+    trip_rows: DefaultDict[str, List[Tuple[int, str, str]]] = defaultdict(list)
+    samples: Dict[Hashable, DefaultDict[Tuple[str, str], List[int]]] = {
+        group: defaultdict(list) for group in group_pairs
+    }
+
+    for row in read_dict_rows(stop_times_file):
+        trip_id = row.get("trip_id", "")
+        group = trip_id_to_group.get(trip_id)
+        if group is None:
+            continue
+
+        stop_id = row.get("stop_id", "")
+        sequence_text = row.get("stop_sequence", "")
+        arrival_time = row.get("arrival_time", "")
+        if not stop_id or not sequence_text:
+            continue
+        if stop_id not in group_stop_ids[group]:
+            continue
+
+        try:
+            stop_sequence = int(sequence_text)
+        except ValueError:
+            continue
+
+        trip_rows[trip_id].append((stop_sequence, stop_id, arrival_time))
+
+    for trip_id, rows in trip_rows.items():
+        group = trip_id_to_group[trip_id]
+        pair_set = group_pair_sets[group]
+        rows.sort(key=lambda item: item[0])
+        for current_row, next_row in zip(rows, rows[1:]):
+            current_sequence, current_stop_id, current_arrival = current_row
+            next_sequence, next_stop_id, next_arrival = next_row
+            if next_sequence != current_sequence + 1:
+                continue
+            pair = (current_stop_id, next_stop_id)
+            if pair not in pair_set:
+                continue
+            if not current_arrival or not next_arrival:
+                continue
+
+            travel_time = parse_time_to_seconds(next_arrival) - parse_time_to_seconds(
+                current_arrival
+            )
+            while travel_time < 0:  # Case of passing midnight, add 24h until positive
+                travel_time += SECONDS_PER_DAY
+            samples[group][pair].append(travel_time)
+
+    return {
+        group: {pair: samples[group].get(pair, []) for pair in pairs}
+        for group, pairs in group_pairs.items()
+    }
+
+
+def average_times_for_pairs(
+    pair_samples: Dict[Tuple[str, str], List[int]]
+) -> Dict[Tuple[str, str], Optional[Tuple[float, int, float]]]:
+    """Return average travel time, sample count and stdev per directed pair.
+
+    args:
+        pair_samples: Mapping of directed stop pairs to travel-time samples.
+
+    returns:
+        Mapping from each pair to (mean_seconds, count, stdev), or None when
+        no samples were observed for that pair.
+    """
+    results: Dict[Tuple[str, str], Optional[Tuple[float, int, float]]] = {}
+    for pair, samples in pair_samples.items():
+        if not samples:
+            results[pair] = None
+            continue
+        count = len(samples)
+        avg = mean(samples)
+        std = stdev(samples) if count > 1 else 0.0
+        results[pair] = (avg, count, std)
+    return results

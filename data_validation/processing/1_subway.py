@@ -1,6 +1,6 @@
 """Build GTFS subway extracts from the subway input files.
 
-This script reads the subway GTFS files from ``.src/gtfs/data/0_original`` and writes
+This script reads the subway GTFS files from ``.src/gtfs/data/0_raw`` and writes
 filtered ``*_subway.txt`` files into .src/gtfs/data/1_subway.
 
 Rows whose first column starts with ``2.`` are removed.
@@ -18,11 +18,11 @@ if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT))
 
 from data_validation.gtfs_utils import (  # noqa: E402
-    ORIGINAL_BASE,
-    ROUTES_ORIGINAL_FILE,
-    STOP_TIMES_ORIGINAL_FILE,
-    STOPS_ORIGINAL_FILE,
-    TRIPS_ORIGINAL_FILE,
+    RAW_BASE,
+    ROUTES_RAW_FILE,
+    STOP_TIMES_RAW_FILE,
+    STOPS_RAW_FILE,
+    TRIPS_RAW_FILE,
     _DEFAULT_SUBWAY_DATA_DIR,
     check_missing_files,
     print_file_disclaimer,
@@ -31,10 +31,10 @@ from scripts.utils import sniff_dialect  # noqa: E402
 
 
 SOURCE_FILES = (
-    ROUTES_ORIGINAL_FILE,
-    STOP_TIMES_ORIGINAL_FILE,
-    STOPS_ORIGINAL_FILE,
-    TRIPS_ORIGINAL_FILE,
+    ROUTES_RAW_FILE,
+    STOP_TIMES_RAW_FILE,
+    STOPS_RAW_FILE,
+    TRIPS_RAW_FILE,
 )
 
 
@@ -136,11 +136,11 @@ def clean_file(source_path: Path, destination_dir: Path) -> Tuple[int, int, int,
 def main() -> None:
     """Run the processing pipeline for all configured source files.
 
-    This implementation reads the original GTFS files from `ORIGINAL_BASE`
+    This implementation reads the raw GTFS files from `RAW_BASE`
     and writes filtered subway extracts into a `subway` directory under
     `BASE` as `{stem}_subway.txt`."""
 
-    source_paths = [Path(ORIGINAL_BASE) / name for name in SOURCE_FILES]
+    source_paths = [Path(RAW_BASE) / name for name in SOURCE_FILES]
     destination_dir = _DEFAULT_SUBWAY_DATA_DIR
 
     check_missing_files([str(path) for path in source_paths])

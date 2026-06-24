@@ -14,7 +14,6 @@ The filtered files are written next to the inputs as:
 
 from __future__ import annotations
 
-import csv
 import sys
 from pathlib import Path
 from typing import Set, Tuple
@@ -32,6 +31,9 @@ from data_validation.gtfs_utils import (  # noqa: E402
     check_missing_files,
     print_file_disclaimer,
     load_nonempty_lines,
+    read_dict_rows,
+    read_header,
+    write_rows,
 )
 
 
@@ -54,23 +56,15 @@ def write_cleaned_file(
     kept_rows: list[dict[str, str]] = []
     removed_rows = 0
 
-    with open(input_path, "r", encoding="utf-8-sig", newline="") as input_handle:
-        reader = csv.DictReader(input_handle)
-        if reader.fieldnames is None:
-            raise RuntimeError(f"{Path(input_path).name} has no header.")
-        fieldnames = list(reader.fieldnames)
+    fieldnames = read_header(input_path)
+    for row in read_dict_rows(input_path):
+        total_rows += 1
+        trip_id = row.get("trip_id", "")
+        if trip_id in eliminated_trip_ids:
+            continue
+        kept_rows.append(row)
 
-        for row in reader:
-            total_rows += 1
-            trip_id = (row.get("trip_id") or "").strip()
-            if trip_id in eliminated_trip_ids:
-                continue
-            kept_rows.append(row)
-
-    with open(output_path, "w", encoding="utf-8", newline="") as output_handle:
-        writer = csv.DictWriter(output_handle, fieldnames=fieldnames)
-        writer.writeheader()
-        writer.writerows(kept_rows)
+    write_rows(output_path, fieldnames, kept_rows)
 
     removed_rows = total_rows - len(kept_rows)
     return total_rows, removed_rows, len(kept_rows), output_path
