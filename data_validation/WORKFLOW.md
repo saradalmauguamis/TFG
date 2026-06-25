@@ -123,14 +123,23 @@ Run anytime after step 1 of the core pipeline. None of these produce a file cons
 ## Decision-support analyses
 
 Read-only scripts in [`analysis/`](analysis/README.md). Unlike *Independent checks*, these need
-the pipeline through step 9 (`stop_times_doors.txt`), not just step 1 — they don't produce any
-file consumed downstream, but answer design questions for the graph build.
+the pipeline well past step 1 — they don't produce any file consumed downstream, but answer
+design questions for the graph build. Two need only step 9; the third needs the full pipeline
+through step 11, since it has to read stop_times *after* shared platforms are split.
 
-- **`analysis/shared_platforms.py`** — reads `stop_times_doors.txt` (step 9), `stops_subway.txt`
-  (`1_subway`), `trips_cleaned.txt` (step 3). Compared travel times across lines sharing a
-  platform (e.g. L9S/L10S, L9N/L10N) and found they differ, which is what motivated step 11.
-- **`analysis/directional_asymmetry.py`** — same inputs. A separate, unrelated question: compared
-  a→b vs b→a travel times to decide the graph needs directed edges. Doesn't motivate step 11.
+- **(needs step 9+)** **`analysis/shared_platforms.py`** — reads `stop_times_doors.txt` (step 9),
+  `stops_subway.txt` (`1_subway`), `trips_cleaned.txt` (step 3). Compared travel times across
+  lines sharing a platform (e.g. L9S/L10S, L9N/L10N) and found they differ, which is what
+  motivated step 11.
+- **(needs step 9+)** **`analysis/directional_asymmetry.py`** — same inputs. A separate,
+  unrelated question: compared a→b vs b→a travel times to decide the graph needs directed edges.
+  Doesn't motivate step 11.
+- **(needs step 11+)** **`analysis/edge_weight_validation.py`** — reads
+  `stop_times_shared.txt`/`stops_shared.txt` (step 11, *after* shared platforms are split),
+  `trips_cleaned.txt` (step 3). Runs only once step 11 exists, since it ranks `sw` edges by the
+  per-line stop_ids that step 11 produces, not the original (still-shared) ones. Validates whether
+  `mean(total)` travel time is a trustworthy static weight for those `sw` edges, or needs a
+  different treatment (better averaging, or a time-dependent weight).
 
 ---
 
