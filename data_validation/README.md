@@ -23,8 +23,9 @@ data_validation/
 │   ├── 4_doors_time.py
 │   └── 5_shared_platforms_duplication.py
 └── analysis/
+    ├── shared_platforms.py
     ├── directional_asymmetry.py
-    └── shared_platforms.py
+    └── edge_weight_validation.py
 ```
 
 ---
@@ -66,5 +67,6 @@ Scripts that transform raw GTFS files into cleaned, stage-by-stage outputs.
 
 Read-only scripts that answer specific questions to help decide graph design.
 
-- `directional_asymmetry.py` — compare directional travel times between adjacent platforms
 - `shared_platforms.py` — compare inter-platform travel times across lines sharing a platform
+- `directional_asymmetry.py` — compare directional travel times between adjacent platforms
+- `edge_weight_validation.py` — validate whether mean(total) travel time is a trustworthy static edge weight

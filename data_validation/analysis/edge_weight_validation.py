@@ -1,4 +1,4 @@
-"""Rank platform-to-platform edges by travel-time stdev, on the final stop_times.
+"""Validate whether mean(total) is a trustworthy static edge weight, on the final stop_times.
 
 The graph's `sw` edges (platform -> platform) get their weight from the mean
 travel time observed in stop_times, where each sample is `arrival_b -
@@ -13,9 +13,10 @@ cover).
 
 `total = arrival_b - arrival_a` conflates two physically different things:
 dwell at the departure platform A (door open for boarding) and the actual
-movement between A and B. Every edge printed is therefore decomposed into
-`door` (`departure_a - arrival_a`) and `sw` (`arrival_b - departure_a`, the
-pure run time a future `sw` edge weight should use), via
+movement between A and B. The edge weight stays `total`, since that's the
+real time to get from A to B; every edge printed is decomposed into `door`
+(`departure_a - arrival_a`) and `sw` (`arrival_b - departure_a`, time spent
+actually moving) only as a diagnostic, via
 `collect_pair_door_sw_samples_by_trip_group`, to see how much of the stdev is
 dwell-time noise versus genuine travel-time variance.
 
@@ -64,24 +65,35 @@ from scripts.basics import (  # noqa: E402
     subway_routes_names_ids,
 )
 
-REPORT_FILE = Path(__file__).resolve().parent / "edge_stdev_report.txt"
+REPORT_FILE = Path(__file__).resolve().parent / "edge_weight_validation_report.txt"
 
 GroupKey = Tuple[str, int]  # (line_short_name, direction_id)
 PairRecord = Tuple[float, int, float]  # (mean, count, stdev)
-# (stdev, line_short_name, direction_id, (from_stop_id, to_stop_id), PairRecord)
+# (stdev, line_short_name, direction_id, (from_stop_id, to_stop_id), PairRecord).
+# Always the *total* stdev: total is the actual edge weight (door + sw is the
+# real time to get from A to B), door/sw are only looked up per edge as a
+# diagnostic for the "door-dominated"/"sw-dominated" flag, not ranked on their own.
 RankedEdge = Tuple[float, str, int, Tuple[str, str], PairRecord]
 # (cv, line_short_name, direction_id, (from_stop_id, to_stop_id), PairRecord, median)
 RankedCV = Tuple[float, str, int, Tuple[str, str], PairRecord, float]
-# (hourly_range_pct, line, direction, pair, PairRecord, range, min_hour,
-# min_mean, max_hour, max_mean)
+# (hourly_range_pct, line, direction, pair, PairRecord, range, min_hours,
+# min_mean, max_hours, max_mean). min_hours/max_hours are lists because
+# several hours can tie for the same min/max hourly mean.
 RankedHourlyRange = Tuple[
-    float, str, int, Tuple[str, str], PairRecord, float, int, float, int, float
+    float,
+    str,
+    int,
+    Tuple[str, str],
+    PairRecord,
+    float,
+    List[int],
+    float,
+    List[int],
+    float,
 ]
 
-TOP_K_HOURLY = 6
+TOP_K_HOURLY = 3
 MIN_STDEV_TO_PRINT_SECONDS_TOTAL = 10.0
-MIN_STDEV_TO_PRINT_SECONDS_DOOR = 10.0
-MIN_STDEV_TO_PRINT_SECONDS_SW = 5.0
 
 # CV (stdev / mean) bucket boundaries. An edge is only printed in the CV
 # ranking once it crosses into the "investigate" bucket, so the print
@@ -91,11 +103,25 @@ CV_STABLE_MAX = 0.10
 CV_ACCEPTABLE_MAX = 0.15
 MIN_CV_TO_PRINT = CV_ACCEPTABLE_MAX
 
+SECTION_BANNER_WIDTH = 70
+
 # Hourly-range (range / mean) bucket boundaries, same one-source-of-truth
 # reasoning as the CV thresholds above.
 HOURLY_RANGE_EXCELLENT_MAX = 0.05
 HOURLY_RANGE_REASONABLE_MAX = 0.15
 MIN_HOURLY_RANGE_PCT_TO_PRINT = HOURLY_RANGE_REASONABLE_MAX
+
+
+def _print_section_header(title: str) -> None:
+    """Print a section title inside a banner, to visually separate report sections.
+
+    args:
+            title: Section title, printed upper-case between two divider lines.
+    """
+    divider = "=" * SECTION_BANNER_WIDTH
+    print(f"\n{divider}")
+    print(title.upper())
+    print(f"{divider}\n")
 
 
 def rank_edges_by_stdev(
@@ -133,7 +159,7 @@ def cv_bucket(cv: float) -> str:
             cv: Coefficient of variation (stdev / mean) for one edge.
 
     returns:
-            Stability label, from "extremely stable" to "investigate".
+            Stability label, from "extremely stable" to "unstable".
     """
     if cv < CV_EXTREMELY_STABLE_MAX:
         return "extremely stable"
@@ -141,7 +167,7 @@ def cv_bucket(cv: float) -> str:
         return "stable"
     if cv < CV_ACCEPTABLE_MAX:
         return "acceptable"
-    return "investigate"
+    return "unstable"
 
 
 def hourly_range_bucket(hourly_range_pct: float) -> str:
@@ -235,7 +261,10 @@ def rank_edges_by_hourly_range(
 
     returns:
             Edges with at least two hours of data and a positive mean, sorted
-            by descending hourly range percentage.
+            by descending hourly range percentage. min_hours/max_hours list
+            every hour tied for the minimum/maximum hourly mean, rather than
+            an arbitrary single hour, since ties are common with low sample
+            counts per hour.
     """
     ranked: List[RankedHourlyRange] = []
 
@@ -263,9 +292,11 @@ def rank_edges_by_hourly_range(
             if len(hourly_means) < 2:
                 continue
 
-            min_hour = min(hourly_means, key=hourly_means.get)
-            max_hour = max(hourly_means, key=hourly_means.get)
-            hourly_range = hourly_means[max_hour] - hourly_means[min_hour]
+            min_mean = min(hourly_means.values())
+            max_mean = max(hourly_means.values())
+            min_hours = sorted(h for h, m in hourly_means.items() if m == min_mean)
+            max_hours = sorted(h for h, m in hourly_means.items() if m == max_mean)
+            hourly_range = max_mean - min_mean
             hourly_range_pct = hourly_range / mean_seconds
             ranked.append(
                 (
@@ -275,10 +306,10 @@ def rank_edges_by_hourly_range(
                     pair,
                     record,
                     hourly_range,
-                    min_hour,
-                    hourly_means[min_hour],
-                    max_hour,
-                    hourly_means[max_hour],
+                    min_hours,
+                    min_mean,
+                    max_hours,
+                    max_mean,
                 )
             )
 
@@ -288,67 +319,62 @@ def rank_edges_by_hourly_range(
 
 def print_ranked_edges(
     ranked: Sequence[RankedEdge],
-    avg_total_by_group: Dict[GroupKey, Dict[Tuple[str, str], Optional[PairRecord]]],
     avg_door_by_group: Dict[GroupKey, Dict[Tuple[str, str], Optional[PairRecord]]],
     avg_sw_by_group: Dict[GroupKey, Dict[Tuple[str, str], Optional[PairRecord]]],
     stop_names: Dict[str, str],
     min_stdev: float,
-    metric_label: str,
 ) -> None:
-    """Print edges ranked by descending stdev, with their total/door/sw decomposition.
+    """Print edges ranked by descending total stdev, with a door/sw breakdown.
 
-    For every edge printed (stdev >= min_stdev), prints `total`, `door`
+    `total` is the edge weight that will actually be used (door + sw is the
+    real time to get from A to B), so this is the only ranking printed. For
+    every edge printed (stdev >= min_stdev), also prints `door`
     (`departure_a - arrival_a`) and `sw` (`arrival_b - departure_a`), looked
-    up from the precomputed `avg_total_by_group`/`avg_door_by_group`/
-    `avg_sw_by_group` (built once in `main` over every edge, so this can be
-    called for several rankings without recomputing). `ranked`'s own
-    embedded record is only the metric `ranked` was sorted by (e.g. door
-    stdev when ranking by door), not necessarily `total`, so all three lines
-    are looked up independently rather than read off the ranked tuple.
+    up from the precomputed `avg_door_by_group`/`avg_sw_by_group`, plus a
+    "door-dominated"/"sw-dominated" flag (whichever has the larger stdev) so
+    a reader can tell at a glance whether a noisy edge's variance comes from
+    boarding/alighting dwell or from genuine run-time variance.
 
     args:
-            ranked: Edges sorted by descending stdev of the metric being ranked.
-            avg_total_by_group: Total (mean, count, stdev) per group/pair.
+            ranked: Edges sorted by descending total stdev.
             avg_door_by_group: Door (mean, count, stdev) per group/pair.
             avg_sw_by_group: Sw (mean, count, stdev) per group/pair.
             stop_names: Mapping from stop_id to stop_name.
             min_stdev: Only print edges whose stdev is at least this many seconds.
-            metric_label: Name of the metric `ranked` is sorted by (e.g. "total",
-                    "door", "sw"), used in the header line.
     """
     above_threshold: List[RankedEdge] = [
         edge for edge in ranked if edge[0] >= min_stdev
     ]
 
+    _print_section_header("Edges ranked by total stdev")
     print(
-        f"Edges ranked by {metric_label} stdev (highest first, stdev >= "
-        f"{min_stdev:.0f}s): {len(above_threshold)} of {len(ranked)}"
+        f"Edges ranked by total stdev (highest first, stdev >= "
+        f"{min_stdev:.0f}s): {len(above_threshold)} of {len(ranked)} "
+        f"({_format_pct(len(above_threshold), len(ranked))})"
     )
     if not above_threshold:
         print()
         return
 
     print("(door = departure_a - arrival_a; sw = arrival_b - departure_a)\n")
-    for index, (std, line_short_name, direction_id, (a, b), _) in enumerate(
+    for index, (std, line_short_name, direction_id, (a, b), record) in enumerate(
         above_threshold, start=1
     ):
-        label_a = f"{line_short_name}-{stop_names.get(a, a)}"
-        label_b = f"{line_short_name}-{stop_names.get(b, b)}"
+        label_a = f"{stop_names.get(a, a)}"
+        label_b = f"{stop_names.get(b, b)}"
         print(
             f"{index}. {line_short_name} dir{direction_id}  {a} ({label_a}) -> "
-            f"{b} ({label_b})  [{metric_label} stdev={std:.2f}s]"
+            f"{b} ({label_b})  [total stdev={std:.2f}s]"
         )
 
         group = (line_short_name, direction_id)
-        total_record = avg_total_by_group.get(group, {}).get((a, b))
         door_record = avg_door_by_group.get(group, {}).get((a, b))
         sw_record = avg_sw_by_group.get(group, {}).get((a, b))
-        if total_record is not None:
-            total_avg, total_count, total_std = total_record
-            print(
-                f"     total  {seconds_to_hms(total_avg):>8} ({total_avg:.2f}s) "
-                f"cnt={total_count} stdev={total_std:.2f}s"
-            )
+        total_avg, total_count, total_std = record
+        print(
+            f"     total  {seconds_to_hms(total_avg):>8} ({total_avg:.2f}s) "
+            f"cnt={total_count} stdev={total_std:.2f}s"
+        )
         if door_record is not None:
             door_avg, door_count, door_std = door_record
             print(
@@ -361,6 +387,9 @@ def print_ranked_edges(
                 f"     sw     {seconds_to_hms(sw_avg):>8} ({sw_avg:.2f}s) "
                 f"cnt={sw_count} stdev={sw_std:.2f}s"
             )
+        if door_record is not None and sw_record is not None:
+            dominant = "door" if door_record[2] >= sw_record[2] else "sw"
+            print(f"     -> {dominant}-dominated")
         print()
 
 
@@ -380,7 +409,7 @@ def print_cv_ranking(
         "extremely stable": 0,
         "stable": 0,
         "acceptable": 0,
-        "investigate": 0,
+        "unstable": 0,
     }
     total_edges = len(ranked)
     above_threshold: List[RankedCV] = [edge for edge in ranked if edge[0] >= min_cv]
@@ -399,29 +428,30 @@ def print_cv_ranking(
         """
         return _format_pct(count, total_edges)
 
-    print("Edge stability by coefficient of variation")
+    _print_section_header("Edge stability by coefficient of variation")
     print("CV = stdev / mean, computed from total travel time.\n")
     print("Stability summary:")
     print(
-        f"  CV < {CV_EXTREMELY_STABLE_MAX:.0%}     extremely stable: "
+        f"  CV < {CV_EXTREMELY_STABLE_MAX:.0%}                       extremely stable: "
         f"{buckets['extremely stable']} ({_pct(buckets['extremely stable'])})"
     )
     print(
-        f"  CV < {CV_STABLE_MAX:.0%}    stable: "
+        f"  {CV_EXTREMELY_STABLE_MAX:.0%} <= CV < {CV_STABLE_MAX:.0%}                stable: "
         f"{buckets['stable']} ({_pct(buckets['stable'])})"
     )
     print(
-        f"  CV < {CV_ACCEPTABLE_MAX:.0%}    acceptable: "
+        f"  {CV_STABLE_MAX:.0%} <= CV < {CV_ACCEPTABLE_MAX:.0%}                acceptable: "
         f"{buckets['acceptable']} ({_pct(buckets['acceptable'])})"
     )
     print(
-        f"  CV >= {CV_ACCEPTABLE_MAX:.0%}   investigate: "
-        f"{buckets['investigate']} ({_pct(buckets['investigate'])})\n"
+        f"  CV >= {CV_ACCEPTABLE_MAX:.0%}                      unstable: "
+        f"{buckets['unstable']} ({_pct(buckets['unstable'])})\n"
     )
 
     print(
         f"Edges ranked by total CV (highest first, CV >= {min_cv:.0%}): "
-        f"{len(above_threshold)} of {total_edges}"
+        f"{len(above_threshold)} of {total_edges} "
+        f"({_format_pct(len(above_threshold), total_edges)})"
     )
     if not above_threshold:
         print()
@@ -435,15 +465,15 @@ def print_cv_ranking(
         (avg, count, std),
         median_seconds,
     ) in enumerate(above_threshold, start=1):
-        label_a = f"{line_short_name}-{stop_names.get(a, a)}"
-        label_b = f"{line_short_name}-{stop_names.get(b, b)}"
+        label_a = f"{stop_names.get(a, a)}"
+        label_b = f"{stop_names.get(b, b)}"
         print(
             f"{index}. {line_short_name} dir{direction_id}  {a} ({label_a}) -> "
             f"{b} ({label_b})  [CV={cv:.2%}: {cv_bucket(cv)}]"
         )
         print(
-            f"     total  mean={seconds_to_hms(avg):>8} ({avg:.2f}s) "
-            f"median={seconds_to_hms(median_seconds):>8} ({median_seconds:.2f}s) "
+            f"     total  mean={seconds_to_hms(avg)} ({avg:.2f}s) "
+            f"median={seconds_to_hms(median_seconds)} ({median_seconds:.2f}s) "
             f"cnt={count} stdev={std:.2f}s cv={cv:.2%}"
         )
     print()
@@ -487,7 +517,7 @@ def print_hourly_range_ranking(
         """
         return _format_pct(count, total_edges)
 
-    print("Time-of-day variation by hourly range")
+    _print_section_header("Time-of-day variation by hourly range")
     print(
         "Hourly range = max(hourly mean) - min(hourly mean), normalized by "
         "overall total mean.\n"
@@ -515,7 +545,8 @@ def print_hourly_range_ranking(
     print(
         "Edges ranked by total hourly range percentage "
         f"(highest first, range >= {min_hourly_range_pct:.0%}): "
-        f"{len(above_threshold)} of {total_edges}"
+        f"{len(above_threshold)} of {total_edges} "
+        f"({_format_pct(len(above_threshold), total_edges)})"
     )
     if not above_threshold:
         print()
@@ -528,29 +559,30 @@ def print_hourly_range_ranking(
         (a, b),
         (avg, count, std),
         hourly_range,
-        min_hour,
+        min_hours,
         min_mean,
-        max_hour,
+        max_hours,
         max_mean,
     ) in enumerate(above_threshold, start=1):
-        label_a = f"{line_short_name}-{stop_names.get(a, a)}"
-        label_b = f"{line_short_name}-{stop_names.get(b, b)}"
+        label_a = f"{stop_names.get(a, a)}"
+        label_b = f"{stop_names.get(b, b)}"
+        min_hours_str = ", ".join(f"{hour:02d}:00" for hour in min_hours)
+        max_hours_str = ", ".join(f"{hour:02d}:00" for hour in max_hours)
         print(
             f"{index}. {line_short_name} dir{direction_id}  {a} ({label_a}) -> "
             f"{b} ({label_b})  "
-            f"[range={hourly_range:.2f}s, {hourly_range_pct:.2%}: "
-            f"{hourly_range_bucket(hourly_range_pct)}]"
+            f"[range={hourly_range:.2f}s, {hourly_range_pct:.2%}]"
         )
         print(
             f"     overall total  {seconds_to_hms(avg):>8} ({avg:.2f}s) "
             f"cnt={count} stdev={std:.2f}s"
         )
         print(
-            f"     min hourly mean  {min_hour:02d}:00  "
+            f"     min hourly mean  {min_hours_str}  "
             f"{seconds_to_hms(min_mean):>8} ({min_mean:.2f}s)"
         )
         print(
-            f"     max hourly mean  {max_hour:02d}:00  "
+            f"     max hourly mean  {max_hours_str}  "
             f"{seconds_to_hms(max_mean):>8} ({max_mean:.2f}s)"
         )
     print()
@@ -601,11 +633,11 @@ def print_hourly_breakdown(
         )
     )
 
+    _print_section_header("Hour-of-day breakdown for top hourly-range edges")
     print(
         "Hour-of-day total/door/sw breakdown for the top "
-        f"{len(top_edges)} highest hourly-range edges:"
+        f"{len(top_edges)} highest hourly-range edges:\n"
     )
-    print("(hour = arrival at the first stop of the pair, a departure-hour proxy)\n")
     for index, (
         hourly_range_pct,
         line_short_name,
@@ -618,8 +650,8 @@ def print_hourly_breakdown(
         _,
         _,
     ) in enumerate(top_edges, start=1):
-        label_a = f"{line_short_name}-{stop_names.get(a, a)}"
-        label_b = f"{line_short_name}-{stop_names.get(b, b)}"
+        label_a = f"{stop_names.get(a, a)}"
+        label_b = f"{stop_names.get(b, b)}"
         print(
             f"\n{index}. {line_short_name} dir{direction_id}  {a} ({label_a}) -> "
             f"{b} ({label_b})"
@@ -667,6 +699,8 @@ def print_hourly_breakdown(
 def print_executive_summary(
     ranked_cv: Sequence[RankedCV],
     ranked_hourly_range: Sequence[RankedHourlyRange],
+    avg_door_by_group: Dict[GroupKey, Dict[Tuple[str, str], Optional[PairRecord]]],
+    avg_sw_by_group: Dict[GroupKey, Dict[Tuple[str, str], Optional[PairRecord]]],
     stop_names: Dict[str, str],
     min_cv: float,
     min_hourly_range_pct: float,
@@ -675,12 +709,18 @@ def print_executive_summary(
 
     Collapses the CV and hourly-range sections above into a few lines, plus
     the union of edges that crossed either threshold, so a reader doesn't
-    have to scan every edge listing to find the conclusion.
+    have to scan every edge listing to find the conclusion. Each flagged
+    edge is annotated with *which* test flagged it (CV, hourly range, or
+    both) and its door/sw dominance, since a CV failure and an hourly-range
+    failure call for different fixes (see the printed explanation) and
+    aren't interchangeable just because both ended up in the same list.
 
     args:
             ranked_cv: Edges sorted by descending CV, from `rank_edges_by_cv`.
             ranked_hourly_range: Edges sorted by descending hourly range
                     percentage, from `rank_edges_by_hourly_range`.
+            avg_door_by_group: Door (mean, count, stdev) per group/pair.
+            avg_sw_by_group: Sw (mean, count, stdev) per group/pair.
             stop_names: Mapping from stop_id to stop_name.
             min_cv: CV threshold an edge must reach to be flagged.
             min_hourly_range_pct: Hourly range percentage threshold an edge
@@ -690,8 +730,8 @@ def print_executive_summary(
     stable_cv = sum(
         1 for cv, *_ in ranked_cv if cv_bucket(cv) in ("extremely stable", "stable")
     )
-    investigate_cv = sum(1 for cv, *_ in ranked_cv if cv_bucket(cv) == "investigate")
-    acceptable_cv = total_cv_edges - stable_cv - investigate_cv
+    unstable_cv = sum(1 for cv, *_ in ranked_cv if cv_bucket(cv) == "unstable")
+    acceptable_cv = total_cv_edges - stable_cv - unstable_cv
 
     total_hourly_edges = len(ranked_hourly_range)
     time_dependent = sum(
@@ -701,25 +741,28 @@ def print_executive_summary(
     )
     static_ok = total_hourly_edges - time_dependent
 
-    flagged_keys = {
-        (line, direction, pair)
-        for cv, line, direction, pair, *_ in ranked_cv
-        if cv >= min_cv
-    } | {
-        (line, direction, pair)
+    cv_by_key: Dict[Tuple[str, int, Tuple[str, str]], float] = {
+        (line, direction, pair): cv for cv, line, direction, pair, *_ in ranked_cv
+    }
+    hourly_by_key: Dict[Tuple[str, int, Tuple[str, str]], float] = {
+        (line, direction, pair): pct
         for pct, line, direction, pair, *_ in ranked_hourly_range
-        if pct >= min_hourly_range_pct
+    }
+
+    flagged_keys = {key for key, cv in cv_by_key.items() if cv >= min_cv} | {
+        key for key, pct in hourly_by_key.items() if pct >= min_hourly_range_pct
     }
     flagged_edges = sorted(flagged_keys)
+    passing_edges = total_cv_edges - len(flagged_edges)
 
-    print("=== Summary ===")
+    _print_section_header("Summary")
     print(f"{total_cv_edges} sw edges analyzed.\n")
     print(
         f"Stability (CV): {stable_cv} stable/extremely stable "
         f"({_format_pct(stable_cv, total_cv_edges)}), {acceptable_cv} "
         f"acceptable ({_format_pct(acceptable_cv, total_cv_edges)}), "
-        f"{investigate_cv} need investigation "
-        f"({_format_pct(investigate_cv, total_cv_edges)})."
+        f"{unstable_cv} unstable "
+        f"({_format_pct(unstable_cv, total_cv_edges)})."
     )
     print(
         f"Time-of-day: {static_ok} edges have a static weight that's fine "
@@ -727,19 +770,54 @@ def print_executive_summary(
         "would benefit from time-dependent routing "
         f"({_format_pct(time_dependent, total_hourly_edges)})."
     )
+    print(
+        "\nA CV failure means the mean itself is noisy at any time of day - "
+        "the static weight is unreliable in general, no matter when you "
+        "query it. An hourly-range failure means the mean is fine as long "
+        "as you account for time-of-day - it's stable within an hour, but "
+        "shifts between rush and off-peak, so a single static weight "
+        "averages over a real pattern instead of noise."
+    )
+
+    print(
+        f"\nVerdict: mean(total) is a trustworthy static weight for "
+        f"{passing_edges} of {total_cv_edges} edges "
+        f"({_format_pct(passing_edges, total_cv_edges)}). The remaining "
+        f"{len(flagged_edges)} ({_format_pct(len(flagged_edges), total_cv_edges)}) "
+        "need revisiting, and not necessarily with the same fix - see which "
+        "test flagged each one below."
+    )
 
     if not flagged_edges:
-        print("\nNo edges crossed either threshold; no edges need attention.")
         return
 
     print(
         f"\nEdges needing attention ({len(flagged_edges)}, high CV or high hourly range):"
     )
     for line_short_name, direction_id, (a, b) in flagged_edges:
-        label_a = f"{line_short_name}-{stop_names.get(a, a)}"
-        label_b = f"{line_short_name}-{stop_names.get(b, b)}"
+        key = (line_short_name, direction_id, (a, b))
+        label_a = f"{stop_names.get(a, a)}"
+        label_b = f"{stop_names.get(b, b)}"
+
+        reasons: List[str] = []
+        cv = cv_by_key.get(key)
+        if cv is not None and cv >= min_cv:
+            reasons.append(f"CV={cv:.1%}")
+        hourly_pct = hourly_by_key.get(key)
+        if hourly_pct is not None and hourly_pct >= min_hourly_range_pct:
+            reasons.append(f"hourly range={hourly_pct:.1%}")
+
+        group = (line_short_name, direction_id)
+        door_record = avg_door_by_group.get(group, {}).get((a, b))
+        sw_record = avg_sw_by_group.get(group, {}).get((a, b))
+        if door_record is not None and sw_record is not None:
+            dominant = "door" if door_record[2] >= sw_record[2] else "sw"
+            reasons.append(f"{dominant}-dominated")
+
+        reasons_str = f"  [{', '.join(reasons)}]" if reasons else ""
         print(
-            f"  - {line_short_name} dir{direction_id}  {a} ({label_a}) -> {b} ({label_b})"
+            f"  - {line_short_name} dir{direction_id}  {a} ({label_a}) -> "
+            f"{b} ({label_b}){reasons_str}"
         )
 
 
@@ -788,18 +866,25 @@ def main() -> None:
     ] = {}
     sw_hourly_by_group: Dict[GroupKey, Dict[Tuple[str, str], Dict[int, List[int]]]] = {}
     ranked_total: List[RankedEdge] = []
-    ranked_door: List[RankedEdge] = []
-    ranked_sw: List[RankedEdge] = []
     ranked_cv: List[RankedCV] = []
     ranked_hourly_range: List[RankedHourlyRange] = []
     relevant_stop_ids: Set[str] = set()
     stop_names: Dict[str, str] = {}
 
+    _print_section_header("Objective")
     print(
-        "We rank the subway sw edges (platform -> platform) by travel-time "
-        "stdev, to see whether the mean is a trustworthy weight for "
-        "shortest-path algorithms on the weighted graph, or hides a real "
-        "time-of-day pattern.\n"
+        "Is mean(total) per sw edge (platform -> platform) a trustworthy "
+        "static weight for shortest-path algorithms on the weighted graph? "
+        "We test this two ways:\n"
+        "  1. overall variability (stdev/CV) - is the spread small relative "
+        "to the mean, regardless of cause?\n"
+        "  2. time-of-day structure (hourly range) - does the mean hide a "
+        "rush/off-peak pattern a static weight would wash out?\n"
+        "The edge weight itself stays total ('arrival_b - arrival_a'). "
+        "Every flagged edge also gets it split into door ('departure_a - "
+        "arrival_a', dwell at the boarding platform) and sw ('arrival_b - "
+        "departure_a', time spent actually moving between platforms), as a "
+        "diagnostic for *why* it's noisy, not as a third thing being proven.\n"
     )
 
     check_missing_files([STOP_TIMES_FILE, STOPS_FILE, TRIPS_FILE])
@@ -836,8 +921,6 @@ def main() -> None:
     }
 
     ranked_total = rank_edges_by_stdev(group_pairs, avg_by_group)
-    ranked_door = rank_edges_by_stdev(group_pairs, avg_door_by_group)
-    ranked_sw = rank_edges_by_stdev(group_pairs, avg_sw_by_group)
     ranked_cv = rank_edges_by_cv(group_pairs, avg_by_group, samples_by_group)
 
     door_hourly_by_group, sw_hourly_by_group = (
@@ -852,30 +935,10 @@ def main() -> None:
     print(f"Number of edges with at least one sample: {len(ranked_total)}\n")
     print_ranked_edges(
         ranked_total,
-        avg_by_group,
         avg_door_by_group,
         avg_sw_by_group,
         stop_names,
         MIN_STDEV_TO_PRINT_SECONDS_TOTAL,
-        "total",
-    )
-    print_ranked_edges(
-        ranked_door,
-        avg_by_group,
-        avg_door_by_group,
-        avg_sw_by_group,
-        stop_names,
-        MIN_STDEV_TO_PRINT_SECONDS_DOOR,
-        "door",
-    )
-    print_ranked_edges(
-        ranked_sw,
-        avg_by_group,
-        avg_door_by_group,
-        avg_sw_by_group,
-        stop_names,
-        MIN_STDEV_TO_PRINT_SECONDS_SW,
-        "sw",
     )
     print_cv_ranking(ranked_cv, stop_names, MIN_CV_TO_PRINT)
     print_hourly_range_ranking(
@@ -885,6 +948,8 @@ def main() -> None:
     print_executive_summary(
         ranked_cv,
         ranked_hourly_range,
+        avg_door_by_group,
+        avg_sw_by_group,
         stop_names,
         MIN_CV_TO_PRINT,
         MIN_HOURLY_RANGE_PCT_TO_PRINT,
