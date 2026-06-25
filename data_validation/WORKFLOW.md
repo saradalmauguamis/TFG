@@ -8,10 +8,10 @@ There are two kinds of steps here:
 - **Core pipeline** — a strict sequential chain. Each step's output is required by the next, so
   these must run in order.
 - **Independent checks** — `checks/file_connection_checks.ipynb`, `checks/pathways_checks.ipynb`,
-  `checks/trips_checks.ipynb`, and the *Does stop_sequence increment by one?* block of
-  `checks/stop_times_checks.ipynb` only need `processing/1_subway.py` to have run. They don't
-  produce any file consumed downstream, don't gate each other, and can run in any order (or be
-  skipped) without affecting the rest of the pipeline.
+  `checks/trips_checks.ipynb`, and `checks/stop_times/sequence_increment_check.py` only need
+  `processing/1_subway.py` to have run. They don't produce any file consumed downstream, don't
+  gate each other, and can run in any order (or be skipped) without affecting the rest of the
+  pipeline.
 
 ---
 
@@ -21,7 +21,11 @@ There are two kinds of steps here:
 
    Extracts subway-only rows from `routes`, `stop_times`, `stops`, `trips`.
 
-2. **`checks/stop_times_checks.ipynb`** → *Duplicate full trip_id blocs in stop_times*
+2. **`checks/stop_times/1_duplicate_trips_check.py`** → *Duplicate full trip_id blocs in stop_times*
+
+   ```bash
+   python data_validation/checks/stop_times/1_duplicate_trips_check.py
+   ```
 
    Reads `stop_times_subway.txt`/`trips_subway.txt` from `1_subway`.
    → produces `trip_ids_to_eliminate.txt` in `2_duplicated_trips`.
@@ -31,12 +35,21 @@ There are two kinds of steps here:
    Consumes `trip_ids_to_eliminate.txt` (step 2) to remove duplicate trips, writing
    `stop_times_cleaned.txt` and `trips_cleaned.txt`.
 
-4. **`checks/stop_times_checks.ipynb`** → *After deduplication* *(verification)*
+4. **`checks/stop_times/1_duplicate_trips_check.py verify`** *(verification)*
+
+   ```bash
+   python data_validation/checks/stop_times/1_duplicate_trips_check.py verify
+   ```
 
    Re-runs the same duplicate-detection check on `stop_times_cleaned.txt`/`trips_cleaned.txt`
    (step 3); no signature should now map to 2+ trip_id. No file output.
 
-5. **`checks/stop_times_checks.ipynb`** → *The canonical stop sequence is followed correctly?*
+5. **`checks/stop_times/2_canonical_sequence_check.py`** → *The canonical stop sequence is
+   followed correctly?*
+
+   ```bash
+   python data_validation/checks/stop_times/2_canonical_sequence_check.py
+   ```
 
    Reads `stop_times_cleaned.txt` (step 3).
    → produces `wrong_stop_sequences.txt` in `3_stop_sequence`.
@@ -46,13 +59,21 @@ There are two kinds of steps here:
    Consumes `wrong_stop_sequences.txt` (step 5) to open sequence gaps, writing
    `stop_times_sequence.txt`.
 
-7. **`checks/stop_times_checks.ipynb`** → *After the sequence fix* *(verification)*
+7. **`checks/stop_times/2_canonical_sequence_check.py verify`** *(verification)*
+
+   ```bash
+   python data_validation/checks/stop_times/2_canonical_sequence_check.py verify
+   ```
 
    Re-runs the same canonical-order check on `stop_times_sequence.txt` (step 6); bad pairs should
    now be non-consecutive. No file output.
 
-8. **`checks/stop_times_checks.ipynb`** → *Cases when arrival_time and departure_time is the
-   same*
+8. **`checks/stop_times/3_door_times_check.py`** → *Cases when arrival_time and departure_time is
+   the same*
+
+   ```bash
+   python data_validation/checks/stop_times/3_door_times_check.py
+   ```
 
    Reads `stop_times_sequence.txt` (step 6) and `trips_cleaned.txt` (step 3).
    → produces `doors.txt` in `4_doors_time`.
@@ -62,7 +83,11 @@ There are two kinds of steps here:
    Consumes `doors.txt` (step 8) and `trips_cleaned.txt` (step 3) to adjust terminal-stop
    timestamps, writing `stop_times_doors.txt`.
 
-10. **`checks/stop_times_checks.ipynb`** → *After the door-time fix* *(verification)*
+10. **`checks/stop_times/3_door_times_check.py verify`** *(verification)*
+
+    ```bash
+    python data_validation/checks/stop_times/3_door_times_check.py verify
+    ```
 
     Re-runs the arrival/departure check on `stop_times_doors.txt` (step 9); no stop should still
     have `arrival_time == departure_time`. No file output.
@@ -89,7 +114,7 @@ Run anytime after step 1 of the core pipeline. None of these produce a file cons
   subway-filtered equivalent exists because all available pathways/transfers are already only
   for the subway) and `stops_subway.txt` (`1_subway`).
 - **`checks/trips_checks.ipynb`** — reads `routes_subway.txt`/`trips_subway.txt` (`1_subway`).
-- **`checks/stop_times_checks.ipynb`** → *Does stop_sequence increment by one?* — reads
+- **`checks/stop_times/sequence_increment_check.py`** — reads
   `stop_times_subway.txt`/`trips_subway.txt` (`1_subway`); duplicates don't affect a trip's own
   sequence continuity, so it doesn't need step 2's deduplication.
 
@@ -111,8 +136,8 @@ file consumed downstream, but answer design questions for the graph build.
 
 ## Why the core pipeline jumps around
 
-`checks/stop_times_checks.ipynb` is interleaved with three processing scripts because each
+The `checks/stop_times/` scripts are interleaved with three processing scripts because each
 script needs a check to first detect what to fix (e.g. `wrong_stop_sequences.txt`), and the same
-notebook is then re-run after the fix to confirm it worked. See
+check script is then re-run with `verify` after the fix to confirm it worked. See
 [`checks/README.md`](checks/README.md) and [`processing/README.md`](processing/README.md) for
 the per-file/per-question breakdown; this page only fixes the order.

@@ -10,7 +10,11 @@ data_validation/
 ├── checks/
 │   ├── file_connection_checks.ipynb
 │   ├── pathways_checks.ipynb
-│   ├── stop_times_checks.ipynb
+│   ├── stop_times/
+│   │   ├── sequence_increment_check.py
+│   │   ├── 1_duplicate_trips_check.py
+│   │   ├── 2_canonical_sequence_check.py
+│   │   └── 3_door_times_check.py
 │   └── trips_checks.ipynb
 ├── processing/
 │   ├── 1_subway.py
@@ -33,15 +37,15 @@ Shared path constants, file I/O helpers, and data loading functions used across 
 
 ### [`checks/`](checks/README.md) — data consistency validation
 
-Notebooks that validate data at each stage of the pipeline. `file_connection_checks.ipynb`,
-`pathways_checks.ipynb`, and `trips_checks.ipynb` are independent of pipeline order — they only
-need `processing/1_subway.py` to have run. `stop_times_checks.ipynb` is the only one with a
-fixed position, since it's interleaved with three processing scripts (see
-[`WORKFLOW.md`](WORKFLOW.md)).
+Notebooks (and, for `stop_times`, standalone scripts) that validate data at each stage of the
+pipeline. `file_connection_checks.ipynb`, `pathways_checks.ipynb`, and `trips_checks.ipynb` are
+independent of pipeline order — they only need `processing/1_subway.py` to have run. `stop_times/`
+is the only one with a fixed position, since most of its scripts are interleaved with three
+processing scripts (see [`WORKFLOW.md`](WORKFLOW.md)).
 
 - `file_connection_checks.ipynb` — file relationship checks
 - `pathways_checks.ipynb` — pathway and platform connectivity checks
-- `stop_times_checks.ipynb` — stop_times consistency and sequence checks
+- `stop_times/` — stop_times consistency and sequence checks, one script per check
 - `trips_checks.ipynb` — trip metadata pairing checks
 
 ---
