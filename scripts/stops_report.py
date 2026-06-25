@@ -2,12 +2,14 @@ import sys
 from pathlib import Path
 from typing import Any, Dict, List, Set
 
-from basics import subway_route_names_stop_ids, subway_route_names_stop_ids_artificial
-
 REPO_ROOT = Path(__file__).resolve().parents[1]
 if str(REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(REPO_ROOT))
 
+from scripts.basics import (  # noqa: E402
+    subway_route_names_stop_ids,
+    subway_route_names_stop_ids_artificial,
+)
 from data_validation.gtfs_utils import (  # noqa: E402
     PATHWAYS_FILE as PATHWAYS_SHARED_FILE,
     PATHWAYS_RAW_FILE,

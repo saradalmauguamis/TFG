@@ -22,7 +22,7 @@ PROJECT_ROOT = Path(__file__).resolve().parents[2]
 if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT))
 
-import scripts.basics as basics  # noqa: E402
+from scripts.basics import subway_routes_names_ids  # noqa: E402
 from data_validation.gtfs_utils import (  # noqa: E402
     _PROJECT_ROOT,
     DOORS_FILE,
@@ -159,7 +159,7 @@ def main() -> None:
     door_seconds = load_door_seconds(DOORS_FILE)
     print(f"Door entries loaded: {len(door_seconds)}")
 
-    rid_to_name = {rid: name for name, rid in basics.subway_routes_names_ids.items()}
+    rid_to_name = {rid: name for name, rid in subway_routes_names_ids.items()}
     trip_to_line = load_trip_to_line(TRIPS_FILE, rid_to_name)
     trip_bounds = load_trip_sequence_bounds(STOP_TIMES_SEQUENCE_FILE, set(trip_to_line))
 
