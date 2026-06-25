@@ -103,6 +103,7 @@ __all__ = [
     "load_platform_pairs_present",
     # Graph builders
     "build_graph_and_coverage",
+    "build_directed_entrance_edges",
     # Validation helpers
     "check_trip",
     "make_signature",
@@ -682,6 +683,41 @@ def build_graph_and_coverage(
             _add_entry(platform_to_entries, covered_platforms, stop_b, stop_a)
 
     return platform_graph, platform_to_entries, covered_platforms
+
+
+def build_directed_entrance_edges(
+    pathway_ids: Set[str],
+) -> Tuple[Dict[str, Set[str]], Dict[str, Set[str]]]:
+    """Build directed platform<->entrance edges, keyed by platform stop_id.
+
+    Unlike `build_graph_and_coverage`, which treats a platform and an entrance
+    as connected if *either* direction's pathway row exists, this keeps the
+    two directions separate so a caller can detect a one-way-only connection
+    (e.g. `PW.E.xxx_1.yyy` present without its inverse `PW.1.yyy_E.xxx`).
+
+    args:
+        pathway_ids: Pathway IDs to parse and classify.
+
+    returns:
+        Tuple of (platform_to_entrance, entrance_to_platform), both mapping a
+        platform stop_id to the set of entrance stop_ids reachable via a
+        pathway row in that direction only.
+    """
+    platform_to_entrance: Dict[str, Set[str]] = {}
+    entrance_to_platform: Dict[str, Set[str]] = {}
+
+    for pathway_id in pathway_ids:
+        match = PW_PAIR.match(pathway_id)
+        if not match:
+            continue
+        stop_a, stop_b = match.group("a"), match.group("b")
+
+        if stop_a.startswith("1.") and stop_b.startswith("E."):
+            platform_to_entrance.setdefault(stop_a, set()).add(stop_b)
+        elif stop_a.startswith("E.") and stop_b.startswith("1."):
+            entrance_to_platform.setdefault(stop_b, set()).add(stop_a)
+
+    return platform_to_entrance, entrance_to_platform
 
 
 # -----------------------------
