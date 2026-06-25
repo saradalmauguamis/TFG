@@ -38,6 +38,7 @@ from data_validation.gtfs_utils import (  # noqa: E402
     check_missing_files,
     print_file_disclaimer,
     collect_pair_samples_by_trip_group,
+    consecutive_pairs,
     load_stop_names,
     load_trip_ids_by_route,
     seconds_to_hms,
@@ -83,7 +84,7 @@ def build_pairs_by_lines(
             Line-tuple -> consecutive directed stop pairs.
     """
     return {
-        line_names: list(zip(stop_ids, stop_ids[1:]))
+        line_names: consecutive_pairs(stop_ids)
         for line_names, stop_ids in stops_by_lines.items()
     }
 
