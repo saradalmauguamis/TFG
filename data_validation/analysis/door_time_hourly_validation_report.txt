@@ -1,0 +1,245 @@
+
+======================================================================
+OBJECTIVE
+======================================================================
+
+`doors.txt` imputes door time two ways: partial stops (some trips have arrival_time == departure_time, some don't) get a flat mean from every trip *at that stop* where the times differ; canonical terminals (every trip equal) have no real samples of their own, so they borrow a flat mean pooled from every other stop on the line (or, for FM, from every other line). Does bucketing the underlying real samples by hour reveal a genuine time-of-day pattern worth using instead of either flat mean, or is there just not enough data per hour to trust it?
+
+Disclaimer: for coherence we will consider the next file(s) from .src/gtfs/data:
+ - stop_times_sequence.txt as 'stop_times' from /3_stop_sequence
+ - trips_cleaned.txt as 'trips' from /2_duplicated_trips
+ - stops_subway.txt as 'stops' from /1_subway
+
+
+
+======================================================================
+FEASIBILITY SUMMARY
+======================================================================
+
+41 partial stops analyzed.
+
+Not enough hourly data to bucket at all: 0 (0.0%) - fewer than 2 hours with >= 5 real samples, so most/all hours would fall back to the flat mean anyway.
+Enough hourly data, but flat mean is already fine: 8 (19.5%) - hourly range < 15% of the flat mean, i.e. bucketing by hour would mostly trade real signal for sampling noise.
+Enough hourly data AND a real time-of-day shift: 33 (80.5%) - these are the only stops where hour-bucketed door time would plausibly improve on the current flat mean.
+
+Verdict: out of 41 partial stops, hourly door-time imputation would help 33 (80.5%); the rest would gain nothing or trade stability for noise.
+
+======================================================================
+PARTIAL STOPS RANKED BY HOURLY RANGE
+======================================================================
+
+Hourly range = max(qualifying hourly mean) - min(qualifying hourly mean), normalized by the flat daily mean (range >= 15%): 33 of 41 feasible stops (80.5%)
+
+1. L10S  1.956 (Foc)  [range=25.35s, 63.91%, 24 qualifying hours]
+     flat mean            0:40 (39.66s) cnt=926 stdev=13.98s
+     min hourly mean  01:00      0:23 (23.44s)
+     max hourly mean  23:00      0:49 (48.79s)
+
+2. L9S  1.909 (Les Moreres)  [range=13.93s, 57.22%, 24 qualifying hours]
+     flat mean            0:24 (24.34s) cnt=925 stdev=4.23s
+     min hourly mean  07:00, 08:00, 10:00, 11:00, 12:00, 13:00, 14:00, 15:00, 16:00, 17:00, 18:00, 19:00, 20:00, 21:00, 22:00      0:23 (23.00s)
+     max hourly mean  02:00      0:37 (36.93s)
+
+3. L1  1.136 (Torras i Bages)  [range=11.60s, 50.48%, 24 qualifying hours]
+     flat mean            0:23 (22.98s) cnt=1406 stdev=4.80s
+     min hourly mean  05:00      0:21 (20.59s)
+     max hourly mean  21:00      0:32 (32.19s)
+
+4. L2  1.226 (Pep Ventura)  [range=8.28s, 48.34%, 24 qualifying hours]
+     flat mean            0:17 (17.12s) cnt=1188 stdev=6.36s
+     min hourly mean  00:00      0:12 (12.26s)
+     max hourly mean  10:00      0:21 (20.53s)
+
+5. L10S  1.954 (Zona Franca)  [range=19.68s, 47.98%, 20 qualifying hours]
+     flat mean            0:41 (41.02s) cnt=854 stdev=13.71s
+     min hourly mean  08:00      0:29 (28.59s)
+     max hourly mean  23:00      0:48 (48.27s)
+
+6. L9S  1.905 (Parc Nou)  [range=12.12s, 46.35%, 24 qualifying hours]
+     flat mean            0:26 (26.14s) cnt=925 stdev=3.67s
+     min hourly mean  08:00, 10:00, 11:00, 12:00, 13:00, 14:00, 15:00, 16:00, 17:00, 18:00, 19:00, 20:00, 21:00, 22:00      0:25 (25.00s)
+     max hourly mean  01:00      0:37 (37.12s)
+
+7. L9S  1.912 (Fira)  [range=12.08s, 46.03%, 24 qualifying hours]
+     flat mean            0:26 (26.24s) cnt=926 stdev=4.18s
+     min hourly mean  07:00, 08:00, 10:00, 11:00, 12:00, 13:00, 14:00, 15:00, 16:00, 17:00, 18:00, 19:00, 20:00, 21:00, 22:00      0:25 (25.00s)
+     max hourly mean  02:00      0:37 (37.08s)
+
+8. L2  1.216 (Sagrada Família)  [range=13.83s, 45.97%, 24 qualifying hours]
+     flat mean            0:30 (30.09s) cnt=1176 stdev=11.41s
+     min hourly mean  01:00      0:22 (22.44s)
+     max hourly mean  10:00      0:36 (36.27s)
+
+9. L3  1.333 (Vall d'Hebron)  [range=5.93s, 42.52%, 24 qualifying hours]
+     flat mean            0:14 (13.94s) cnt=1127 stdev=3.22s
+     min hourly mean  05:00      0:11 (10.70s)
+     max hourly mean  21:00      0:17 (16.62s)
+
+10. L1  1.134 (Fabra i Puig)  [range=11.88s, 40.99%, 24 qualifying hours]
+     flat mean            0:29 (28.97s) cnt=1411 stdev=4.75s
+     min hourly mean  05:00      0:27 (26.54s)
+     max hourly mean  21:00      0:38 (38.41s)
+
+11. L3  1.334 (Montbau)  [range=5.32s, 38.57%, 24 qualifying hours]
+     flat mean            0:14 (13.80s) cnt=1128 stdev=2.47s
+     min hourly mean  05:00      0:11 (10.83s)
+     max hourly mean  21:00      0:16 (16.15s)
+
+12. L5  1.521 (Diagonal)  [range=10.21s, 36.17%, 24 qualifying hours]
+     flat mean            0:28 (28.23s) cnt=1508 stdev=5.27s
+     min hourly mean  00:00, 01:00, 02:00, 03:00, 04:00, 05:00, 22:00, 23:00      0:20 (20.00s)
+     max hourly mean  21:00      0:30 (30.21s)
+
+13. L5  1.526 (La Sagrera)  [range=9.57s, 35.16%, 24 qualifying hours]
+     flat mean            0:27 (27.23s) cnt=1503 stdev=5.81s
+     min hourly mean  00:00, 01:00, 02:00, 03:00, 04:00, 05:00, 22:00, 23:00      0:20 (20.00s)
+     max hourly mean  06:00      0:30 (29.57s)
+
+14. L1  1.133 (La Sagrera)  [range=12.71s, 34.06%, 24 qualifying hours]
+     flat mean            0:37 (37.33s) cnt=1411 stdev=5.94s
+     min hourly mean  05:00      0:34 (33.60s)
+     max hourly mean  21:00      0:46 (46.31s)
+
+15. L3  1.337 (Canyelles)  [range=5.29s, 31.90%, 24 qualifying hours]
+     flat mean            0:17 (16.60s) cnt=1131 stdev=3.93s
+     min hourly mean  05:00      0:16 (15.55s)
+     max hourly mean  21:00      0:21 (20.84s)
+
+16. L5  1.531 (Horta)  [range=7.81s, 30.64%, 24 qualifying hours]
+     flat mean            0:25 (25.49s) cnt=1506 stdev=3.38s
+     min hourly mean  00:00, 02:00, 03:00, 04:00      0:20 (20.00s)
+     max hourly mean  21:00      0:28 (27.81s)
+
+17. L3  1.332 (Penitents)  [range=3.90s, 28.62%, 24 qualifying hours]
+     flat mean            0:14 (13.63s) cnt=1130 stdev=1.63s
+     min hourly mean  05:00      0:11 (10.89s)
+     max hourly mean  07:00      0:15 (14.79s)
+
+18. L3  1.326 (Catalunya)  [range=4.69s, 23.61%, 24 qualifying hours]
+     flat mean            0:20 (19.85s) cnt=1135 stdev=1.56s
+     min hourly mean  05:00      0:16 (15.78s)
+     max hourly mean  17:00      0:20 (20.47s)
+
+19. L2  1.222 (Verneda)  [range=3.56s, 22.37%, 24 qualifying hours]
+     flat mean            0:16 (15.92s) cnt=1178 stdev=2.48s
+     min hourly mean  02:00      0:14 (14.44s)
+     max hourly mean  05:00      0:18 (18.00s)
+
+20. L2  1.221 (La Pau)  [range=3.63s, 22.08%, 24 qualifying hours]
+     flat mean            0:16 (16.44s) cnt=1178 stdev=5.69s
+     min hourly mean  01:00      0:15 (15.46s)
+     max hourly mean  04:00      0:19 (19.09s)
+
+21. L3  1.327 (Passeig de Gràcia)  [range=3.27s, 20.42%, 24 qualifying hours]
+     flat mean            0:16 (16.00s) cnt=1133 stdev=1.59s
+     min hourly mean  05:00      0:13 (13.33s)
+     max hourly mean  16:00      0:17 (16.60s)
+
+22. L3  1.321 (Espanya)  [range=3.71s, 19.41%, 24 qualifying hours]
+     flat mean            0:19 (19.10s) cnt=1135 stdev=1.55s
+     min hourly mean  05:00      0:16 (16.00s)
+     max hourly mean  18:00      0:20 (19.71s)
+
+23. L5  1.514 (Pubilla Cases)  [range=4.54s, 19.30%, 24 qualifying hours]
+     flat mean            0:24 (23.53s) cnt=1506 stdev=2.27s
+     min hourly mean  00:00, 01:00, 02:00, 03:00, 04:00, 22:00, 23:00      0:20 (20.00s)
+     max hourly mean  10:00      0:25 (24.54s)
+
+24. L5  1.513 (Can Vidalet)  [range=3.72s, 19.00%, 24 qualifying hours]
+     flat mean            0:20 (19.57s) cnt=1482 stdev=2.08s
+     min hourly mean  06:00      0:19 (18.86s)
+     max hourly mean  05:00      0:23 (22.58s)
+
+25. L4  1.424 (Urquinaona)  [range=2.80s, 17.81%, 24 qualifying hours]
+     flat mean            0:16 (15.72s) cnt=1309 stdev=3.77s
+     min hourly mean  01:00, 02:00, 03:00, 04:00      0:14 (14.00s)
+     max hourly mean  06:00      0:17 (16.80s)
+
+26. L1  1.118 (Santa Eulàlia)  [range=5.20s, 17.21%, 24 qualifying hours]
+     flat mean            0:30 (30.21s) cnt=1406 stdev=3.96s
+     min hourly mean  04:00      0:27 (27.27s)
+     max hourly mean  07:00      0:32 (32.47s)
+
+27. L1  1.122 (Espanya)  [range=5.72s, 17.04%, 24 qualifying hours]
+     flat mean            0:34 (33.54s) cnt=1411 stdev=5.12s
+     min hourly mean  02:00      0:31 (30.56s)
+     max hourly mean  06:00      0:36 (36.27s)
+
+28. L4  1.428 (Joanic)  [range=2.62s, 16.68%, 24 qualifying hours]
+     flat mean            0:16 (15.73s) cnt=1307 stdev=3.78s
+     min hourly mean  01:00, 02:00, 03:00, 04:00      0:14 (14.00s)
+     max hourly mean  07:00      0:17 (16.62s)
+
+29. L4  1.418 (Poblenou)  [range=2.58s, 16.41%, 24 qualifying hours]
+     flat mean            0:16 (15.72s) cnt=1307 stdev=3.78s
+     min hourly mean  01:00, 02:00, 03:00, 04:00      0:14 (14.00s)
+     max hourly mean  08:00      0:17 (16.58s)
+
+30. L1  1.129 (Marina)  [range=3.54s, 15.74%, 24 qualifying hours]
+     flat mean            0:22 (22.48s) cnt=1411 stdev=2.23s
+     min hourly mean  00:00      0:21 (20.73s)
+     max hourly mean  06:00      0:24 (24.27s)
+
+31. L1  1.125 (Universitat)  [range=3.52s, 15.67%, 24 qualifying hours]
+     flat mean            0:22 (22.49s) cnt=1411 stdev=2.25s
+     min hourly mean  00:00      0:21 (20.76s)
+     max hourly mean  07:00      0:24 (24.29s)
+
+32. L5  1.533 (El Coll | La Teixonera)  [range=3.41s, 15.29%, 24 qualifying hours]
+     flat mean            0:22 (22.28s) cnt=1513 stdev=2.79s
+     min hourly mean  00:00, 02:00, 03:00, 04:00      0:20 (20.00s)
+     max hourly mean  06:00      0:23 (23.41s)
+
+33. L1  1.119 (Mercat Nou)  [range=2.75s, 15.20%, 24 qualifying hours]
+     flat mean            0:18 (18.07s) cnt=1410 stdev=1.93s
+     min hourly mean  04:00      0:17 (16.54s)
+     max hourly mean  07:00      0:19 (19.29s)
+
+
+======================================================================
+CANONICAL TERMINAL / FM DONOR POOL FEASIBILITY
+======================================================================
+
+11 donor pools analyzed (one per line that has real door-time samples, plus 'FM fallback (pooled non-FM lines)'). A canonical terminal's imputed door time is currently `round_half_up_mean` of its line's pool (or the FM fallback pool, for FM); this checks whether splitting that same pool by hour would change anything.
+
+Not enough hourly data to bucket at all: 0 (0.0%) - fewer than 2 hours with >= 5 real samples.
+Enough hourly data, but flat mean is already fine: 5 (45.5%) - hourly range < 15% of the flat mean.
+Enough hourly data AND a real time-of-day shift: 6 (54.5%) - these are the only pools where hour-bucketing a canonical terminal's donor mean would plausibly improve on the current flat mean.
+
+Verdict: out of 11 donor pools, hourly imputation for canonical terminals (and FM) would help 6 (54.5%); the rest would gain nothing or trade stability for noise.
+
+======================================================================
+DONOR POOLS RANKED BY HOURLY RANGE
+======================================================================
+
+Hourly range = max(qualifying hourly mean) - min(qualifying hourly mean), normalized by the flat pool mean (range >= 15%): 6 of 11 feasible pools (54.5%)
+
+1. L10S  [range=18.41s, 50.15%, 24 qualifying hours]
+     flat mean            0:37 (36.71s) cnt=8123 stdev=13.89s
+     min hourly mean  01:00      0:24 (24.23s)
+     max hourly mean  23:00      0:43 (42.64s)
+
+2. L9S  [range=8.89s, 34.00%, 24 qualifying hours]
+     flat mean            0:26 (26.14s) cnt=11822 stdev=4.47s
+     min hourly mean  19:00      0:25 (25.34s)
+     max hourly mean  01:00      0:34 (34.23s)
+
+3. L11  [range=10.40s, 28.86%, 23 qualifying hours]
+     flat mean            0:36 (36.05s) cnt=1929 stdev=16.18s
+     min hourly mean  01:00, 03:00, 22:00      0:28 (28.00s)
+     max hourly mean  12:00      0:38 (38.40s)
+
+4. L3  [range=3.95s, 25.06%, 24 qualifying hours]
+     flat mean            0:16 (15.75s) cnt=27238 stdev=3.35s
+     min hourly mean  05:00      0:13 (12.95s)
+     max hourly mean  21:00      0:17 (16.90s)
+
+5. L1  [range=4.98s, 21.05%, 24 qualifying hours]
+     flat mean            0:24 (23.65s) cnt=39475 stdev=6.59s
+     min hourly mean  00:00      0:22 (21.86s)
+     max hourly mean  21:00      0:27 (26.84s)
+
+6. L2  [range=2.56s, 15.03%, 24 qualifying hours]
+     flat mean            0:17 (17.00s) cnt=18910 stdev=6.16s
+     min hourly mean  01:00      0:15 (15.29s)
+     max hourly mean  06:00      0:18 (17.85s)
