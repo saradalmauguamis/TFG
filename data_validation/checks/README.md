@@ -14,18 +14,18 @@ rest of `stop_times/` is tied to a fixed position, since it's interleaved with
 `processing/4_doors_time.py` (see [`WORKFLOW.md`](../WORKFLOW.md)).
 
 - `file_connection_checks.ipynb`: file relationship checks.
-  - All `stop_id` from `pathways` and `stop_times` exist in `stops`?
+  - All `stop_id` from `pathways`, `transfers`, and `stop_times` exist in `stops`?
   - All `route_id` from `trips` exist in `routes`?
   - All `trip_id` from `stop_times` exist in `trips`?
 
 - `pathways_checks.ipynb`: pathway and platform connectivity checks.
-  - All transfers from `transfers` are within `pathways`?
+  - Platform-to-platform `pathways` and `transfers` contain exactly the same pairs?
   - Each pathway `PW.a_b` has its inverse `PW.b_a`?
   - `traversal_time` is the same for both directions?
   - `traversal_time` is present, numeric, and multiple of 15?
   - Each entrance (`E.*`) is connected to a platform (`1.*`)?
   - Each platform (`1.*`) is connected to an entrance (`E.*`)?
-  - There is a pathway between each pair of platforms of the same stop?
+  - There is a transfer between each pair of platforms of the same stop?
 
 - `stop_times/`: stop_times consistency and sequence checks, one script per check, numbered in
   pipeline run order. Each numbered script takes an optional `verify` argument to re-run the same
