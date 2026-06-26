@@ -1,9 +1,8 @@
 """Fix stop_sequence gaps for out-of-order stops in subway trips.
 
 This script reads `wrong_stop_sequences.txt` from `STOP_SEQUENCE_BASE`, produced
-by running the canonical stop-sequence check in
-`data_validation/checks/stop_times_checks.ipynb`, and uses it to adjust
-stop_sequence values in `stop_times_cleaned.txt`.
+by running `data_validation/checks/stop_times/2_canonical_sequence_check.py`,
+and uses it to adjust stop_sequence values in `stop_times_cleaned.txt`.
 
 For each break in a trip (two consecutive stops not adjacent in the canonical
 route order) the sequence number of the breaking stop and every stop after it
