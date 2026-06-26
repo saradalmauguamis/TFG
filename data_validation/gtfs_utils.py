@@ -107,11 +107,13 @@ __all__ = [
     # Pathway / transfer helpers
     "iter_pathway_pairs",
     "load_transfer_pairs",
+    "load_transfer_pairs_present",
     "load_stops_info",
     # Platform helpers
     "load_platforms_by_name",
     "load_platform_pairs_present",
     # Graph builders
+    "build_platform_graph",
     "build_graph_and_coverage",
     "build_directed_entrance_edges",
     # Validation helpers
@@ -620,6 +622,23 @@ def load_platform_pairs_present(file_path: str) -> Set[Tuple[str, str]]:
     return pairs
 
 
+def load_transfer_pairs_present(file_path: str) -> Set[Tuple[str, str]]:
+    """Return undirected platform pairs (1.*, 1.*) present in transfers.txt.
+
+    args:
+        file_path: Input transfers file path.
+
+    returns:
+        Set of sorted platform-stop pairs.
+    """
+    pairs: Set[Tuple[str, str]] = set()
+    for stop_a, stop_b in load_transfer_pairs(file_path):
+        if stop_a and stop_b:
+            first, second = sorted((stop_a, stop_b))
+            pairs.add((first, second))
+    return pairs
+
+
 # -----------------------------
 # Platform graph helpers
 # -----------------------------
@@ -655,21 +674,34 @@ def _add_entry(
     covered_platforms.add(platform_stop)
 
 
+def build_platform_graph(platform_pairs: Set[Tuple[str, str]]) -> Dict[str, Set[str]]:
+    """Build an undirected platform (1.*) adjacency map from canonical pairs.
+
+    args:
+        platform_pairs: Set of sorted (stop_a, stop_b) platform pairs, e.g. from
+            `load_transfer_pairs_present` or `load_platform_pairs_present`.
+
+    returns:
+        Adjacency map of platform stop IDs to the set of directly connected
+        platform stop IDs. Edges are undirected: when two platforms are
+        connected both appear in each other's adjacency set.
+    """
+    platform_graph: Dict[str, Set[str]] = {}
+    for stop_a, stop_b in platform_pairs:
+        _add_platform_edge(platform_graph, stop_a, stop_b)
+    return platform_graph
+
+
 def build_graph_and_coverage(
     pathway_ids: Set[str],
-) -> Tuple[Dict[str, Set[str]], Dict[str, Set[str]], Set[str]]:
-    """Build the platform graph and entrance coverage information.
+) -> Tuple[Dict[str, Set[str]], Set[str]]:
+    """Build platform-entrance coverage information from pathways.
 
     args:
         pathway_ids: Pathway IDs to parse and classify.
 
         returns:
-                Tuple containing three elements:
-
-                - `platform_graph` (Dict[str, Set[str]]): adjacency map of platform stop IDs
-                    (IDs starting with `1.`) to the set of directly connected platform stop IDs.
-                    Edges are undirected: when two platforms are connected both appear in each
-                    other's adjacency set.
+                Tuple containing two elements:
 
                 - `platform_to_entries` (Dict[str, Set[str]]): mapping from a platform stop ID
                     to the set of entrance stop IDs (IDs starting with `E.`) that connect to that
@@ -678,7 +710,6 @@ def build_graph_and_coverage(
                 - `covered_platforms` (Set[str]): set of platform stop IDs that have at least
                     one connected entrance (i.e., the keys of `platform_to_entries`).
     """
-    platform_graph: Dict[str, Set[str]] = {}
     platform_to_entries: Dict[str, Set[str]] = {}
     covered_platforms: Set[str] = set()
 
@@ -688,15 +719,12 @@ def build_graph_and_coverage(
             continue
         stop_a, stop_b = match.group("a"), match.group("b")
 
-        if stop_a.startswith("1.") and stop_b.startswith("1."):
-            _add_platform_edge(platform_graph, stop_a, stop_b)
-
         if stop_a.startswith("1.") and stop_b.startswith("E."):
             _add_entry(platform_to_entries, covered_platforms, stop_a, stop_b)
         elif stop_b.startswith("1.") and stop_a.startswith("E."):
             _add_entry(platform_to_entries, covered_platforms, stop_b, stop_a)
 
-    return platform_graph, platform_to_entries, covered_platforms
+    return platform_to_entries, covered_platforms
 
 
 def build_directed_entrance_edges(

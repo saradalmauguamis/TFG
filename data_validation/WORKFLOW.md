@@ -107,8 +107,9 @@ There are two kinds of steps here:
 
 Run anytime after step 1 of the core pipeline. None of these produce a file consumed elsewhere.
 
-- **`checks/file_connection_checks.ipynb`** — reads `pathways.txt` (`0_raw`, no subway-filtered
-  equivalent exists because all available pathways are already only for the subway) and
+- **`checks/file_connection_checks.ipynb`** — reads `pathways.txt`/`transfers.txt` (`0_raw`, no
+  subway-filtered equivalent exists because all available pathways/transfers are already only
+  for the subway) and
   `routes_subway.txt`/`stops_subway.txt`/`stop_times_subway.txt`/`trips_subway.txt` (`1_subway`).
 - **`checks/pathways_checks.ipynb`** — reads `pathways.txt`/`transfers.txt` (`0_raw`, no
   subway-filtered equivalent exists because all available pathways/transfers are already only
