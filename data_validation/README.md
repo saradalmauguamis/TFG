@@ -10,7 +10,11 @@ data_validation/
 ├── checks/
 │   ├── file_connection_checks.ipynb
 │   ├── pathways_checks.ipynb
-│   ├── stop_times_checks.ipynb
+│   ├── stop_times/
+│   │   ├── sequence_increment_check.py
+│   │   ├── 1_duplicate_trips_check.py
+│   │   ├── 2_canonical_sequence_check.py
+│   │   └── 3_door_times_check.py
 │   └── trips_checks.ipynb
 ├── processing/
 │   ├── 1_subway.py
@@ -19,8 +23,9 @@ data_validation/
 │   ├── 4_doors_time.py
 │   └── 5_shared_platforms_duplication.py
 └── analysis/
+    ├── shared_platforms.py
     ├── directional_asymmetry.py
-    └── shared_platforms.py
+    └── edge_weight_validation.py
 ```
 
 ---
@@ -33,15 +38,15 @@ Shared path constants, file I/O helpers, and data loading functions used across 
 
 ### [`checks/`](checks/README.md) — data consistency validation
 
-Notebooks that validate data at each stage of the pipeline. `file_connection_checks.ipynb`,
-`pathways_checks.ipynb`, and `trips_checks.ipynb` are independent of pipeline order — they only
-need `processing/1_subway.py` to have run. `stop_times_checks.ipynb` is the only one with a
-fixed position, since it's interleaved with three processing scripts (see
-[`WORKFLOW.md`](WORKFLOW.md)).
+Notebooks (and, for `stop_times`, standalone scripts) that validate data at each stage of the
+pipeline. `file_connection_checks.ipynb`, `pathways_checks.ipynb`, and `trips_checks.ipynb` are
+independent of pipeline order — they only need `processing/1_subway.py` to have run. `stop_times/`
+is the only one with a fixed position, since most of its scripts are interleaved with three
+processing scripts (see [`WORKFLOW.md`](WORKFLOW.md)).
 
 - `file_connection_checks.ipynb` — file relationship checks
 - `pathways_checks.ipynb` — pathway and platform connectivity checks
-- `stop_times_checks.ipynb` — stop_times consistency and sequence checks
+- `stop_times/` — stop_times consistency and sequence checks, one script per check
 - `trips_checks.ipynb` — trip metadata pairing checks
 
 ---
@@ -62,5 +67,6 @@ Scripts that transform raw GTFS files into cleaned, stage-by-stage outputs.
 
 Read-only scripts that answer specific questions to help decide graph design.
 
-- `directional_asymmetry.py` — compare directional travel times between adjacent platforms
 - `shared_platforms.py` — compare inter-platform travel times across lines sharing a platform
+- `directional_asymmetry.py` — compare directional travel times between adjacent platforms
+- `edge_weight_validation.py` — validate whether mean(total) travel time is a trustworthy static edge weight

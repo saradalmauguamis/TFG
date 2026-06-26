@@ -4,7 +4,17 @@ import sys
 from collections import defaultdict
 from pathlib import Path
 from statistics import mean, stdev
-from typing import DefaultDict, Dict, Hashable, Iterable, List, Optional, Set, Tuple
+from typing import (
+    DefaultDict,
+    Dict,
+    Hashable,
+    Iterable,
+    List,
+    Optional,
+    Sequence,
+    Set,
+    Tuple,
+)
 
 # Ensure the project root is on sys.path so that shared scripts can be imported.
 _PROJECT_ROOT = str(Path(__file__).resolve().parents[1])
@@ -103,6 +113,7 @@ __all__ = [
     "load_platform_pairs_present",
     # Graph builders
     "build_graph_and_coverage",
+    "build_directed_entrance_edges",
     # Validation helpers
     "check_trip",
     "make_signature",
@@ -116,7 +127,11 @@ __all__ = [
     "build_shared_platform_lines",
     "format_stop_label",
     # Directed pair travel-time helpers
+    "consecutive_pairs",
+    "build_trip_groups_by_line",
     "collect_pair_samples_by_trip_group",
+    "collect_pair_door_sw_samples_by_trip_group",
+    "collect_pair_door_sw_samples_by_trip_group_hourly",
     "average_times_for_pairs",
 ]
 
@@ -684,6 +699,41 @@ def build_graph_and_coverage(
     return platform_graph, platform_to_entries, covered_platforms
 
 
+def build_directed_entrance_edges(
+    pathway_ids: Set[str],
+) -> Tuple[Dict[str, Set[str]], Dict[str, Set[str]]]:
+    """Build directed platform<->entrance edges, keyed by platform stop_id.
+
+    Unlike `build_graph_and_coverage`, which treats a platform and an entrance
+    as connected if *either* direction's pathway row exists, this keeps the
+    two directions separate so a caller can detect a one-way-only connection
+    (e.g. `PW.E.xxx_1.yyy` present without its inverse `PW.1.yyy_E.xxx`).
+
+    args:
+        pathway_ids: Pathway IDs to parse and classify.
+
+    returns:
+        Tuple of (platform_to_entrance, entrance_to_platform), both mapping a
+        platform stop_id to the set of entrance stop_ids reachable via a
+        pathway row in that direction only.
+    """
+    platform_to_entrance: Dict[str, Set[str]] = {}
+    entrance_to_platform: Dict[str, Set[str]] = {}
+
+    for pathway_id in pathway_ids:
+        match = PW_PAIR.match(pathway_id)
+        if not match:
+            continue
+        stop_a, stop_b = match.group("a"), match.group("b")
+
+        if stop_a.startswith("1.") and stop_b.startswith("E."):
+            platform_to_entrance.setdefault(stop_a, set()).add(stop_b)
+        elif stop_a.startswith("E.") and stop_b.startswith("1."):
+            entrance_to_platform.setdefault(stop_b, set()).add(stop_a)
+
+    return platform_to_entrance, entrance_to_platform
+
+
 # -----------------------------
 # Validation helpers
 # -----------------------------
@@ -910,6 +960,67 @@ def load_trip_sequence_bounds(
 # -----------------------------
 # Directed pair travel-time helpers
 # -----------------------------
+def consecutive_pairs(stop_ids: Sequence[str]) -> List[Tuple[str, str]]:
+    """Return consecutive directed stop pairs for an ordered stop list.
+
+    args:
+        stop_ids: Canonical stop order for a line (or a sub-sequence of it,
+            e.g. only the stops shared by a group of lines).
+
+    returns:
+        Directed pairs (a, b) for each consecutive position in stop_ids.
+    """
+    return list(zip(stop_ids, stop_ids[1:]))
+
+
+def build_trip_groups_by_line(
+    route_names_stop_ids: Dict[str, List[str]],
+    routes_names_ids: Dict[str, str],
+    trips_file: str,
+) -> Tuple[Dict[str, Tuple[str, int]], Dict[Tuple[str, int], List[Tuple[str, str]]]]:
+    """Map every trip on each line to its (line, direction_id) group and pairs.
+
+    Shared by every per-line/direction breakdown (directional asymmetry, edge
+    stdev, ...): each line's canonical stop order becomes direction_id=0's
+    directed pairs, and the reverse order becomes direction_id=1's, with every
+    trip assigned to its group via `load_trip_ids_by_route`.
+
+    args:
+        route_names_stop_ids: Mapping from line name to its ordered stop_id
+            list, e.g. `scripts.basics.subway_route_names_stop_ids` (or its
+            `_artificial` post-duplication variant, for analyses that read
+            stop_times after shared-platform duplication).
+        routes_names_ids: Mapping from line name to route_id, e.g.
+            `scripts.basics.subway_routes_names_ids`.
+        trips_file: Path to the trips file used to resolve each trip's
+            direction_id.
+
+    returns:
+        Tuple of (trip_id -> (line, direction_id), (line, direction_id) ->
+        directed stop pairs), so a single stop_times scan can serve every
+        line and direction.
+    """
+    trip_id_to_group: Dict[str, Tuple[str, int]] = {}
+    group_pairs: Dict[Tuple[str, int], List[Tuple[str, str]]] = {}
+
+    for line_short_name, stop_ids in route_names_stop_ids.items():
+        route_id = routes_names_ids.get(line_short_name)
+        if not route_id:
+            continue
+
+        pairs_dir0 = consecutive_pairs(stop_ids)
+        pairs_dir1 = [(b, a) for a, b in pairs_dir0]
+        trip_ids_by_direction = load_trip_ids_by_route(trips_file, route_id)
+        for trip_id in trip_ids_by_direction.get(0, set()):
+            trip_id_to_group[trip_id] = (line_short_name, 0)
+        for trip_id in trip_ids_by_direction.get(1, set()):
+            trip_id_to_group[trip_id] = (line_short_name, 1)
+        group_pairs[(line_short_name, 0)] = pairs_dir0
+        group_pairs[(line_short_name, 1)] = pairs_dir1
+
+    return trip_id_to_group, group_pairs
+
+
 def collect_pair_samples_by_trip_group(
     stop_times_file: str,
     trip_id_to_group: Dict[str, Hashable],
@@ -990,6 +1101,236 @@ def collect_pair_samples_by_trip_group(
         group: {pair: samples[group].get(pair, []) for pair in pairs}
         for group, pairs in group_pairs.items()
     }
+
+
+def collect_pair_door_sw_samples_by_trip_group(
+    stop_times_file: str,
+    trip_id_to_group: Dict[str, Hashable],
+    group_pairs: Dict[Hashable, List[Tuple[str, str]]],
+) -> Tuple[
+    Dict[Hashable, Dict[Tuple[str, str], List[int]]],
+    Dict[Hashable, Dict[Tuple[str, str], List[int]]],
+]:
+    """Split each pair's travel time into door time at A and sw (run) time A->B.
+
+    For a directed pair (A, B), `collect_pair_samples_by_trip_group` measures
+    `arrival_B - arrival_A`, which conflates two physically different things:
+    the dwell at the departure platform A (door open for boarding) and the
+    actual movement between A and B. This splits them using `departure_time`
+    at A: `door_time = departure_A - arrival_A` and
+    `sw_time = arrival_B - departure_A` (so `door_time + sw_time` equals the
+    travel time `collect_pair_samples_by_trip_group` would have reported).
+    `sw_time` is named for the graph's `sw` (platform-to-platform) edge type,
+    since it is the pure run time a future `sw` edge weight should use.
+
+    args:
+        stop_times_file: Path to the stop_times file to scan.
+        trip_id_to_group: Mapping from trip_id to its group key. Trips absent
+            from this mapping are skipped.
+        group_pairs: Mapping from group key to the directed stop pairs
+            relevant to that group; non-consecutive or unmatched adjacencies
+            are ignored.
+
+    returns:
+        Tuple of (door_samples_by_group, sw_samples_by_group), each shaped
+        like `collect_pair_samples_by_trip_group`'s return value so
+        `average_times_for_pairs` can be applied directly to either.
+    """
+    group_pair_sets = {group: set(pairs) for group, pairs in group_pairs.items()}
+    group_stop_ids = {
+        group: {stop_id for pair in pairs for stop_id in pair}
+        for group, pairs in group_pairs.items()
+    }
+    trip_rows: DefaultDict[str, List[Tuple[int, str, str, str]]] = defaultdict(list)
+    door_samples: Dict[Hashable, DefaultDict[Tuple[str, str], List[int]]] = {
+        group: defaultdict(list) for group in group_pairs
+    }
+    sw_samples: Dict[Hashable, DefaultDict[Tuple[str, str], List[int]]] = {
+        group: defaultdict(list) for group in group_pairs
+    }
+    door_by_group: Dict[Hashable, Dict[Tuple[str, str], List[int]]] = {}
+    sw_by_group: Dict[Hashable, Dict[Tuple[str, str], List[int]]] = {}
+
+    for row in read_dict_rows(stop_times_file):
+        trip_id = row.get("trip_id", "")
+        group = trip_id_to_group.get(trip_id)
+        if group is None or group not in group_pair_sets:
+            continue
+
+        stop_id = row.get("stop_id", "")
+        sequence_text = row.get("stop_sequence", "")
+        arrival_time = row.get("arrival_time", "")
+        departure_time = row.get("departure_time", "")
+        if not stop_id or not sequence_text:
+            continue
+        if stop_id not in group_stop_ids[group]:
+            continue
+
+        try:
+            stop_sequence = int(sequence_text)
+        except ValueError:
+            continue
+
+        trip_rows[trip_id].append(
+            (stop_sequence, stop_id, arrival_time, departure_time)
+        )
+
+    for trip_id, rows in trip_rows.items():
+        group = trip_id_to_group[trip_id]
+        if group not in group_pair_sets:
+            continue
+        pair_set = group_pair_sets[group]
+        rows.sort(key=lambda item: item[0])
+        for current_row, next_row in zip(rows, rows[1:]):
+            current_sequence, current_stop_id, current_arrival, current_departure = (
+                current_row
+            )
+            next_sequence, next_stop_id, next_arrival, _ = next_row
+            if next_sequence != current_sequence + 1:
+                continue
+            pair = (current_stop_id, next_stop_id)
+            if pair not in pair_set:
+                continue
+            if not current_arrival or not current_departure or not next_arrival:
+                continue
+
+            arrival_a = parse_time_to_seconds(current_arrival)
+            departure_a = parse_time_to_seconds(current_departure)
+            arrival_b = parse_time_to_seconds(next_arrival)
+
+            door_time = departure_a - arrival_a
+            while door_time < 0:
+                door_time += SECONDS_PER_DAY
+            sw_time = arrival_b - departure_a
+            while sw_time < 0:
+                sw_time += SECONDS_PER_DAY
+
+            door_samples[group][pair].append(door_time)
+            sw_samples[group][pair].append(sw_time)
+
+    door_by_group = {
+        group: {pair: door_samples[group].get(pair, []) for pair in pairs}
+        for group, pairs in group_pairs.items()
+    }
+    sw_by_group = {
+        group: {pair: sw_samples[group].get(pair, []) for pair in pairs}
+        for group, pairs in group_pairs.items()
+    }
+    return door_by_group, sw_by_group
+
+
+def collect_pair_door_sw_samples_by_trip_group_hourly(
+    stop_times_file: str,
+    trip_id_to_group: Dict[str, Hashable],
+    group_pairs: Dict[Hashable, List[Tuple[str, str]]],
+) -> Tuple[
+    Dict[Hashable, Dict[Tuple[str, str], Dict[int, List[int]]]],
+    Dict[Hashable, Dict[Tuple[str, str], Dict[int, List[int]]]],
+]:
+    """Like `collect_pair_door_sw_samples_by_trip_group`, bucketed by hour.
+
+    The hour bucket is the arrival hour at A (a departure-hour proxy), same
+    convention as the rest of this module's hour-bucketed helpers. Door and
+    sw samples within the same hour bucket are appended in lockstep (one
+    pair per trip occurrence), so `zip`-ing the two lists for a given hour
+    gives the matching per-trip total (`door + sw`).
+
+    args:
+        stop_times_file: Path to the stop_times file to scan.
+        trip_id_to_group: Mapping from trip_id to its group key. Trips absent
+            from this mapping are skipped.
+        group_pairs: Mapping from group key to the directed stop pairs
+            relevant to that group; non-consecutive or unmatched adjacencies
+            are ignored.
+
+    returns:
+        Tuple of (door_hourly_by_group, sw_hourly_by_group), each mapping
+        group key to {pair: {departure_hour: samples}}.
+    """
+    group_pair_sets = {group: set(pairs) for group, pairs in group_pairs.items()}
+    group_stop_ids = {
+        group: {stop_id for pair in pairs for stop_id in pair}
+        for group, pairs in group_pairs.items()
+    }
+    trip_rows: DefaultDict[str, List[Tuple[int, str, str, str]]] = defaultdict(list)
+    door_samples: Dict[
+        Hashable, DefaultDict[Tuple[str, str], DefaultDict[int, List[int]]]
+    ] = {group: defaultdict(lambda: defaultdict(list)) for group in group_pairs}
+    sw_samples: Dict[
+        Hashable, DefaultDict[Tuple[str, str], DefaultDict[int, List[int]]]
+    ] = {group: defaultdict(lambda: defaultdict(list)) for group in group_pairs}
+    door_hourly_by_group: Dict[
+        Hashable, Dict[Tuple[str, str], Dict[int, List[int]]]
+    ] = {}
+    sw_hourly_by_group: Dict[Hashable, Dict[Tuple[str, str], Dict[int, List[int]]]] = {}
+
+    for row in read_dict_rows(stop_times_file):
+        trip_id = row.get("trip_id", "")
+        group = trip_id_to_group.get(trip_id)
+        if group is None or group not in group_pair_sets:
+            continue
+
+        stop_id = row.get("stop_id", "")
+        sequence_text = row.get("stop_sequence", "")
+        arrival_time = row.get("arrival_time", "")
+        departure_time = row.get("departure_time", "")
+        if not stop_id or not sequence_text:
+            continue
+        if stop_id not in group_stop_ids[group]:
+            continue
+
+        try:
+            stop_sequence = int(sequence_text)
+        except ValueError:
+            continue
+
+        trip_rows[trip_id].append(
+            (stop_sequence, stop_id, arrival_time, departure_time)
+        )
+
+    for trip_id, rows in trip_rows.items():
+        group = trip_id_to_group[trip_id]
+        if group not in group_pair_sets:
+            continue
+        pair_set = group_pair_sets[group]
+        rows.sort(key=lambda item: item[0])
+        for current_row, next_row in zip(rows, rows[1:]):
+            current_sequence, current_stop_id, current_arrival, current_departure = (
+                current_row
+            )
+            next_sequence, next_stop_id, next_arrival, _ = next_row
+            if next_sequence != current_sequence + 1:
+                continue
+            pair = (current_stop_id, next_stop_id)
+            if pair not in pair_set:
+                continue
+            if not current_arrival or not current_departure or not next_arrival:
+                continue
+
+            arrival_a = parse_time_to_seconds(current_arrival)
+            departure_a = parse_time_to_seconds(current_departure)
+            arrival_b = parse_time_to_seconds(next_arrival)
+
+            door_time = departure_a - arrival_a
+            while door_time < 0:
+                door_time += SECONDS_PER_DAY
+            sw_time = arrival_b - departure_a
+            while sw_time < 0:
+                sw_time += SECONDS_PER_DAY
+
+            hour = (arrival_a % SECONDS_PER_DAY) // 3600
+            door_samples[group][pair][hour].append(door_time)
+            sw_samples[group][pair][hour].append(sw_time)
+
+    door_hourly_by_group = {
+        group: {pair: dict(door_samples[group].get(pair, {})) for pair in pairs}
+        for group, pairs in group_pairs.items()
+    }
+    sw_hourly_by_group = {
+        group: {pair: dict(sw_samples[group].get(pair, {})) for pair in pairs}
+        for group, pairs in group_pairs.items()
+    }
+    return door_hourly_by_group, sw_hourly_by_group
 
 
 def average_times_for_pairs(

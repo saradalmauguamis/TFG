@@ -27,10 +27,10 @@ from data_validation.gtfs_utils import (  # noqa: E402
     STOPS_SUBWAY_FILE,
     TRIPS_FILE,
     average_times_for_pairs,
+    build_trip_groups_by_line,
     check_missing_files,
     collect_pair_samples_by_trip_group,
     load_stop_names,
-    load_trip_ids_by_route,
     print_file_disclaimer,
     seconds_to_hms,
 )
@@ -42,48 +42,6 @@ from scripts.basics import (  # noqa: E402
 PairRecord = Tuple[float, int, float]
 RankedPair = Tuple[float, str, Tuple[str, str], PairRecord, PairRecord]
 GroupKey = Tuple[str, int]  # (line_short_name, direction_id)
-
-
-def consecutive_pairs(stop_ids: Sequence[str]) -> List[Tuple[str, str]]:
-    """Return consecutive directed stop pairs for an ordered stop list.
-
-    args:
-            stop_ids: Canonical stop order for a line.
-
-    returns:
-            Directed pairs (a, b) for each consecutive position in stop_ids.
-    """
-    return list(zip(stop_ids, stop_ids[1:]))
-
-
-def build_trip_groups() -> (
-    Tuple[Dict[str, GroupKey], Dict[GroupKey, List[Tuple[str, str]]]]
-):
-    """Map every subway trip to its (line, direction) group and its pairs.
-
-    returns:
-            Tuple of (trip_id -> group key, group key -> directed stop pairs),
-            so a single stop_times scan can serve every line and direction.
-    """
-    trip_id_to_group: Dict[str, GroupKey] = {}
-    group_pairs: Dict[GroupKey, List[Tuple[str, str]]] = {}
-
-    for line_short_name, stop_ids in subway_route_names_stop_ids.items():
-        route_id = subway_routes_names_ids.get(line_short_name)
-        if not route_id:
-            continue
-
-        pairs_dir0 = consecutive_pairs(stop_ids)
-        pairs_dir1 = [(b, a) for a, b in pairs_dir0]
-        trip_ids_by_direction = load_trip_ids_by_route(TRIPS_FILE, route_id)
-        for trip_id in trip_ids_by_direction.get(0, set()):
-            trip_id_to_group[trip_id] = (line_short_name, 0)
-        for trip_id in trip_ids_by_direction.get(1, set()):
-            trip_id_to_group[trip_id] = (line_short_name, 1)
-        group_pairs[(line_short_name, 0)] = pairs_dir0
-        group_pairs[(line_short_name, 1)] = pairs_dir1
-
-    return trip_id_to_group, group_pairs
 
 
 def rank_all_pairs(
@@ -171,7 +129,9 @@ def main() -> None:
     }
     stop_names = load_stop_names(STOPS_SUBWAY_FILE, relevant_stop_ids)
 
-    trip_id_to_group, group_pairs = build_trip_groups()
+    trip_id_to_group, group_pairs = build_trip_groups_by_line(
+        subway_route_names_stop_ids, subway_routes_names_ids, TRIPS_FILE
+    )
     samples_by_group = collect_pair_samples_by_trip_group(
         STOP_TIMES_DOORS_FILE, trip_id_to_group, group_pairs
     )
