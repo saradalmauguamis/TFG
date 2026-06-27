@@ -84,6 +84,10 @@ __all__ = [
     "WRONG_STOP_SEQUENCES_FILE",
     "DOORS_FILE",
     "EQUIVALENCES_SHARED_FILE",
+    "_DEFAULT_WEIGHTS_DATA_DIR",
+    "WEIGHTS_BASE",
+    "SUBWAY_WEIGHTS_FILE",
+    "WEIGHTS_FILE",
     "SECONDS_PER_DAY",
     # Regex / Patterns
     "PW_PAIR",
@@ -135,6 +139,8 @@ __all__ = [
     "collect_pair_door_sw_samples_by_trip_group",
     "collect_pair_door_sw_samples_by_trip_group_hourly",
     "average_times_for_pairs",
+    "build_stop_id_order_index",
+    "load_transfer_weights",
 ]
 
 
@@ -189,6 +195,13 @@ SHARED_PLATFORMS_BASE = str(
     ).resolve()
 )
 
+_DEFAULT_WEIGHTS_DATA_DIR = _DEFAULT_DATA_DIR / "6_weights"
+WEIGHTS_BASE = str(
+    Path(
+        os.environ.get("GTFS_WEIGHTS_DATA_DIR", str(_DEFAULT_WEIGHTS_DATA_DIR))
+    ).resolve()
+)
+
 PATHWAYS_RAW_FILE = os.path.join(RAW_BASE, "pathways.txt")
 PATHWAYS_FILE = os.path.join(SHARED_PLATFORMS_BASE, "pathways_shared.txt")
 
@@ -221,6 +234,9 @@ DOORS_FILE = os.path.join(DOORS_BASE, "doors.txt")
 EQUIVALENCES_SHARED_FILE = os.path.join(
     SHARED_PLATFORMS_BASE, "equivalences_shared.txt"
 )
+
+SUBWAY_WEIGHTS_FILE = os.path.join(WEIGHTS_BASE, "subway_weights.txt")
+WEIGHTS_FILE = os.path.join(WEIGHTS_BASE, "weights.txt")
 
 
 SECONDS_PER_DAY = 24 * 60 * 60
@@ -558,6 +574,24 @@ def load_transfer_pairs(file_path: str) -> Iterable[Tuple[str, str]]:
         to_stop_id = row.get("to_stop_id", "").strip()
         if from_stop_id or to_stop_id:
             yield from_stop_id, to_stop_id
+
+
+def load_transfer_weights(file_path: str) -> Iterable[Tuple[str, str, int]]:
+    """Yield (from_stop_id, to_stop_id, min_transfer_time) from transfers.txt.
+
+    args:
+        file_path: Input transfers file path.
+
+    returns:
+        Iterator of transfer stop pairs with their min_transfer_time, in
+        seconds.
+    """
+    for row in read_dict_rows(file_path):
+        from_stop_id = row.get("from_stop_id", "").strip()
+        to_stop_id = row.get("to_stop_id", "").strip()
+        min_transfer_time = row.get("min_transfer_time", "").strip()
+        if from_stop_id and to_stop_id and min_transfer_time:
+            yield from_stop_id, to_stop_id, int(min_transfer_time)
 
 
 def load_stops_info(file_path: str) -> Dict[str, Tuple[str, str, str]]:
@@ -1359,6 +1393,34 @@ def collect_pair_door_sw_samples_by_trip_group_hourly(
         for group, pairs in group_pairs.items()
     }
     return door_hourly_by_group, sw_hourly_by_group
+
+
+def build_stop_id_order_index(
+    route_names_stop_ids: Dict[str, List[str]]
+) -> Dict[str, int]:
+    """Flatten a line -> stop_id list mapping into one canonical rank per stop_id.
+
+    Walks `route_names_stop_ids` the same way `scripts/stops_report.py` already
+    does (line by line, then stop by stop), so sorting by this index lines up
+    with that canonical order. The first line to mention a stop_id wins its
+    rank.
+
+    args:
+        route_names_stop_ids: Mapping from line name to its ordered stop_id
+            list, e.g. `scripts.basics.subway_route_names_stop_ids_artificial`.
+
+    returns:
+        Mapping from stop_id to its 0-based canonical rank. Stop_ids outside
+        `route_names_stop_ids` (e.g. entrances) have no entry; sort callers
+        should fall back to `index.get(stop_id, len(index))` to push them
+        after every platform.
+    """
+    order_index: Dict[str, int] = {}
+    for stop_ids in route_names_stop_ids.values():
+        for stop_id in stop_ids:
+            if stop_id not in order_index:
+                order_index[stop_id] = len(order_index)
+    return order_index
 
 
 def average_times_for_pairs(

@@ -43,6 +43,8 @@ PairRecord = Tuple[float, int, float]
 RankedPair = Tuple[float, str, Tuple[str, str], PairRecord, PairRecord]
 GroupKey = Tuple[str, int]  # (line_short_name, direction_id)
 
+TOP_N_PAIRS_TO_PRINT = 160
+
 
 def rank_all_pairs(
     group_pairs: Dict[GroupKey, List[Tuple[str, str]]],
@@ -144,7 +146,7 @@ def main() -> None:
     ranked.sort(key=lambda item: (-item[0], item[1], item[2]))
 
     print(f"Number of stop pairs with both directions defined: {len(ranked)}\n")
-    print_ranked_pairs(ranked, stop_names)
+    print_ranked_pairs(ranked[:TOP_N_PAIRS_TO_PRINT], stop_names)
 
 
 if __name__ == "__main__":
