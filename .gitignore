@@ -12,3 +12,4 @@ __pycache__/
 *.pyc
 *.pyo
 data_validation/analysis/understanding_stdev.py
+data_validation/analysis/edge_weight_validation_report.txt

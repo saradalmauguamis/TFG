@@ -85,6 +85,37 @@ Shared platforms (stops served by more than one line, e.g. the L9S/L10S and L9N/
 - **STOP_TIMES**: the shared `stop_id` is *replaced* (not duplicated) with the single new id matching that row's own trip's line, since a trip belongs to exactly one line.
 - **`equivalences_shared.txt`**: a lookup table of `original_stop_id, line, new_stop_id` for every split platform, so the mapping can be looked back up later.
 
+### `6_weights.py` — build the weighted graph edges
+
+`.src/gtfs/data/5_shared_platforms` (+ `.src/gtfs/data/2_duplicated_trips` trips) → `.src/gtfs/data/6_weights`
+
+| Input | Output |
+|---|---|
+| `stop_times_shared.txt` | `subway_weights.txt` |
+| `transfers_shared.txt` | — |
+| `pathways_shared.txt` | — |
+| — | `weights.txt` |
+
+Also reads `trips_cleaned.txt` from `.src/gtfs/data/2_duplicated_trips` to resolve each trip's line and
+direction.
+
+Motivated by `analysis/directional_asymmetry.py` (directed edges) and
+`analysis/edge_weight_validation.py` (whether `mean(total)` is a trustworthy static weight for `sw`
+edges).
+
+- **`subway_weights.txt`** (`from_stop_id, to_stop_id, weight_seconds, line`): the `sw` (platform →
+  platform) edge weight for every directed pair observed in `stop_times_shared.txt`, computed as
+  `round_half_up_mean` of the observed travel times (`arrival_b - arrival_a`), pooled across every
+  `(line, direction_id)` group that produces that exact pair. `round_half_up_mean` (integer-only
+  arithmetic) is used instead of a float mean to avoid the precision drift `statistics.mean`/`round()`
+  can introduce.
+- **`weights.txt`** (`from_stop_id, to_stop_id, weight_seconds, type`): the full set of graph edges,
+  combining `subway_weights.txt` (`type=SW`) with two more edge types: `TF` (transfers, weight =
+  `min_transfer_time` from `transfers_shared.txt`) and `PW` (entrance ↔ platform pathways, weight =
+  `traversal_time` from `pathways_shared.txt`, restricted to rows where one side is an entrance
+  (`E.*`) and the other a platform (`1.*`)).
+
+
 ---
 
 ## File transformation summary
@@ -98,3 +129,5 @@ Each line traces one logical file across the stages where it actually exists (st
 - **transfers**: `0_raw/transfers.txt` → `5_shared_platforms/transfers_shared.txt`
 - **trips**: `0_raw/trips.txt` → `1_subway/trips_subway.txt` → `2_duplicated_trips/trips_cleaned.txt`
 - **equivalences** *(new, no upstream file)*: `5_shared_platforms/equivalences_shared.txt`
+- **subway_weights** *(new, no upstream file)*: `6_weights/subway_weights.txt`
+- **weights** *(new, no upstream file)*: `6_weights/weights.txt`

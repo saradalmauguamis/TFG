@@ -21,7 +21,8 @@ data_validation/
 │   ├── 2_duplicated_trips.py
 │   ├── 3_stop_sequence.py
 │   ├── 4_doors_time.py
-│   └── 5_shared_platforms_duplication.py
+│   ├── 5_shared_platforms_duplication.py
+│   └── 6_weights.py
 └── analysis/
     ├── shared_platforms.py
     ├── directional_asymmetry.py
@@ -60,6 +61,7 @@ Scripts that transform raw GTFS files into cleaned, stage-by-stage outputs.
 - `3_stop_sequence.py` — fix stop_sequence gaps
 - `4_doors_time.py` — add door-open times to terminal stops
 - `5_shared_platforms_duplication.py` — split shared platforms into one stop_id per line
+- `6_weights.py` — build the weighted graph edges (`sw`, `tf`, `pw`)
 
 ---
 

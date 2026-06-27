@@ -1,7 +1,7 @@
 # Pipeline Workflow
 
 `checks/` and `processing/` are split by *kind* of file, not by run order. This page lists the
-actual run order, end to end, from `0_raw` to `5_shared_platforms`.
+actual run order, end to end, from `0_raw` to `6_weights`.
 
 There are two kinds of steps here:
 
@@ -95,11 +95,16 @@ There are two kinds of steps here:
 11. **`processing/5_shared_platforms_duplication.py`** — `4_doors_time` (+ `0_raw` pathways/transfers,
     `1_subway` stops, `2_duplicated_trips` trips) → `5_shared_platforms`
 
-    Splits every platform shared by more than one line (detected generically from
-    `scripts/basics.py`, not hardcoded) into one stop_id per line across stops, pathways,
-    transfers, and stop_times, plus an `equivalences_shared.txt` lookup table. See
+    Splits every platform shared by more than one line into one stop_id per line. See
     [`processing/README.md`](processing/README.md) for the per-file behavior. Motivated by
     `analysis/shared_platforms.py` below.
+
+12. **`processing/6_weights.py`** — `5_shared_platforms` (+ `2_duplicated_trips` trips) →
+    `6_weights`
+
+    Builds the weighted graph's edges (`sw`, `tf`, `pw`). See
+    [`processing/README.md`](processing/README.md) for the per-file behavior. Motivated by
+    `analysis/directional_asymmetry.py` and `analysis/edge_weight_validation.py` below.
 
 ---
 
@@ -107,8 +112,9 @@ There are two kinds of steps here:
 
 Run anytime after step 1 of the core pipeline. None of these produce a file consumed elsewhere.
 
-- **`checks/file_connection_checks.ipynb`** — reads `pathways.txt` (`0_raw`, no subway-filtered
-  equivalent exists because all available pathways are already only for the subway) and
+- **`checks/file_connection_checks.ipynb`** — reads `pathways.txt`/`transfers.txt` (`0_raw`, no
+  subway-filtered equivalent exists because all available pathways/transfers are already only
+  for the subway) and
   `routes_subway.txt`/`stops_subway.txt`/`stop_times_subway.txt`/`trips_subway.txt` (`1_subway`).
 - **`checks/pathways_checks.ipynb`** — reads `pathways.txt`/`transfers.txt` (`0_raw`, no
   subway-filtered equivalent exists because all available pathways/transfers are already only
@@ -125,21 +131,24 @@ Run anytime after step 1 of the core pipeline. None of these produce a file cons
 Read-only scripts in [`analysis/`](analysis/README.md). Unlike *Independent checks*, these need
 the pipeline well past step 1 — they don't produce any file consumed downstream, but answer
 design questions for the graph build. Two need only step 9; the third needs the full pipeline
-through step 11, since it has to read stop_times *after* shared platforms are split.
+through step 11, since it has to read stop_times *after* shared platforms are split. All three
+motivate decisions baked into step 12.
 
 - **(needs step 9+)** **`analysis/shared_platforms.py`** — reads `stop_times_doors.txt` (step 9),
   `stops_subway.txt` (`1_subway`), `trips_cleaned.txt` (step 3). Compared travel times across
   lines sharing a platform (e.g. L9S/L10S, L9N/L10N) and found they differ, which is what
   motivated step 11.
 - **(needs step 9+)** **`analysis/directional_asymmetry.py`** — same inputs. A separate,
-  unrelated question: compared a→b vs b→a travel times to decide the graph needs directed edges.
-  Doesn't motivate step 11.
+  unrelated question: compared a→b vs b→a travel times and found them asymmetric, which is what
+  motivated step 12 to compute one `sw` weight per *directed* pair rather than a single
+  undirected one.
 - **(needs step 11+)** **`analysis/edge_weight_validation.py`** — reads
   `stop_times_shared.txt`/`stops_shared.txt` (step 11, *after* shared platforms are split),
   `trips_cleaned.txt` (step 3). Runs only once step 11 exists, since it ranks `sw` edges by the
   per-line stop_ids that step 11 produces, not the original (still-shared) ones. Validates whether
   `mean(total)` travel time is a trustworthy static weight for those `sw` edges, or needs a
-  different treatment (better averaging, or a time-dependent weight).
+  different treatment (better averaging, or a time-dependent weight) — which is what motivated
+  step 12 to use `round_half_up_mean(total)`, rounded to whole seconds, as the `sw` edge weight.
 
 ---
 
