@@ -6,7 +6,7 @@ from time import perf_counter
 from typing import Dict, List, Optional, Tuple
 
 Node = str
-Weight = int  # IMPORTANT! <-- change later if it's necessary
+Weight = int
 Graph = Dict[Node, Dict[Node, Weight]]
 INF = 10**18
 
@@ -48,12 +48,11 @@ def _run_dijkstra(
     while pq:  # It means "while the priority queue is not empty"
         best_dist, node = heapq.heappop(pq)
 
+        # Skip already expanded nodes or stale queue entries (robustness check).
+        # This check is not in the L.A.-pseudocode because it updates the priority and here
+        # we can have multiple entries for the same node (that's why we need this check)
         if expanded[node] or best_dist != dist[node]:
             continue
-        """ Skip already expanded nodes or stale queue entries (robustness
-        check). This check is not in the L.A.-pseudocde because it updates the
-        priority and here we can have multiple entries for the same node
-        (that's why we need this check)"""
 
         iteration += 1
         if verbose:
@@ -65,11 +64,12 @@ def _run_dijkstra(
             break
 
         for adj, weight in graph[node].items():
+            # For not going back to already expanded nodes. We have to think in the perspective
+            # of starting from the source and going forward. We want the shortest path from the
+            # source, not from any other node <-- also because if we considered adj before it's
+            # because we found its shortest path already
             if expanded[adj]:
                 continue
-            """ For not going back to already expanded nodes. We have to think
-            in the perspective of starting from the source and going forward.
-            We want the shortest path from the source, not from any other node"""
 
             new_cost = dist[node] + weight
             if new_cost < dist[adj]:
@@ -156,7 +156,7 @@ def build_example_graph(num_example: int) -> Graph:
     """Directed, weighted graph.
 
     args:
-        num_example: The example number (1 or 2) to select which graph to return.
+        num_example: The example number (1, 2, 3 or 4) to select which graph to return.
 
     returns:
         A graph represented as an adjacency list with weights.
@@ -236,6 +236,71 @@ def build_example_graph(num_example: int) -> Graph:
         raise ValueError(f"Invalid example number: {num_example}")
 
 
+def print_distances(graph: Graph, dist: Dict[Node, int]) -> None:
+    """Print the shortest distance from the source to every node in the graph.
+
+    args:
+        graph: A directed, weighted graph represented as an adjacency list.
+        dist: A mapping from each node to its shortest distance from the source.
+    """
+    nodes = list(graph.keys())
+    width = max(len(n) for n in nodes)
+    print("\nShortest distances from source:")
+    for node in nodes:
+        value = dist[node]
+        shown = value if value != INF else "inf"
+        print(f"- {node:<{width}} : {shown}")
+
+
+def print_path_summary(
+    source: Node, target: Node, path: List[Node], dist: Dict[Node, int]
+) -> None:
+    """Print the rebuilt path from source to target and its total distance.
+
+    args:
+        source: The starting node.
+        target: The destination node.
+        path: The rebuilt path from source to target, or an empty list if none.
+        dist: A mapping from each node to its shortest distance from the source.
+    """
+    if path:
+        print(f"\nShortest path from {source} to {target}:")
+        print("  ", " -> ".join(path))
+        total = dist[target]
+        shown_total = total if total != INF else "inf"
+        print(f"Minimum distance found: {shown_total}")
+    else:
+        print(f"\nNo path found from {source} to {target}.")
+
+
+def print_summary(
+    iterations: int, elapsed_ms: float, cut_iterations: int, cut_elapsed_ms: float
+) -> None:
+    """Print the iteration counts and execution times for both algorithm runs.
+
+    args:
+        iterations: Number of iterations taken by the normal Dijkstra run.
+        elapsed_ms: Execution time in milliseconds for the normal Dijkstra run.
+        cut_iterations: Number of iterations taken by the cut_dijkstra run.
+        cut_elapsed_ms: Execution time in milliseconds for the cut_dijkstra run.
+    """
+    print(f"Iterations needed: normal={iterations} | cut={cut_iterations}")
+    print(f"Execution time: normal={elapsed_ms:.3f} ms | cut={cut_elapsed_ms:.3f} ms")
+
+
+def print_disclaimer() -> None:
+    """Print a disclaimer about the limitations of the execution time comparisons."""
+    print(
+        "Disclaimer: Execution time comparisons provide only a rough reference and"
+        " should not be taken as precise benchmarks. Key factors affecting timings:"
+    )
+    print("  • Verbose output (print statements) significantly impacts execution time")
+    print(
+        "  • When iterations match, normal Dijkstra computes ALL distances, while"
+        " cut_dijkstra computes only distances needed to reach the target"
+    )
+
+
 def main() -> None:
     """Run Dijkstra's algorithm on multiple example graphs and display results."""
 
@@ -247,24 +312,11 @@ def main() -> None:
     iterations: int
     path: List[Node]
     elapsed_ms: float
+    cut_start: float
     cut_iterations: int
     cut_elapsed_ms: float
-    nodes: List[Node]
-    width: int
-    value: int
-    shown: int | str
-    total: int
-    shown_total: int | str
 
-    print(
-        "Disclaimer: Execution time comparisons provide only a rough reference and"
-        " should not be taken as precise benchmarks. Key factors affecting timings:"
-    )
-    print("  • Verbose output (print statements) significantly impacts execution time")
-    print(
-        "  • When iterations match, normal Dijkstra computes ALL distances, while"
-        " cut_dijkstra computes only distances needed to reach the target"
-    )
+    print_disclaimer()
 
     for num_example, source, target in examples:
         print("\n\n" + "=" * 50)
@@ -274,35 +326,16 @@ def main() -> None:
 
         start = perf_counter()
         dist, parent, iterations = dijkstra(graph, source, verbose=True)
-        path = rebuild_path(parent, source, target)
         elapsed_ms = (perf_counter() - start) * 1000
+        path = rebuild_path(parent, source, target)
 
         cut_start = perf_counter()
         _, _, cut_iterations = cut_dijkstra(graph, source, target, verbose=False)
         cut_elapsed_ms = (perf_counter() - cut_start) * 1000
 
-        print("\nShortest distances from source:")
-        nodes = list(graph.keys())
-        width = max(len(n) for n in nodes)
-        for node in nodes:
-            value = dist[node]
-            shown = value if value != INF else "inf"
-            print(f"- {node:<{width}} : {shown}")
-
-        # Path summary
-        if path:
-            print(f"\nShortest path from {source} to {target}:")
-            print("  ", " -> ".join(path))
-            total = dist[target]
-            shown_total = total if total != INF else "inf"
-            print(f"Minimum distance found: {shown_total}")
-        else:
-            print(f"\nNo path found from {source} to {target}.")
-
-        print(f"Iterations needed: normal={iterations} | cut={cut_iterations}")
-        print(
-            f"Execution time: normal={elapsed_ms:.3f} ms | cut={cut_elapsed_ms:.3f} ms"
-        )
+        print_distances(graph, dist)
+        print_path_summary(source, target, path, dist)
+        print_summary(iterations, elapsed_ms, cut_iterations, cut_elapsed_ms)
 
 
 if __name__ == "__main__":
