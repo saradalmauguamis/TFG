@@ -13,3 +13,4 @@ __pycache__/
 *.pyo
 data_validation/analysis/understanding_stdev.py
 data_validation/analysis/edge_weight_validation_report.txt
+routing_algotithms/graph_draw/graph_zoom_*
