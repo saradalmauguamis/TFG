@@ -57,8 +57,6 @@ SHOW_TF_EDGES = True
 CENTER_STOP_ID: str | None = None
 # Half-width of the zoom window in degrees (0.004 ~ 400m). Only used when CENTER_STOP_ID is set.
 RADIUS_DEGREES = 0.004
-# Path to save the plot to, or None to default to graph.png (or graph_zoom_<stop>.png when zoomed).
-OUTPUT_PATH: str | None = None
 
 
 def load_line_colors() -> dict[str, str]:
@@ -310,9 +308,7 @@ def draw_graph(
 
 
 if __name__ == "__main__":
-    if OUTPUT_PATH is not None:
-        output_path = OUTPUT_PATH
-    elif CENTER_STOP_ID is not None:
+    if CENTER_STOP_ID is not None:
         output_path = f"routing_algotithms/graph_draw/graph_zoom_{CENTER_STOP_ID}.png"
     else:
         output_path = "routing_algotithms/graph_draw/graph.png"
