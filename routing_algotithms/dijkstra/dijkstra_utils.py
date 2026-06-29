@@ -392,6 +392,10 @@ def _run_dijkstra(
 
             # Relaxation step
             if dist[adj] > dist_aux:  # pseudocode: if dist[adj] > dist_aux
+                old_dist_adj = dist[
+                    adj
+                ]  # captured before overwriting, for verbose output
+
                 if dist[adj] == INF:  # pseudocode: if dist[adj] = ∞
                     pq.add_with_priority(adj, dist_aux)  # first time seeing adj
                 else:
@@ -403,8 +407,8 @@ def _run_dijkstra(
                 parent[adj] = node  # pseudocode: parent[adj] <- node
 
                 if verbose:
-                    old = best_dist if dist[node] == best_dist else dist[node]
-                    print(f"  -> update {adj}: {old} -> {dist_aux} via {node}")
+                    old_shown = old_dist_adj if old_dist_adj != INF else "inf"
+                    print(f"  -> update {adj}: {old_shown} -> {dist_aux} via {node}")
 
     return dist, parent, iteration
 
@@ -480,21 +484,35 @@ def rebuild_path(
     return path
 
 
-def print_distances(graph: Graph, dist: Dict[Node, int]) -> None:
+def print_graph_size(graph: Graph) -> None:
+    """Print the number of vertices and edges in the graph.
+
+    args:
+        graph: A directed, weighted graph represented as an adjacency list.
+    """
+    num_vertices = len(graph)
+    num_edges = sum(len(adjacency) for adjacency in graph.values())
+    print(f"Graph size: |V| = {num_vertices}, |E| = {num_edges}")
+
+
+def print_distances(
+    graph: Graph, dist: Dict[Node, int], show_unreachable: bool = True
+) -> None:
     """Print the shortest distance from the source to every node in the graph.
 
     args:
         graph: A directed, weighted graph represented as an adjacency list.
         dist: A mapping from each node to its shortest distance from the source.
+        show_unreachable: Whether to also print nodes still at distance INF.
     """
     nodes = list(graph.keys())
     width = max(len(n) for n in nodes)
     print("\nShortest distances from source:")
     for node in nodes:
         value = dist[node]
-        shown = (
-            value if value != INF else "inf"
-        )  # Later exclude the inf ones? To know which ones have been considered
+        if value == INF and not show_unreachable:
+            continue
+        shown = value if value != INF else "inf"
         print(f"- {node:<{width}} : {shown}")
 
 
