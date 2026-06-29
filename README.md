@@ -4,10 +4,13 @@
 
 ```
 TFG/
-├── data_validation/      # GTFS data validation, processing, and analysis pipeline
-├── routing_algotithms/   # Shortest-path algorithms and graph drawing
-├── scripts/              # General-purpose helpers not tied to a pipeline stage
-└── hooks/                # Pre-commit hook scripts
+├── data_validation/        # GTFS data validation, processing, and analysis pipeline
+├── routing_algotithms/     # Shortest-path algorithms and graph drawing
+├── scripts/                # General-purpose helpers not tied to a pipeline stage
+├── hooks/                  # Pre-commit hook scripts
+├── .gitignore              # Files and folders excluded from version control
+├── .pre-commit-config.yaml # Pre-commit hook registration (see hooks/README.md)
+└── requirements.txt        # Pinned Python dependencies for .venv
 ```
 
 - [`data_validation/`](data_validation/README.md) — pipeline for validating, processing, and
@@ -58,4 +61,18 @@ pre-commit install
 ## Pre-commit Checks
 
 Pre-commit runs automatically on every `git commit`. See [`hooks/README.md`](hooks/README.md)
-for the full list of checks and how to run them manually.
+for the full list of checks.
+
+### Run Pre-commit Manually
+
+To check all files before committing:
+
+```bash
+pre-commit run --all-files
+```
+
+To check only staged files:
+
+```bash
+pre-commit run
+```

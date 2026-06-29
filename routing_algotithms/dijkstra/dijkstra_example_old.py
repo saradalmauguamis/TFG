@@ -11,6 +11,7 @@ from dijkstra_utils import (
     dijkstra_old,
     print_disclaimer,
     print_distances,
+    print_graph_size,
     print_path_summary,
     print_summary,
     rebuild_path,
@@ -123,6 +124,7 @@ def main() -> None:
         print(f"Running example {num_example}: source={source} target={target}")
         print("=" * 50)
         graph = build_example_graph(num_example=num_example)
+        print_graph_size(graph)
 
         start = perf_counter()
         dist, parent, iterations = dijkstra_old(graph, source, verbose=True)
