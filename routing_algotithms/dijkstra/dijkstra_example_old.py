@@ -1,4 +1,4 @@
-"""Dijkstra's algorithm based on Lluís Alsedà pseudo-code"""
+"""Dijkstra's algorithm is based in Lluís Alsedà pseudo-code"""
 
 from __future__ import annotations
 from time import perf_counter
@@ -7,8 +7,8 @@ from typing import Dict, List, Optional
 from dijkstra_utils import (
     Graph,
     Node,
-    cut_dijkstra,
-    dijkstra,
+    cut_dijkstra_old,
+    dijkstra_old,
     print_disclaimer,
     print_distances,
     print_path_summary,
@@ -26,7 +26,7 @@ def build_example_graph(num_example: int) -> Graph:
     returns:
         A graph represented as an adjacency list with weights.
     """
-    if num_example == 1:
+    if num_example == 1:  # DO 5th exercise
         return {
             "a": {"v1": 7, "v2": 8, "v3": 1},
             "v1": {"v6": 4, "v5": 4},
@@ -40,7 +40,8 @@ def build_example_graph(num_example: int) -> Graph:
             "v9": {"v8": 3, "b": 6},
             "b": {},
         }
-    if num_example == 2:
+
+    if num_example == 2:  # DO class notes
         return {
             "v1": {"v2": 4, "v3": 2, "v4": 3},
             "v2": {"v6": 1},
@@ -52,7 +53,10 @@ def build_example_graph(num_example: int) -> Graph:
             "v8": {"v9": 1},
             "v9": {},
         }
-    if num_example == 3:
+
+    if (
+        num_example == 3
+    ):  # Internet example (undirected graph, so I add manually both directions)
         return {
             "v0": {"v1": 4, "v7": 8},
             "v1": {"v0": 4, "v2": 8, "v7": 11},
@@ -64,7 +68,8 @@ def build_example_graph(num_example: int) -> Graph:
             "v7": {"v0": 8, "v1": 11, "v6": 1, "v8": 7},
             "v8": {"v2": 2, "v6": 6, "v7": 7},
         }
-    if num_example == 4:
+
+    if num_example == 4:  # Internet example
         return {
             "A": {"B": 3, "C": 1},
             "B": {"D": 2, "T": 3},
@@ -91,11 +96,14 @@ def build_example_graph(num_example: int) -> Graph:
             "W": {"I": 1},
             "X": {"I": 2},
         }
-    raise ValueError(f"Invalid example number: {num_example}")
+
+    else:
+        raise ValueError(f"Invalid example number: {num_example}")
 
 
 def main() -> None:
     """Run Dijkstra's algorithm on multiple example graphs and display results."""
+
     examples = [(1, "a", "b"), (2, "v1", "v9"), (3, "v0", "v4"), (4, "A", "K")]
     graph: Graph
     start: float
@@ -117,12 +125,12 @@ def main() -> None:
         graph = build_example_graph(num_example=num_example)
 
         start = perf_counter()
-        dist, parent, iterations = dijkstra(graph, source, verbose=True)
+        dist, parent, iterations = dijkstra_old(graph, source, verbose=True)
         elapsed_ms = (perf_counter() - start) * 1000
         path = rebuild_path(parent, source, target)
 
         cut_start = perf_counter()
-        _, _, cut_iterations = cut_dijkstra(graph, source, target, verbose=False)
+        _, _, cut_iterations = cut_dijkstra_old(graph, source, target, verbose=False)
         cut_elapsed_ms = (perf_counter() - cut_start) * 1000
 
         print_distances(graph, dist)
