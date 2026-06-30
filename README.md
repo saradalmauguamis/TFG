@@ -4,15 +4,20 @@
 
 ```
 TFG/
-├── data_validation/        # GTFS data validation, processing, and analysis pipeline
-├── routing_algotithms/     # Shortest-path algorithms and graph drawing
-├── scripts/                # General-purpose helpers not tied to a pipeline stage
-├── hooks/                  # Pre-commit hook scripts
-├── .gitignore              # Files and folders excluded from version control
-├── .pre-commit-config.yaml # Pre-commit hook registration (see hooks/README.md)
-└── requirements.txt        # Pinned Python dependencies for .venv
+├── data/
+├── data_validation/
+├── routing_algotithms/
+├── scripts/
+├── hooks/
+├── subway_maps/
+├── .gitignore
+├── .pre-commit-config.yaml
+└── requirements.txt
 ```
 
+- `data/` — GTFS pipeline data, organized by processing stage (`0_raw` → `6_weights`); see
+  [`data_validation/README.md`](data_validation/README.md) and
+  [`data_validation/WORKFLOW.md`](data_validation/WORKFLOW.md) for what reads/writes each stage.
 - [`data_validation/`](data_validation/README.md) — pipeline for validating, processing, and
   analysing the GTFS subway data.
 - [`routing_algotithms/`](routing_algotithms/README.md) — Dijkstra and A* implementations, plus a
@@ -20,6 +25,10 @@ TFG/
 - [`scripts/`](scripts/README.md) — reference data and standalone utilities shared across the
   other folders.
 - [`hooks/`](hooks/README.md) — pre-commit hook scripts; see that README for what gets checked.
+- `subway_maps/` — reference JPGs of Barcelona's subway lines, used for visual cross-checking.
+- `.gitignore` — files and folders excluded from version control.
+- `.pre-commit-config.yaml` — pre-commit hook registration (see [`hooks/README.md`](hooks/README.md)).
+- `requirements.txt` — pinned Python dependencies for `.venv`.
 
 ## Setup
 

@@ -95,16 +95,29 @@ __all__ = [
     "check_missing_files",
     "print_file_disclaimer",
     # ID loaders
+    "load_stop_ids",
     "load_stop_names",
     "load_pathway_ids",
+    "load_route_ids",
     "load_trip_ids",
     "load_trip_ids_by_route",
+    "load_from_stop_ids",
+    "load_to_stop_ids",
     "load_nonempty_lines",
     # Time helpers
     "parse_time_to_seconds",
     "format_seconds",
     "seconds_to_hms",
-    # Graph builders
+    # Pathway / transfer helpers
+    "iter_pathway_pairs",
+    "load_transfer_pairs",
+    "load_transfer_pairs_present",
+    "load_stops_info",
+    "load_platforms_by_name",
+    "load_platform_pairs_present",
+    # Platform graph helpers
+    "build_platform_graph",
+    "build_graph_and_coverage",
     "build_directed_entrance_edges",
     # Validation helpers
     "check_trip",
@@ -115,6 +128,7 @@ __all__ = [
     "load_trip_to_line",
     "build_stop_to_lines",
     "build_shared_platform_lines",
+    "format_stop_label",
     # Directed pair travel-time helpers
     "consecutive_pairs",
     "build_trip_groups_by_line",
@@ -131,7 +145,7 @@ __all__ = [
 # Constants / paths
 # -----------------------------
 
-_DEFAULT_DATA_DIR = Path(__file__).resolve().parents[1] / ".src" / "gtfs" / "data"
+_DEFAULT_DATA_DIR = Path(__file__).resolve().parents[1] / "data"
 BASE = str(Path(os.environ.get("GTFS_DATA_DIR", str(_DEFAULT_DATA_DIR))).resolve())
 
 _DEFAULT_RAW_DATA_DIR = _DEFAULT_DATA_DIR / "0_raw"
@@ -278,6 +292,23 @@ def check_missing_files(list_of_files: List[str]) -> None:
 # -----------------------------
 # ID loaders
 # -----------------------------
+def load_stop_ids(file_path: str) -> Set[str]:
+    """Return the set of stop_id values from a file.
+
+    args:
+        file_path: Input GTFS file path.
+
+    returns:
+        Unique stop identifiers.
+    """
+    stop_ids: Set[str] = set()
+    for row in read_dict_rows(file_path):
+        stop_id = row.get("stop_id", "").strip()
+        if stop_id:
+            stop_ids.add(stop_id)
+    return stop_ids
+
+
 def load_stop_names(
     file_path: str, stop_ids: Optional[Set[str]] = None
 ) -> Dict[str, str]:
@@ -316,6 +347,23 @@ def load_pathway_ids(file_path: str) -> Set[str]:
         if pathway_id:
             pathway_ids.add(pathway_id)
     return pathway_ids
+
+
+def load_route_ids(file_path: str) -> Set[str]:
+    """Return the set of route_id values from a file.
+
+    args:
+        file_path: Input routes file path.
+
+    returns:
+        Unique route identifiers.
+    """
+    route_ids: Set[str] = set()
+    for row in read_dict_rows(file_path):
+        route_id = row.get("route_id", "").strip()
+        if route_id:
+            route_ids.add(route_id)
+    return route_ids
 
 
 def load_trip_ids(file_path: str) -> Set[str]:
@@ -362,6 +410,40 @@ def load_trip_ids_by_route(file_path: str, route_id: str) -> Dict[int, Set[str]]
         if direction_id in trip_ids:
             trip_ids[direction_id].add(trip_id)
     return trip_ids
+
+
+def load_from_stop_ids(file_path: str) -> Set[str]:
+    """Return the set of from_stop_id values from a file.
+
+    args:
+        file_path: Input transfers file path.
+
+    returns:
+        Unique from_stop_id values.
+    """
+    stop_ids: Set[str] = set()
+    for row in read_dict_rows(file_path):
+        stop_id = row.get("from_stop_id", "").strip()
+        if stop_id:
+            stop_ids.add(stop_id)
+    return stop_ids
+
+
+def load_to_stop_ids(file_path: str) -> Set[str]:
+    """Return the set of to_stop_id values from a file.
+
+    args:
+        file_path: Input transfers file path.
+
+    returns:
+        Unique to_stop_id values.
+    """
+    stop_ids: Set[str] = set()
+    for row in read_dict_rows(file_path):
+        stop_id = row.get("to_stop_id", "").strip()
+        if stop_id:
+            stop_ids.add(stop_id)
+    return stop_ids
 
 
 def load_nonempty_lines(file_path: str) -> Set[str]:
@@ -442,6 +524,41 @@ def seconds_to_hms(value: float) -> str:
 # -----------------------------
 # Pathway / transfer helpers
 # -----------------------------
+def iter_pathway_pairs(file_path: str) -> Iterable[Tuple[str, str, str]]:
+    """Yield (pathway_id, a, b) for rows matching the pathway pattern PW.a_b.
+
+    args:
+        file_path: Input pathways file path.
+
+    returns:
+        Iterator of parsed pathway triples.
+    """
+    for row in read_dict_rows(file_path):
+        pathway_id = row.get("pathway_id", "").strip()
+        if not pathway_id:
+            continue
+        match = PW_PAIR.match(pathway_id)
+        if not match:
+            continue
+        yield pathway_id, match.group("a"), match.group("b")
+
+
+def load_transfer_pairs(file_path: str) -> Iterable[Tuple[str, str]]:
+    """Yield (from_stop_id, to_stop_id) pairs from transfers.txt.
+
+    args:
+        file_path: Input transfers file path.
+
+    returns:
+        Iterator of transfer stop pairs.
+    """
+    for row in read_dict_rows(file_path):
+        from_stop_id = row.get("from_stop_id", "").strip()
+        to_stop_id = row.get("to_stop_id", "").strip()
+        if from_stop_id or to_stop_id:
+            yield from_stop_id, to_stop_id
+
+
 def load_transfer_weights(file_path: str) -> Iterable[Tuple[str, str, int]]:
     """Yield (from_stop_id, to_stop_id, min_transfer_time) from transfers.txt.
 
@@ -458,6 +575,173 @@ def load_transfer_weights(file_path: str) -> Iterable[Tuple[str, str, int]]:
         min_transfer_time = row.get("min_transfer_time", "").strip()
         if from_stop_id and to_stop_id and min_transfer_time:
             yield from_stop_id, to_stop_id, int(min_transfer_time)
+
+
+def load_stops_info(file_path: str) -> Dict[str, Tuple[str, str, str]]:
+    """Return stop_id -> (stop_name, stop_lat, stop_lon).
+
+    args:
+        file_path: Input stops file path.
+
+    returns:
+        Mapping of stop_id to name and coordinates.
+    """
+    stops_info: Dict[str, Tuple[str, str, str]] = {}
+    for row in read_dict_rows(file_path):
+        stop_id = row.get("stop_id", "").strip()
+        if not stop_id:
+            continue
+        stops_info[stop_id] = (
+            row.get("stop_name", "").strip(),
+            row.get("stop_lat", "").strip(),
+            row.get("stop_lon", "").strip(),
+        )
+    return stops_info
+
+
+def load_platforms_by_name(file_path: str) -> Dict[str, List[str]]:
+    """Return stop_name -> sorted unique platform stop_id list for 1.* platforms.
+
+    args:
+        file_path: Input stops file path.
+
+    returns:
+        Mapping from stop_name to sorted platform stop IDs.
+    """
+    platforms_by_name: Dict[str, List[str]] = {}
+    for row in read_dict_rows(file_path):
+        stop_id = row.get("stop_id", "").strip()
+        stop_name = row.get("stop_name", "").strip()
+        if not stop_id:
+            continue
+        if stop_id.startswith("1."):
+            platforms_by_name.setdefault(stop_name, []).append(stop_id)
+
+    for stop_name in list(platforms_by_name.keys()):
+        platforms_by_name[stop_name] = sorted(set(platforms_by_name[stop_name]))
+    return platforms_by_name
+
+
+def load_platform_pairs_present(file_path: str) -> Set[Tuple[str, str]]:
+    """Return undirected platform pairs (1.*, 1.*) linked by a pathway.
+
+    args:
+        file_path: Input pathways file path.
+
+    returns:
+        Set of sorted platform-stop pairs.
+    """
+    pairs: Set[Tuple[str, str]] = set()
+    for _, stop_a, stop_b in iter_pathway_pairs(file_path):
+        if stop_a.startswith("1.") and stop_b.startswith("1."):
+            first, second = sorted((stop_a, stop_b))
+            pairs.add((first, second))
+    return pairs
+
+
+def load_transfer_pairs_present(file_path: str) -> Set[Tuple[str, str]]:
+    """Return undirected platform pairs (1.*, 1.*) present in transfers.txt.
+
+    args:
+        file_path: Input transfers file path.
+
+    returns:
+        Set of sorted platform-stop pairs.
+    """
+    pairs: Set[Tuple[str, str]] = set()
+    for stop_a, stop_b in load_transfer_pairs(file_path):
+        if stop_a and stop_b:
+            first, second = sorted((stop_a, stop_b))
+            pairs.add((first, second))
+    return pairs
+
+
+# -----------------------------
+# Platform graph helpers
+# -----------------------------
+def _add_platform_edge(
+    platform_graph: Dict[str, Set[str]], stop_a: str, stop_b: str
+) -> None:
+    """Add an undirected edge between two platform stops.
+
+    args:
+        platform_graph: Adjacency map being populated.
+        stop_a: First platform stop ID.
+        stop_b: Second platform stop ID.
+    """
+    platform_graph.setdefault(stop_a, set()).add(stop_b)
+    platform_graph.setdefault(stop_b, set()).add(stop_a)
+
+
+def _add_entry(
+    platform_to_entries: Dict[str, Set[str]],
+    covered_platforms: Set[str],
+    platform_stop: str,
+    entrance_stop: str,
+) -> None:
+    """Record an entrance that connects to a platform stop.
+
+    args:
+        platform_to_entries: Mapping of platforms to connected entrances.
+        covered_platforms: Set of platforms already covered by entrances.
+        platform_stop: Platform stop ID.
+        entrance_stop: Entrance stop ID.
+    """
+    platform_to_entries.setdefault(platform_stop, set()).add(entrance_stop)
+    covered_platforms.add(platform_stop)
+
+
+def build_platform_graph(platform_pairs: Set[Tuple[str, str]]) -> Dict[str, Set[str]]:
+    """Build an undirected platform (1.*) adjacency map from canonical pairs.
+
+    args:
+        platform_pairs: Set of sorted (stop_a, stop_b) platform pairs, e.g. from
+            `load_transfer_pairs_present` or `load_platform_pairs_present`.
+
+    returns:
+        Adjacency map of platform stop IDs to the set of directly connected
+        platform stop IDs. Edges are undirected: when two platforms are
+        connected both appear in each other's adjacency set.
+    """
+    platform_graph: Dict[str, Set[str]] = {}
+    for stop_a, stop_b in platform_pairs:
+        _add_platform_edge(platform_graph, stop_a, stop_b)
+    return platform_graph
+
+
+def build_graph_and_coverage(
+    pathway_ids: Set[str],
+) -> Tuple[Dict[str, Set[str]], Set[str]]:
+    """Build platform-entrance coverage information from pathways.
+
+    args:
+        pathway_ids: Pathway IDs to parse and classify.
+
+    returns:
+        Tuple containing two elements:
+
+        - `platform_to_entries` (Dict[str, Set[str]]): mapping from a platform stop ID
+            to the set of entrance stop IDs (IDs starting with `E.`) that connect to that
+            platform. Only platform<->entrance pathway edges are recorded here.
+
+        - `covered_platforms` (Set[str]): set of platform stop IDs that have at least
+            one connected entrance (i.e., the keys of `platform_to_entries`).
+    """
+    platform_to_entries: Dict[str, Set[str]] = {}
+    covered_platforms: Set[str] = set()
+
+    for pathway_id in pathway_ids:
+        match = PW_PAIR.match(pathway_id)
+        if not match:
+            continue
+        stop_a, stop_b = match.group("a"), match.group("b")
+
+        if stop_a.startswith("1.") and stop_b.startswith("E."):
+            _add_entry(platform_to_entries, covered_platforms, stop_a, stop_b)
+        elif stop_b.startswith("1.") and stop_a.startswith("E."):
+            _add_entry(platform_to_entries, covered_platforms, stop_b, stop_a)
+
+    return platform_to_entries, covered_platforms
 
 
 def build_directed_entrance_edges(
@@ -643,6 +927,25 @@ def build_shared_platform_lines(
     return {
         stop_id: lines for stop_id, lines in stop_to_lines.items() if len(lines) > 1
     }
+
+
+def format_stop_label(
+    stop_id: str, stop_name: str, stop_to_lines: Dict[str, List[str]]
+) -> str:
+    """Prefix a stop name with its line(s), e.g. "L9S-L10S-Torrassa".
+
+    args:
+        stop_id: Platform stop_id to look up.
+        stop_name: Stop name to prefix.
+        stop_to_lines: Mapping from stop_id to line names, from `build_stop_to_lines`.
+
+    returns:
+        "{line1}-{line2}-...-{stop_name}", or plain `stop_name` if no lines are found.
+    """
+    lines = stop_to_lines.get(stop_id)
+    if not lines:
+        return stop_name
+    return f"{'-'.join(lines)}-{stop_name}"
 
 
 # -----------------------------

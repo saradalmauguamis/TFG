@@ -7,7 +7,7 @@ scripts/
 ├── basics.py
 ├── stops_report.py
 ├── utils.py
-└── from_txt_to_xlsx.ipynb
+└── from_txt_to_xlsx.py
 ```
 
 ---
@@ -32,9 +32,9 @@ from `data_validation/gtfs_utils.py`. Used to sanity-check that platform-entranc
 Generic CSV helpers — delimiter sniffing with a comma fallback — used by GTFS file readers
 elsewhere in the repo.
 
-### `from_txt_to_xlsx.ipynb`
+### `from_txt_to_xlsx.py`
 
-Converts GTFS `.txt` files into `.xlsx` workbooks for manual inspection. Any folder under `.src/gtfs/data/`
+Converts GTFS `.txt` files into `.xlsx` workbooks for manual inspection. Any folder under `data/`
 can be converted — set `DATA_DIR` to the pipeline stage you want (e.g. `0_raw`, `1_subway`,
 `5_shared_platforms_duplication`). Can convert a single file or all `.txt` files in the data
 folder; large files are split across multiple sheets automatically.

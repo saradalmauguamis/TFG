@@ -12,6 +12,11 @@ data_validation/processing/6_weights.py), not from geographic proximity:
       weight is the traversal_time.
     - "TF" transfer: platform-to-platform across lines, from transfers.txt;
       weight is the min_transfer_time.
+
+A few stops are split into two synthetic platforms (one per line) that share the same
+coordinates; SYNTHETIC_PLATFORM_JITTER_ANGLE hardcodes a manual offset for each so they're
+drawn side-by-side instead of overlapping or crossing their own line. See that constant's
+docstring for why this isn't derived automatically.
 """
 
 import math
@@ -40,12 +45,43 @@ EDGE_STYLE_BY_TYPE = {
     "PW": "dotted",
     "TF": "dashed",
 }
+EDGE_TYPE_LABELS = {
+    "PW": "Pathway (PW)",
+    "TF": "Transfer (TF)",
+}
 NON_LINE_EDGE_COLOR = "#444444"
 FALLBACK_LINE_COLOR = "#999999"
 PLATFORM_NODE_COLOR = "#4477AA"
 SYNTHETIC_PLATFORM_NODE_COLOR = "#FFD700"
 
 JITTER_DEGREES = 0.0015
+
+# Manual jitter angle (radians) for the synthetic platforms in the shared-platform groups
+# produced by the L9/L10 split in EQUIVALENCES_SHARED_FILE, keyed by stop_id. Each pair
+# shares an axis (angle and angle + pi) so the two platforms sit side-by-side along their
+# line instead of drifting across the other line's path (a derived angle was tried and
+# produced visible crossings).
+#
+# NOT SCALABLE: this is tied to the current data_validation/processing output (specifically
+# weights.txt and equivalences_shared.txt). If that pipeline ever changes which stops get
+# split or how, this table must be recomputed or removed; any duplicate-coordinate group
+# without both members listed here falls back to a uniformly random offset.
+SYNTHETIC_PLATFORM_JITTER_ANGLE: dict[str, float] = {
+    # -- South --
+    "1.9140": math.pi,
+    "1.9141": 0,
+    "1.9150": math.pi * 3 / 4,
+    "1.9151": math.pi * 3 / 4 + math.pi,
+    "1.9160": math.pi / 2,
+    "1.9161": math.pi / 2 + math.pi,
+    # -- North --
+    "1.9300": math.pi,
+    "1.9301": 0,
+    "1.9320": math.pi,
+    "1.9321": 0,
+    "1.9330": math.pi,
+    "1.9331": 0,
+}
 
 # Set to True to also draw entry/exit nodes and PW/TF edges, not just platforms and SW.
 SHOW_ALL_NODES_AND_EDGES = False
@@ -110,7 +146,7 @@ def load_graph() -> nx.DiGraph:
     graph = nx.DiGraph()
     coords = stops.set_index("stop_id")[["stop_lon", "stop_lat"]]
     rng = random.Random(0)
-    seen_coords: dict[tuple[float, float], int] = {}
+    groups: dict[tuple[float, float], list[str]] = {}
 
     for _, row in edges.iterrows():
         line = edge_lines.get((row["from_stop_id"], row["to_stop_id"]))
@@ -126,16 +162,31 @@ def load_graph() -> nx.DiGraph:
         if node not in coords.index:
             continue
         lon, lat = coords.loc[node, ["stop_lon", "stop_lat"]]
-        key = (lon, lat)
-        count = seen_coords.get(key, 0)
-        seen_coords[key] = count + 1
-        # Only nudge nodes that share a coordinate with an earlier one, so overlapping
-        # platforms/entries become visually distinguishable.
-        if count > 0:
+        groups.setdefault((lon, lat), []).append(node)
+
+    for (lon, lat), members in groups.items():
+        if len(members) == 1:
+            graph.nodes[members[0]]["pos"] = (lon, lat)
+            continue
+
+        if all(member in SYNTHETIC_PLATFORM_JITTER_ANGLE for member in members):
+            for member in members:
+                angle = SYNTHETIC_PLATFORM_JITTER_ANGLE[member]
+                graph.nodes[member]["pos"] = (
+                    lon + (JITTER_DEGREES / 2) * math.cos(angle),
+                    lat + (JITTER_DEGREES / 2) * math.sin(angle),
+                )
+            continue
+
+        # Not one of the known shared-platform groups: fall back to a random offset.
+        members = sorted(members)
+        graph.nodes[members[0]]["pos"] = (lon, lat)
+        for i, member in enumerate(members[1:], start=1):
             angle = rng.uniform(0, 2 * math.pi)
-            lon += JITTER_DEGREES * count * math.cos(angle)
-            lat += JITTER_DEGREES * count * math.sin(angle)
-        graph.nodes[node]["pos"] = (lon, lat)
+            graph.nodes[member]["pos"] = (
+                lon + JITTER_DEGREES * i * math.cos(angle),
+                lat + JITTER_DEGREES * i * math.sin(angle),
+            )
 
     return graph
 
@@ -160,20 +211,6 @@ def draw_graph(
     fig_size = (10, 10) if zoomed else (14, 14)
     node_scale = 6 if zoomed else 1
     line_colors = load_line_colors()
-    legend_handles = [
-        plt.Line2D([0], [0], color=color, lw=4, label=line)
-        for line, color in line_colors.items()
-    ] + [
-        plt.Line2D(
-            [0],
-            [0],
-            marker="o",
-            color="none",
-            markerfacecolor=SYNTHETIC_PLATFORM_NODE_COLOR,
-            markersize=14,
-            label="Synthetic platform",
-        )
-    ]
     synthetic_platform_ids = load_synthetic_platform_ids()
     platform_nodes = [
         n
@@ -199,7 +236,39 @@ def draw_graph(
             else {"SW": EDGE_STYLE_BY_TYPE["SW"]}
         )
     )
+    legend_handles = (
+        [
+            plt.Line2D([0], [0], color=color, lw=4, label=line)
+            for line, color in line_colors.items()
+        ]
+        + [
+            plt.Line2D(
+                [0],
+                [0],
+                color=NON_LINE_EDGE_COLOR,
+                lw=2,
+                linestyle=style,
+                label=EDGE_TYPE_LABELS[edge_type],
+            )
+            for edge_type, style in edge_styles.items()
+            if edge_type != "SW"
+        ]
+        + [
+            plt.Line2D(
+                [0],
+                [0],
+                marker="o",
+                color="none",
+                markerfacecolor=SYNTHETIC_PLATFORM_NODE_COLOR,
+                markersize=14,
+                label="Synthetic platform",
+            )
+        ]
+    )
     _, ax = plt.subplots(figsize=fig_size)
+    # Compass: confirms the plot uses standard orientation (lon/lat plotted directly as
+    # x/y, unflipped), since there's no other visual cue once the axes are turned off.
+    compass_x, compass_y, arm = 0.06, 0.92, 0.03
 
     nx.draw_networkx_nodes(
         graph,
@@ -273,12 +342,7 @@ def draw_graph(
                 ax=ax,
             )
 
-    ax.legend(
-        handles=legend_handles,
-        loc="lower right",
-        fontsize=14,
-        title="Line",
-    ).get_title().set_fontsize(16)
+    ax.legend(handles=legend_handles, loc="lower right", fontsize=14)
 
     if zoomed:
         center_lon, center_lat = pos[center_stop_id]
@@ -296,6 +360,36 @@ def draw_graph(
             labels={n: n for n in visible},
             font_size=7,
             ax=ax,
+        )
+
+    ax.plot(
+        [compass_x - arm, compass_x + arm],
+        [compass_y, compass_y],
+        color="black",
+        lw=1,
+        transform=ax.transAxes,
+    )
+    ax.plot(
+        [compass_x, compass_x],
+        [compass_y - arm, compass_y + arm],
+        color="black",
+        lw=1,
+        transform=ax.transAxes,
+    )
+    for label, (dx, dy) in {
+        "N": (0, arm * 1.8),
+        "S": (0, -arm * 1.8),
+        "E": (arm * 1.8, 0),
+        "W": (-arm * 1.8, 0),
+    }.items():
+        ax.annotate(
+            label,
+            xy=(compass_x + dx, compass_y + dy),
+            xycoords="axes fraction",
+            ha="center",
+            va="center",
+            fontsize=10,
+            fontweight="bold",
         )
 
     ax.set_title(

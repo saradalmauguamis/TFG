@@ -2,8 +2,8 @@
 
 ```
 routing_algotithms/
-├── a*/
-│   └── a*_example.py
+├── a_star/
+│   └── a_star_example.py
 ├── dijkstra/
 │   └── dijkstra_example.py
 └── graph_draw/
