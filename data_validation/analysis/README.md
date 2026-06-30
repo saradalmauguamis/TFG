@@ -7,9 +7,9 @@ Read-only scripts that answer specific research questions about the data. Most p
 ### `shared_platforms.py` — shared-platform travel time comparison
 
 Reads:
-- `stop_times_doors.txt` from `.src/gtfs/data/4_doors_time`
-- `stops_subway.txt`from `.src/gtfs/data/1_subway`
-- `trips_cleaned.txt` from `.src/gtfs/data/2_duplicated_trips`
+- `stop_times_doors.txt` from `data/4_doors_time`
+- `stops_subway.txt`from `data/1_subway`
+- `trips_cleaned.txt` from `data/2_duplicated_trips`
 
 > Used to decide whether it is necessary to duplicate the shared platforms so each line gets its own edge weight.
 
@@ -37,7 +37,7 @@ Shared platforms currently detected:
 
 ### `directional_asymmetry.py` — directional travel time comparison
 
-Reads: `stop_times_doors.txt` from `.src/gtfs/data/4_doors_time`
+Reads: `stop_times_doors.txt` from `data/4_doors_time`
 
 > Used to decide whether the graph needs to be directed or can be undirected: compares average a→b vs b→a travel time for each adjacent platform pair.
 
@@ -45,7 +45,7 @@ Reads: `stop_times_doors.txt` from `.src/gtfs/data/4_doors_time`
 
 ### `edge_weight_validation.py` — sw edge weight trustworthiness
 
-Reads: `stop_times_shared.txt`/`stops_shared.txt` from `.src/gtfs/data/5_shared_platforms`, `trips_cleaned.txt` from `.src/gtfs/data/2_duplicated_trips`
+Reads: `stop_times_shared.txt`/`stops_shared.txt` from `data/5_shared_platforms`, `trips_cleaned.txt` from `data/2_duplicated_trips`
 
 > Used to decide whether `mean(total)` per directed platform-to-platform pair (`total = arrival_b - arrival_a`) is a trustworthy static weight for the `sw` edges of the shortest-path graph, or whether it needs a different treatment (better averaging, or a time-dependent weight).
 
