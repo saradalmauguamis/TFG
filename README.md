@@ -1,5 +1,35 @@
 # Modeling and Optimization of Routes in Barcelona's Public Transport Network
 
+## Repository Structure
+
+```
+TFG/
+├── data/
+├── data_validation/
+├── routing_algotithms/
+├── scripts/
+├── hooks/
+├── subway_maps/
+├── .gitignore
+├── .pre-commit-config.yaml
+└── requirements.txt
+```
+
+- `data/` — GTFS pipeline data, organized by processing stage (`0_raw` → `6_weights`); see
+  [`data_validation/README.md`](data_validation/README.md) and
+  [`data_validation/WORKFLOW.md`](data_validation/WORKFLOW.md) for what reads/writes each stage.
+- [`data_validation/`](data_validation/README.md) — pipeline for validating, processing, and
+  analysing the GTFS subway data.
+- [`routing_algotithms/`](routing_algotithms/README.md) — Dijkstra and A* implementations, plus a
+  subway graph drawing script.
+- [`scripts/`](scripts/README.md) — reference data and standalone utilities shared across the
+  other folders.
+- [`hooks/`](hooks/README.md) — pre-commit hook scripts; see that README for what gets checked.
+- `subway_maps/` — reference JPGs of Barcelona's subway lines, used for visual cross-checking.
+- `.gitignore` — files and folders excluded from version control.
+- `.pre-commit-config.yaml` — pre-commit hook registration (see [`hooks/README.md`](hooks/README.md)).
+- `requirements.txt` — pinned Python dependencies for `.venv`.
+
 ## Setup
 
 Use the commands below for your operating system.
@@ -39,17 +69,8 @@ pre-commit install
 
 ## Pre-commit Checks
 
-Pre-commit runs automatically on every `git commit`. It checks:
-- ✅ Trailing whitespace
-- ✅ End-of-file formatting
-- ✅ YAML and JSON syntax
-- ✅ Python code with Black (formatting)
-- ✅ Python linting with Flake8
-- ✅ Function docstrings: required description, `args:`, and `returns:` sections (`.py` and `.ipynb`)
-- ✅ Line length in comments and code (`.ipynb` cells, complements Flake8 for notebooks)
-- ✅ Local variable declarations at the top of functions (`.py` and `.ipynb`)
-- ✅ `requirements.txt` matches `.venv` (pre-commit check)
-- ✅ Notebook outputs stripped before committing (`nbstripout`)
+Pre-commit runs automatically on every `git commit`. See [`hooks/README.md`](hooks/README.md)
+for the full list of checks.
 
 ### Run Pre-commit Manually
 

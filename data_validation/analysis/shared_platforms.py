@@ -14,8 +14,8 @@ direction and platform pair, and prints one row per line for each pair, plus
 the spread (max - min) across whichever lines have data — this generalizes to
 however many lines share a given platform, not just two.
 
-The cleaned inputs are expected under the repository at `../.src/gtfs/data/` relative to this file.
-Raw GTFS source files live under `../.src/gtfs/data/0_raw/`.
+The cleaned inputs are expected under `data/` at the repository root.
+Raw GTFS source files live under `data/0_raw/`.
 """
 
 from __future__ import annotations

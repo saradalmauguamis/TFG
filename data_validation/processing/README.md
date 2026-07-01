@@ -6,7 +6,7 @@ Each script is a self-contained step that reads from one data stage and writes t
 
 ### `1_subway.py` — extract subway-only rows
 
-`.src/gtfs/data/0_raw` → `.src/gtfs/data/1_subway`
+`data/0_raw` → `data/1_subway`
 
 | Input | Output |
 |---|---|
@@ -21,26 +21,26 @@ Rows whose first column starts with `2.` (bus network) are removed.
 
 ### `2_duplicated_trips.py` — remove duplicated trips
 
-`.src/gtfs/data/1_subway` → `.src/gtfs/data/2_duplicated_trips`
+`data/1_subway` → `data/2_duplicated_trips`
 
 | Input | Output |
 |---|---|
 | `stop_times_subway.txt` | `stop_times_cleaned.txt` |
 | `trips_subway.txt` | `trips_cleaned.txt` |
 
-Also reads `trip_ids_to_eliminate.txt` from `.src/gtfs/data/2_duplicated_trips`, produced by `data_validation/checks/stop_times/1_duplicate_trips_check.py`.
+Also reads `trip_ids_to_eliminate.txt` from `data/2_duplicated_trips`, produced by `data_validation/checks/stop_times/1_duplicate_trips_check.py`.
 
 ---
 
 ### `3_stop_sequence.py` — fix stop_sequence gaps
 
-`.src/gtfs/data/2_duplicated_trips` → `.src/gtfs/data/3_stop_sequence`
+`data/2_duplicated_trips` → `data/3_stop_sequence`
 
 | Input | Output |
 |---|---|
 | `stop_times_cleaned.txt` | `stop_times_sequence.txt` |
 
-Also reads `wrong_stop_sequences.txt` from `.src/gtfs/data/3_stop_sequence`, produced by `data_validation/checks/stop_times/2_canonical_sequence_check.py`.
+Also reads `wrong_stop_sequences.txt` from `data/3_stop_sequence`, produced by `data_validation/checks/stop_times/2_canonical_sequence_check.py`.
 
 For each trip, `wrong_stop_sequences.txt` lists the breaks where two consecutive stops are not adjacent in the canonical route order (as `seq_a`/`seq_b` pairs). For every such break, the script opens a gap: the breaking stop and every stop after it in that trip have their `stop_sequence` incremented by one. Breaks accumulate, i.e., a stop that comes after two break points ends up with its original sequence plus two. This lets downstream graph builders distinguish physically non-adjacent stops from adjacent ones, without changing arrival/departure times.
 
@@ -48,7 +48,7 @@ For each trip, `wrong_stop_sequences.txt` lists the breaks where two consecutive
 
 ### `4_doors_time.py` — add door-open times to terminal stops
 
-`.src/gtfs/data/3_stop_sequence` → `.src/gtfs/data/4_doors_time`
+`data/3_stop_sequence` → `data/4_doors_time`
 
 | Input | Output |
 |---|---|
@@ -67,7 +67,7 @@ For every row where `arrival_time == departure_time` at a terminal stop, the scr
 
 ### `5_shared_platforms_duplication.py` — split shared platforms into one stop_id per line
 
-`.src/gtfs/data/0_raw` + `.src/gtfs/data/1_subway` + `.src/gtfs/data/4_doors_time` → `.src/gtfs/data/5_shared_platforms`
+`data/0_raw` + `data/1_subway` + `data/4_doors_time` → `data/5_shared_platforms`
 
 | Input | Output |
 |---|---|
@@ -77,7 +77,7 @@ For every row where `arrival_time == departure_time` at a terminal stop, the scr
 | `transfers.txt` | `transfers_shared.txt` |
 | — | `equivalences_shared.txt` |
 
-Also reads `trips_cleaned.txt` from `.src/gtfs/data/2_duplicated_trips` to resolve each stop_times row's trip to its line.
+Also reads `trips_cleaned.txt` from `data/2_duplicated_trips` to resolve each stop_times row's trip to its line.
 
 Shared platforms (stops served by more than one line, e.g. the L9S/L10S and L9N/L10N overlaps) are detected generically from `scripts/basics.py`'s `subway_route_names_stop_ids` — no line names are hardcoded, so any future shared platform is picked up automatically. Each shared `stop_id` (e.g. `1.930`) is split into one new id per serving line (`1.9300`, `1.9301`, ...):
 
@@ -87,7 +87,7 @@ Shared platforms (stops served by more than one line, e.g. the L9S/L10S and L9N/
 
 ### `6_weights.py` — build the weighted graph edges
 
-`.src/gtfs/data/5_shared_platforms` (+ `.src/gtfs/data/2_duplicated_trips` trips) → `.src/gtfs/data/6_weights`
+`data/5_shared_platforms` (+ `data/2_duplicated_trips` trips) → `data/6_weights`
 
 | Input | Output |
 |---|---|
@@ -96,7 +96,7 @@ Shared platforms (stops served by more than one line, e.g. the L9S/L10S and L9N/
 | `pathways_shared.txt` | — |
 | — | `weights.txt` |
 
-Also reads `trips_cleaned.txt` from `.src/gtfs/data/2_duplicated_trips` to resolve each trip's line and
+Also reads `trips_cleaned.txt` from `data/2_duplicated_trips` to resolve each trip's line and
 direction.
 
 Motivated by `analysis/directional_asymmetry.py` (directed edges) and
