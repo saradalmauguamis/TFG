@@ -1,17 +1,18 @@
 """Shared Dijkstra implementations, helpers, and display utilities."""
 
 from __future__ import annotations
-import heapq
-from typing import Dict, List, Optional, Tuple
+from typing import Callable, Dict, List, Optional, Tuple
 
 Node = str
 Weight = int
 Graph = Dict[Node, Dict[Node, Weight]]
-INF = 10**18
+INF = (
+    10**18
+)  # int equivalent of float('inf'); keeps dist arithmetic/equality in pure int
 
 
 # ---------------------------------------------------------------------------
-# Binary heap priority queue with O(log n) decrease_priority
+# Binary heap priority queue with O(log₂ n) decrease_priority
 # ---------------------------------------------------------------------------
 
 
@@ -23,9 +24,9 @@ class MinHeap:
     This avoids the complications of a bi-directional binary tree (Alsedà, slide 95).
 
     Mirrors the three operations named in the Alsedà pseudocode:
-        add_with_priority  — enqueue (Alsedà, slide 87): O(log Q̄)
-        extract_min        — dequeue (Alsedà, slide 87): O(log Q̄)
-        decrease_priority  — requeue (Alsedà, slide 87): O(log Q̄)
+        add_with_priority  — enqueue (Alsedà, slide 87): O(log₂ Q̄)
+        extract_min        — dequeue (Alsedà, slide 87): O(log₂ Q̄)
+        decrease_priority  — requeue (Alsedà, slide 87): O(log₂ Q̄)
 
     Heap property (Alsedà, slide 84): every parent <= its children. Siblings are unordered.
     This means index 0 is always the minimum, but the rest of the array
@@ -64,10 +65,11 @@ class MinHeap:
         """Restore heap property upward from index i (Alsedà, slide 89: heapify_up).
 
         Used after add_with_priority and decrease_priority since the new distance
-        can only be smaller — the heap property can only be violated upward.
+        can only be smaller, so the heap property can only be violated upward.
 
-        Parent index formula from Alsedà slide 88: parentOf(d,p) = (d-1, floor(p/2)),
-        which translates to (i-1)//2 in the consecutive levels vector.
+        Parent index (i-1)//2 is the translation of parentOf(d,p) = (d-1, floor(p/2))
+        (Alsedà, slide 88) into the 1-dimensional consecutive levels vector position
+        (2^d - 1) + p (Alsedà, slide 96).
 
         args:
             self: The MinHeap instance being mutated.
@@ -86,9 +88,15 @@ class MinHeap:
 
         Used after extract_min, since moving the last node to the root preserves
         the shape property but may break the heap property (Alsedà, slide 94).
-        Swaps with the smaller of the two children at each step (Alsedà, slide 90:
-        'smallson'), since swapping with the larger would violate the heap property
-        on that side.
+        Swaps with the smallson (smaller of the two children) at each step
+        (Alsedà, slide 90), since swapping with the larger would violate the heap
+        property on that side.
+
+        Children indices 2i+1 and 2i+2 are the translation of
+        leftchildOf(d,p) = (d+1, 2p) and rightchildOf(d,p) = (d+1, 2p+1) (Alsedà,
+        slide 88) into the 1-dimensional consecutive levels vector position
+        (2^d - 1) + p (Alsedà, slide 96).
+
 
         args:
             self: The MinHeap instance being mutated.
@@ -96,14 +104,14 @@ class MinHeap:
         """
         n = len(self._heap)
         while True:
-            smallest = i
+            smallson = i
             for child in (2 * i + 1, 2 * i + 2):
-                if child < n and self._heap[child][0] < self._heap[smallest][0]:
-                    smallest = child
-            if smallest == i:
+                if child < n and self._heap[child][0] < self._heap[smallson][0]:
+                    smallson = child
+            if smallson == i:
                 break
-            self._swap(i, smallest)
-            i = smallest
+            self._swap(i, smallson)
+            i = smallson
 
     # ------------------------------------------------------------------
     # Public interface  (names match the pseudocode exactly)
@@ -121,7 +129,7 @@ class MinHeap:
         return len(self._heap) == 0
 
     def add_with_priority(self, vertex: Node, dist: int) -> None:
-        """Enqueue a new vertex with the given distance, in O(log Q̄) time.
+        """Enqueue a new vertex with the given distance, in O(log₂ Q̄) time.
 
         Corresponds to enqueue in Alsedà (slide 87): appends the new node to the
         last level of the heap (preserving the shape property), then heapify_up
@@ -141,7 +149,7 @@ class MinHeap:
         self.heapify_up(self._pos[vertex])
 
     def extract_min(self) -> Tuple[Node, int]:
-        """Remove and return the vertex with smallest distance, in O(log Q̄) time.
+        """Remove and return the vertex with smallest distance, in O(log₂ Q̄) time.
 
         Corresponds to dequeue in Alsedà (slide 87) via the three-step procedure (slide 94):
         Step 1: Read the root node (minimum by heap property, Alsedà slide 85).
@@ -185,7 +193,7 @@ class MinHeap:
         return root_vertex, root_dist
 
     def decrease_priority(self, vertex: Node, new_dist: int) -> None:
-        """Lower the distance of a vertex already in the queue, in O(log Q̄) time.
+        """Lower the distance of a vertex already in the queue, in O(log₂ Q̄) time.
 
         Corresponds to requeue in Alsedà (slide 87): the shape property is maintained
         since no structural change occurs; only the heap property may be violated
@@ -206,122 +214,7 @@ class MinHeap:
 
 
 # ---------------------------------------------------------------------------
-# Dijkstra — old version (stdlib heapq, lazy deletion)
-# ---------------------------------------------------------------------------
-
-
-def _run_dijkstra_old(
-    graph: Graph,
-    source: Node,
-    verbose: bool = True,
-    stop_at: Optional[Node] = None,
-) -> Tuple[Dict[Node, int], Dict[Node, Optional[Node]], int]:
-    """Run Dijkstra's algorithm and optionally stop when a target is settled.
-
-    args:
-        graph: A directed, weighted graph represented as an adjacency list.
-        source: The starting node for the algorithm.
-        verbose: Whether to print iterations and updates while running.
-        stop_at: Optional node that stops the search when settled.
-
-    returns:
-        distances: A mapping from each node to its shortest distance from the source.
-        parents: A mapping from each node to its parent in the shortest path tree.
-        iterations: Number of extracted nodes processed by the algorithm.
-    """
-    nodes = list(graph.keys())
-    dist: Dict[Node, int] = {node: INF for node in nodes}
-    parent: Dict[Node, Optional[Node]] = {
-        node: None for node in nodes
-    }  # Different in DO notes
-    expanded: Dict[Node, bool] = {
-        node: False for node in nodes
-    }  # expanded[node] = True if the shortest path to node is already found
-
-    dist[source] = 0
-    pq: List[Tuple[int, Node]] = [
-        (dist[source], source)
-    ]  # Priority queue of (distance, node) pairs, ordered by distance
-    iteration = 0
-
-    while pq:  # It means "while the priority queue is not empty"
-        best_dist, node = heapq.heappop(pq)
-
-        # Skip already expanded nodes or stale queue entries (robustness check).
-        # This check is not in the L.A.-pseudocode because it updates the priority and here
-        # we can have multiple entries for the same node (that's why we need this check)
-        if expanded[node] or best_dist != dist[node]:
-            continue
-
-        iteration += 1
-        if verbose:
-            print(f"\nIteration {iteration}: extract {node} with distance {best_dist}")
-
-        expanded[node] = True
-
-        if stop_at is not None and node == stop_at:
-            break
-
-        for adj, weight in graph[node].items():
-            # For not going back to already expanded nodes. We have to think in the perspective
-            # of starting from the source and going forward. We want the shortest path from the
-            # source, not from any other node <-- also because if we considered adj before it's
-            # because we found its shortest path already
-            if expanded[adj]:
-                continue
-
-            new_cost = dist[node] + weight
-            if new_cost < dist[adj]:
-                old_cost = dist[adj]
-                dist[adj] = new_cost
-                parent[adj] = node
-                heapq.heappush(pq, (new_cost, adj))
-                if verbose:
-                    old_shown = old_cost if old_cost != INF else "inf"
-                    print(f"  -> update {adj}: {old_shown} -> {new_cost} via {node}")
-
-    return dist, parent, iteration
-
-
-def dijkstra_old(
-    graph: Graph, source: Node, verbose: bool = True
-) -> Tuple[Dict[Node, int], Dict[Node, Optional[Node]], int]:
-    """Run the old Dijkstra's algorithm from source and return distance and parent maps.
-
-    args:
-        graph: A directed, weighted graph represented as an adjacency list.
-        source: The starting node for the algorithm.
-        verbose: Whether to print iterations and updates while running.
-
-    returns:
-        distances: A mapping from each node to its shortest distance from the source.
-        parents: A mapping from each node to its parent in the shortest path tree.
-        iterations: Number of extracted nodes processed by the algorithm.
-    """
-    return _run_dijkstra_old(graph, source, verbose=verbose, stop_at=None)
-
-
-def cut_dijkstra_old(
-    graph: Graph, source: Node, target: Node, verbose: bool = True
-) -> Tuple[Dict[Node, int], Dict[Node, Optional[Node]], int]:
-    """Run the old Dijkstra's algorithm and stop when the target is settled.
-
-    args:
-        graph: A directed, weighted graph represented as an adjacency list.
-        source: The starting node for the algorithm.
-        target: The target node that stops the search when settled.
-        verbose: Whether to print iterations and updates while running.
-
-    returns:
-        distances: A mapping from each node to its shortest distance from the source.
-        parents: A mapping from each node to its parent in the shortest path tree.
-        iterations: Number of extracted nodes processed by the algorithm.
-    """
-    return _run_dijkstra_old(graph, source, verbose=verbose, stop_at=target)
-
-
-# ---------------------------------------------------------------------------
-# Dijkstra — new version (MinHeap with decrease_priority)
+# Dijkstra (MinHeap with decrease_priority)
 # ---------------------------------------------------------------------------
 
 
@@ -359,14 +252,13 @@ def _run_dijkstra(
     parent: Dict[Node, Optional[Node]] = {
         node: None for node in nodes
     }  # previous vertices in an optimal path
-    iteration = int
+
+    iteration = 0
 
     dist[source] = 0
     # parent[source] stays None  (pseudocode uses ∞ as "no parent" sentinel)
 
     pq.add_with_priority(source, dist[source])
-
-    iteration = 0
 
     while not pq.is_empty():  # pseudocode: while not Pq.IsEmpty
         node, best_dist = pq.extract_min()  # pseudocode: node <- Pq.extract_min()
@@ -408,7 +300,9 @@ def _run_dijkstra(
 
                 if verbose:
                     old_shown = old_dist_adj if old_dist_adj != INF else "inf"
-                    print(f"  -> update {adj}: {old_shown} -> {dist_aux} via {node}")
+                    print(
+                        f"  -> update {adj}: {old_shown} -> {dist_aux} (w={weight}) via {node}"
+                    )
 
     return dist, parent, iteration
 
@@ -496,7 +390,11 @@ def print_graph_size(graph: Graph) -> None:
 
 
 def print_distances(
-    graph: Graph, dist: Dict[Node, int], show_unreachable: bool = True
+    graph: Graph,
+    dist: Dict[Node, int],
+    show_unreachable: bool = True,
+    source: Optional[Node] = None,
+    dist_fmt: Optional[Callable[[int], str]] = None,
 ) -> None:
     """Print the shortest distance from the source to every node in the graph.
 
@@ -504,20 +402,30 @@ def print_distances(
         graph: A directed, weighted graph represented as an adjacency list.
         dist: A mapping from each node to its shortest distance from the source.
         show_unreachable: Whether to also print nodes still at distance INF.
+        source: When provided, the header names the source node explicitly.
+        dist_fmt: Optional callable to format distance values (e.g. seconds_to_hms).
+            When omitted, raw integers are printed.
     """
     nodes = list(graph.keys())
     width = max(len(n) for n in nodes)
-    print("\nShortest distances from source:")
+    label = source if source is not None else "source"
+    print(f"\nShortest distances from {label}:")
     for node in nodes:
         value = dist[node]
         if value == INF and not show_unreachable:
             continue
-        shown = value if value != INF else "inf"
+        shown: object = (
+            "inf" if value == INF else (dist_fmt(value) if dist_fmt else value)
+        )
         print(f"- {node:<{width}} : {shown}")
 
 
 def print_path_summary(
-    source: Node, target: Node, path: List[Node], dist: Dict[Node, int]
+    source: Node,
+    target: Node,
+    path: List[Node],
+    dist: Dict[Node, int],
+    dist_fmt: Optional[Callable[[int], str]] = None,
 ) -> None:
     """Print the rebuilt path from source to target and its total distance.
 
@@ -526,12 +434,16 @@ def print_path_summary(
         target: The destination node.
         path: The rebuilt path from source to target, or an empty list if none.
         dist: A mapping from each node to its shortest distance from the source.
+        dist_fmt: Optional callable to format the total distance (e.g. seconds_to_hms).
+            When omitted, the raw integer is printed.
     """
     if path:
         print(f"\nShortest path from {source} to {target}:")
         print("  ", " -> ".join(path))
         total = dist[target]
-        shown_total = total if total != INF else "inf"
+        shown_total: object = (
+            "inf" if total == INF else (dist_fmt(total) if dist_fmt else total)
+        )
         print(f"Minimum distance found: {shown_total}")
     else:
         print(f"\nNo path found from {source} to {target}.")

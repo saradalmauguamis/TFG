@@ -5,10 +5,25 @@ routing_algotithms/
 ├── a_star/
 │   └── a_star_example.py
 ├── dijkstra/
-│   └── dijkstra_example.py
+│   ├── dijkstra.py
+│   ├── dijkstra_example.py
+│   └── dijkstra_utils.py
 └── graph_draw/
     └── graph.py
 ```
+
+## dijkstra/
+
+The aim of this thesis is to implement Dijkstra and A* on Barcelona's subway network. After the
+`data_validation` pipeline produces [`data/6_weights/weights.txt`](../data/6_weights/weights.txt),
+that file is the real, GTFS-derived weighted graph the algorithms run on.
+
+- `dijkstra.py`: the main file. Builds the graph straight from `weights.txt` and runs Dijkstra on
+  it, this is the actual thesis result.
+- `dijkstra_utils.py`: the shared implementation (`MinHeap`, `dijkstra`, `cut_dijkstra`, path
+  reconstruction, print helpers) used by both files below.
+- `dijkstra_example.py`: small toy graphs meant to leave an understandable, traceable example of
+  how the algorithm works, separate from the real subway data.
 
 ## graph_draw/graph.py
 

@@ -15,6 +15,7 @@ from data_validation.gtfs_utils import (  # noqa: E402
     WEIGHTS_FILE,
     check_missing_files,
     read_dict_rows,
+    seconds_to_hms,
 )
 from dijkstra_utils import (  # noqa: E402
     Graph,
@@ -82,8 +83,10 @@ def main() -> None:
     _, _, cut_iterations = cut_dijkstra(graph, SOURCE, TARGET, verbose=False)
     cut_elapsed_ms = (perf_counter() - cut_start) * 1000
 
-    print_distances(graph, dist, show_unreachable=False)
-    print_path_summary(SOURCE, TARGET, path, dist)
+    print_distances(
+        graph, dist, show_unreachable=False, source=SOURCE, dist_fmt=seconds_to_hms
+    )
+    print_path_summary(SOURCE, TARGET, path, dist, dist_fmt=seconds_to_hms)
     print_summary(iterations, elapsed_ms, cut_iterations, cut_elapsed_ms)
 
 

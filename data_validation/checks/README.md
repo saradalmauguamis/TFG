@@ -31,7 +31,14 @@ rest of `stop_times/` is tied to a fixed position, since it's interleaved with
 
 - `stop_times/`: stop_times consistency and sequence checks, one script per check, numbered in
   pipeline run order. Each numbered script takes an optional `verify` argument to re-run the same
-  check after its paired processing step, instead of detecting/writing fresh.
+  check after its paired processing step, instead of detecting/writing fresh, e.g.:
+
+  ```bash
+  python data_validation/checks/stop_times/1_duplicate_trips_check.py          # detect
+  python data_validation/checks/stop_times/1_duplicate_trips_check.py verify   # verify
+  ```
+
+  See [`WORKFLOW.md`](../WORKFLOW.md) for where each detect/verify pair fits in the full pipeline.
   - `sequence_increment_check.py` *(independent — only needs `1_subway`)*
     - Does `stop_sequence` increment by one for all trips?
   - `1_duplicate_trips_check.py` *(independent — only needs `1_subway`)*
