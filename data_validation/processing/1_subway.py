@@ -1,7 +1,7 @@
 """Build GTFS subway extracts from the subway input files.
 
-This script reads the subway GTFS files from ``.src/gtfs/data/0_raw`` and writes
-filtered ``*_subway.txt`` files into .src/gtfs/data/1_subway.
+This script reads the subway GTFS files from ``data/0_raw`` and writes
+filtered ``*_subway.txt`` files into data/1_subway.
 
 Rows whose first column starts with ``2.`` are removed.
 """

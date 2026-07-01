@@ -14,7 +14,7 @@ transfers (`TF`, from `TRANSFERS_FILE`) and pathways from an entrance to a
 platform (`PW`, from `PATHWAYS_FILE`, only rows where one side is an entrance
 `E.*` and the other a platform `1.*`) - into a single `weights.txt`.
 
-Outputs (written to `.src/gtfs/data/6_weights/`):
+Outputs (written to `data/6_weights/`):
 - subway_weights.txt: from_stop_id, to_stop_id, weight_seconds, line
 - weights.txt:        from_stop_id, to_stop_id, weight_seconds, type
 

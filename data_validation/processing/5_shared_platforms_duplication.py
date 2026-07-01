@@ -13,7 +13,7 @@ in the future — and rewrites every file that references the original stop_id.
 Naming: e.g. stop_id `1.930`, shared by lines `[L9N, L10N]`, becomes `1.9300`
 (L9N) and `1.9301` (L10N). The original stop_id is dropped everywhere.
 
-Inputs and outputs (outputs are written to `.src/gtfs/data/5_shared_platforms/`):
+Inputs and outputs (outputs are written to `data/5_shared_platforms/`):
 - pathways.txt          -> pathways_shared.txt
 - stop_times_doors.txt  -> stop_times_shared.txt
 - stops_subway.txt      -> stops_shared.txt

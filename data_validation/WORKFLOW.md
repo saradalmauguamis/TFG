@@ -7,8 +7,8 @@ There are two kinds of steps here:
 
 - **Core pipeline** — a strict sequential chain. Each step's output is required by the next, so
   these must run in order.
-- **Independent checks** — `checks/file_connection_checks.ipynb`, `checks/pathways_checks.ipynb`,
-  `checks/trips_checks.ipynb`, and `checks/stop_times/sequence_increment_check.py` only need
+- **Independent checks** — `checks/file_connection_checks.py`, `checks/pathways_checks.py`,
+  `checks/trips_checks.py`, and `checks/stop_times/sequence_increment_check.py` only need
   `processing/1_subway.py` to have run. They don't produce any file consumed downstream, don't
   gate each other, and can run in any order (or be skipped) without affecting the rest of the
   pipeline.
@@ -112,14 +112,14 @@ There are two kinds of steps here:
 
 Run anytime after step 1 of the core pipeline. None of these produce a file consumed elsewhere.
 
-- **`checks/file_connection_checks.ipynb`** — reads `pathways.txt`/`transfers.txt` (`0_raw`, no
+- **`checks/file_connection_checks.py`** — reads `pathways.txt`/`transfers.txt` (`0_raw`, no
   subway-filtered equivalent exists because all available pathways/transfers are already only
   for the subway) and
   `routes_subway.txt`/`stops_subway.txt`/`stop_times_subway.txt`/`trips_subway.txt` (`1_subway`).
-- **`checks/pathways_checks.ipynb`** — reads `pathways.txt`/`transfers.txt` (`0_raw`, no
+- **`checks/pathways_checks.py`** — reads `pathways.txt`/`transfers.txt` (`0_raw`, no
   subway-filtered equivalent exists because all available pathways/transfers are already only
   for the subway) and `stops_subway.txt` (`1_subway`).
-- **`checks/trips_checks.ipynb`** — reads `routes_subway.txt`/`trips_subway.txt` (`1_subway`).
+- **`checks/trips_checks.py`** — reads `routes_subway.txt`/`trips_subway.txt` (`1_subway`).
 - **`checks/stop_times/sequence_increment_check.py`** — reads
   `stop_times_subway.txt`/`trips_subway.txt` (`1_subway`); duplicates don't affect a trip's own
   sequence continuity, so it doesn't need step 2's deduplication.
