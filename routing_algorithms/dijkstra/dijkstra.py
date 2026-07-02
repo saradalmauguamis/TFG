@@ -30,8 +30,8 @@ from dijkstra_utils import (  # noqa: E402
     rebuild_path,
 )
 
-SOURCE = "E.11101"
-TARGET = "E.14001"
+SOURCE = "E.43301"
+TARGET = "E.11301"
 
 
 def build_graph_from_weights(file_path: str) -> Graph:
@@ -91,7 +91,9 @@ def main() -> None:
 
 
 if __name__ == "__main__":
-    output_path = Path(__file__).resolve().parent / f"dijkstra_{SOURCE}_to_{TARGET}.txt"
+    resources_dir = Path(__file__).resolve().parent / "resources"
+    resources_dir.mkdir(exist_ok=True)
+    output_path = resources_dir / f"dijkstra_{SOURCE}_to_{TARGET}.txt"
     with output_path.open("w", encoding="utf-8") as file_handle:
         with redirect_stdout(file_handle):
             main()

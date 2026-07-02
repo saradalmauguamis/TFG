@@ -1,1 +1,1 @@
-"""A_star Algorithm related package."""
+"""A* Algorithm related package."""
