@@ -30,8 +30,8 @@ from dijkstra_utils import (  # noqa: E402
     rebuild_path,
 )
 
-SOURCE = "E.43301"
-TARGET = "E.11301"
+SOURCE = "1.555"
+TARGET = "1.116"
 
 
 def build_graph_from_weights(file_path: str) -> Graph:
