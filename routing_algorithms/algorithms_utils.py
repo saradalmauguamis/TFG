@@ -3,14 +3,42 @@
 from __future__ import annotations
 from typing import Callable, Dict, List, Optional, Set, Tuple
 
-from data_validation.gtfs_utils import format_stop_label, label_entrance_by_platform
+from data_validation.gtfs_utils import (
+    format_stop_label,
+    label_entrance_by_platform,
+    read_dict_rows,
+)
 
 Node = str
 Weight = int
 Graph = Dict[Node, Dict[Node, Weight]]
+NodeFmt = Callable[[Node], str]  # labels a node, e.g. stop name and line via stop_label
 INF = (
     10**18
 )  # int equivalent of float('inf'); keeps dist/g arithmetic and equality in pure int
+
+
+def build_graph_from_weights(file_path: str) -> Graph:
+    """Build a directed, weighted graph from a GTFS-style weights file.
+
+    Shared by dijkstra.py and a_star_need_report.py (any script running against the
+    real subway graph rather than a toy example).
+
+    args:
+        file_path: Path to a CSV with from_stop_id, to_stop_id, weight_seconds columns.
+
+    returns:
+        A graph represented as an adjacency list with weights, including
+        sink-only nodes (no outgoing edges) so every stop_id is a key.
+    """
+    graph: Graph = {}
+    for row in read_dict_rows(file_path):
+        from_stop_id = row["from_stop_id"]
+        to_stop_id = row["to_stop_id"]
+        weight = int(row["weight_seconds"])
+        graph.setdefault(from_stop_id, {})[to_stop_id] = weight
+        graph.setdefault(to_stop_id, {})
+    return graph
 
 
 # ---------------------------------------------------------------------------
@@ -323,9 +351,7 @@ def stop_label(
     return format_stop_label(node, stop_names.get(node, "(no name)"), stop_to_lines)
 
 
-def format_node_label(
-    node: Node, node_fmt: Optional[Callable[[Node], str]], width: int = 0
-) -> str:
+def format_node_label(node: Node, node_fmt: Optional[NodeFmt], width: int = 0) -> str:
     """Return a space-prefixed, parenthesized label for a node, or "" without node_fmt.
 
     Shared by every print helper below so a node's label (e.g. stop name and
@@ -350,7 +376,7 @@ def print_header(
     source: Node,
     target: Optional[Node] = None,
     width: int = 50,
-    node_fmt: Optional[Callable[[Node], str]] = None,
+    node_fmt: Optional[NodeFmt] = None,
 ) -> None:
     """Print a large banner announcing the run's source (and target, if given).
 
@@ -391,7 +417,7 @@ def print_distances(
     dist_fmt: Optional[Callable[[int], str]] = None,
     label: str = "dijkstra",
     expanded: Optional[Dict[Node, bool]] = None,
-    node_fmt: Optional[Callable[[Node], str]] = None,
+    node_fmt: Optional[NodeFmt] = None,
 ) -> None:
     """Print the distance (and stop label, if node_fmt is given) from the source
     to every node in the graph, ordered by ascending distance found.
@@ -466,7 +492,7 @@ def print_path_summary(
     path: List[Node],
     dist: Dict[Node, int],
     dist_fmt: Optional[Callable[[int], str]] = None,
-    node_fmt: Optional[Callable[[Node], str]] = None,
+    node_fmt: Optional[NodeFmt] = None,
 ) -> None:
     """Print the rebuilt path from source to target and weight.
 

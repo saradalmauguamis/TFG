@@ -21,20 +21,18 @@ REPO_ROOT = Path(__file__).resolve().parents[1]
 if str(REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(REPO_ROOT))
 
-from data_validation.gtfs_utils import (  # noqa: E402
-    BASE,
-    _DEFAULT_SHARED_PLATFORMS_DATA_DIR,
-    check_missing_files,
-)
+from data_validation.gtfs_utils import BASE, check_missing_files  # noqa: E402
 
 # DATA_DIR defaults to the shared-platforms stage; point it at any other
 # `_DEFAULT_*_DATA_DIR` constant from data_validation.gtfs_utils (e.g.
-# `_DEFAULT_RAW_DATA_DIR`, `_DEFAULT_SUBWAY_DATA_DIR`) to convert that stage.
-DATA_DIR = Path(_DEFAULT_SHARED_PLATFORMS_DATA_DIR)
+# `_DEFAULT_RAW_DATA_DIR`, `_DEFAULT_SUBWAY_DATA_DIR`) to convert that stage,
+# or at any other folder of comma-separated .txt files, such as
+# routing_algorithms/dijkstra/resources
+DATA_DIR = REPO_ROOT / "routing_algorithms" / "dijkstra" / "resources"
 
 # Set this to a filename like 'trips.txt' to convert only one file.
 # Set it to None to convert every .txt file in DATA_DIR.
-TXT_FILE_NAME: Optional[str] = "transfers_shared.txt"
+TXT_FILE_NAME: Optional[str] = "dijkstra_report.txt"
 
 # Excel limits one sheet to 1,048,576 rows total, including the header.
 EXCEL_MAX_ROWS = 800_000

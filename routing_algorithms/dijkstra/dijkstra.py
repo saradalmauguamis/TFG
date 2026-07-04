@@ -6,7 +6,7 @@ from contextlib import redirect_stdout
 from functools import partial
 from pathlib import Path
 from time import perf_counter
-from typing import Callable, Dict, List, Optional, Set
+from typing import Dict, List, Optional, Set
 
 _PROJECT_ROOT = str(Path(__file__).resolve().parents[2])
 if _PROJECT_ROOT not in sys.path:
@@ -25,10 +25,11 @@ from data_validation.gtfs_utils import (  # noqa: E402
     load_pathway_ids,
     load_stop_names,
     print_file_disclaimer,
-    read_dict_rows,
     seconds_to_hms,
 )
 from routing_algorithms.algorithms_utils import (  # noqa: E402
+    NodeFmt,
+    build_graph_from_weights,
     print_distances,
     print_graph_size,
     print_header,
@@ -49,26 +50,6 @@ SOURCE = "E.11101"
 TARGET = "E.14001"
 
 
-def build_graph_from_weights(file_path: str) -> Graph:
-    """Build a directed, weighted graph from a GTFS-style weights file.
-
-    args:
-        file_path: Path to a CSV with from_stop_id, to_stop_id, weight_seconds columns.
-
-    returns:
-        A graph represented as an adjacency list with weights, including
-        sink-only nodes (no outgoing edges) so every stop_id is a key.
-    """
-    graph: Graph = {}
-    for row in read_dict_rows(file_path):
-        from_stop_id = row["from_stop_id"]
-        to_stop_id = row["to_stop_id"]
-        weight = int(row["weight_seconds"])
-        graph.setdefault(from_stop_id, {})[to_stop_id] = weight
-        graph.setdefault(to_stop_id, {})
-    return graph
-
-
 def main() -> None:
     """Run Dijkstra's algorithm on the real GTFS graph for SOURCE and TARGET."""
     graph: Graph
@@ -87,7 +68,7 @@ def main() -> None:
     stop_to_lines: Dict[str, List[str]]
     platform_to_entries: Dict[str, Set[str]]
     entrance_to_platform: Dict[str, Set[str]]
-    node_fmt: Callable[[Node], str]
+    node_fmt: NodeFmt
     _: object
 
     check_missing_files([WEIGHTS_FILE, STOPS_FILE, PATHWAYS_FILE])
@@ -100,7 +81,7 @@ def main() -> None:
 
     # partial() bakes stop_names/stop_to_lines/entrance_to_platform into
     # stop_label as fixed keyword args, turning it into the single-argument
-    # Callable[[Node], str] every print helper below expects as node_fmt
+    # NodeFmt every print helper below expects as node_fmt
     node_fmt = partial(
         stop_label,
         stop_names=stop_names,

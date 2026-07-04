@@ -1,13 +1,14 @@
 """Shared Dijkstra implementations, helpers, and display utilities."""
 
 from __future__ import annotations
-from typing import Callable, Dict, List, Optional, Set, Tuple
+from typing import Dict, List, Optional, Set, Tuple
 
 from routing_algorithms.algorithms_utils import (  # shared with a_star_utils.py
     INF,
     Graph,
     MinHeap,
     Node,
+    NodeFmt,
     format_node_label,
 )
 
@@ -22,7 +23,7 @@ def _run_dijkstra(
     source: Node,
     verbose: bool = True,
     stop_at: Optional[Node] = None,
-    node_fmt: Optional[Callable[[Node], str]] = None,
+    node_fmt: Optional[NodeFmt] = None,
 ) -> Tuple[Dict[Node, int], Dict[Node, Optional[Node]], int, Dict[Node, bool]]:
     """Run Dijkstra's algorithm, following the Alsedà pseudocode exactly.
 
@@ -146,7 +147,7 @@ def dijkstra(
     graph: Graph,
     source: Node,
     verbose: bool = True,
-    node_fmt: Optional[Callable[[Node], str]] = None,
+    node_fmt: Optional[NodeFmt] = None,
 ) -> Tuple[Dict[Node, int], Dict[Node, Optional[Node]], int, Dict[Node, bool]]:
     """Run Dijkstra's algorithm from source and return distance and parent maps.
 
@@ -174,7 +175,7 @@ def cut_dijkstra(
     source: Node,
     target: Node,
     verbose: bool = True,
-    node_fmt: Optional[Callable[[Node], str]] = None,
+    node_fmt: Optional[NodeFmt] = None,
 ) -> Tuple[Dict[Node, int], Dict[Node, Optional[Node]], int, Dict[Node, bool]]:
     """Run Dijkstra's algorithm and stop when the target is settled.
 
