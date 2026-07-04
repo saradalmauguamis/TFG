@@ -129,7 +129,7 @@ Run anytime after step 1 of the core pipeline. None of these produce a file cons
 ## Decision-support analyses
 
 Read-only scripts in [`analysis/`](analysis/README.md). Unlike *Independent checks*, these need
-the pipeline well past step 1 — they don't produce any file consumed downstream, but answer
+the pipeline well past step 1: they don't produce any file consumed downstream, but answer
 design questions for the graph build. Two need only step 9; the third needs the full pipeline
 through step 11, since it has to read stop_times *after* shared platforms are split. All three
 motivate decisions baked into step 12.
@@ -147,7 +147,7 @@ motivate decisions baked into step 12.
   `trips_cleaned.txt` (step 3). Runs only once step 11 exists, since it ranks `sw` edges by the
   per-line stop_ids that step 11 produces, not the original (still-shared) ones. Validates whether
   `mean(total)` travel time is a trustworthy static weight for those `sw` edges, or needs a
-  different treatment (better averaging, or a time-dependent weight) — which is what motivated
+  different treatment (better averaging, or a time-dependent weight). That is what motivated
   step 12 to use `round_half_up_mean(total)`, rounded to whole seconds, as the `sw` edge weight.
 
 ---

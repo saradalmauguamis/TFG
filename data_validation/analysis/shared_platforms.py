@@ -11,7 +11,7 @@ grouped by the exact tuple of lines that serve each one. This script scans
 and measures the time between two consecutive platform stops (arrival at the
 first stop and arrival at the second). It averages those times per line,
 direction and platform pair, and prints one row per line for each pair, plus
-the spread (max - min) across whichever lines have data — this generalizes to
+the spread (max - min) across whichever lines have data. This generalizes to
 however many lines share a given platform, not just two.
 
 The cleaned inputs are expected under `data/` at the repository root.

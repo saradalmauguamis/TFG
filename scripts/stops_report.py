@@ -19,6 +19,7 @@ from data_validation.gtfs_utils import (  # noqa: E402
     check_missing_files,
     load_pathway_ids,
     load_stop_names,
+    print_file_disclaimer,
 )
 
 # Set to True to inspect stop_ids after `5_shared_platforms_duplication.py`
@@ -162,6 +163,7 @@ def main() -> None:
     expanded: Dict[str, Dict[str, List[Dict[str, Any]]]]
 
     check_missing_files([str(STOPS_FILE), str(PATHWAYS_FILE)])
+    print_file_disclaimer([str(STOPS_FILE), str(PATHWAYS_FILE)])
 
     print(
         "Printing stops and optional entrances of each line of Barcelona subway "
