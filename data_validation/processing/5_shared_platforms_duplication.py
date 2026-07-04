@@ -4,11 +4,11 @@
 by more than one line (currently L9S/L10S and L9N/L10N) have different
 travel times depending on the line, so the graph must not merge them into a
 single node. This script splits every shared stop_id into one new stop_id per
-line that serves it — detected generically via
+line that serves it, detected generically via
 `gtfs_utils.build_shared_platform_lines` from
 `scripts.basics.subway_route_names_stop_ids`, so it is not hardcoded to L9/L10
 and stays reproducible and scalable if the network grows new shared platforms
-in the future — and rewrites every file that references the original stop_id.
+in the future, and rewrites every file that references the original stop_id.
 
 Naming: e.g. stop_id `1.930`, shared by lines `[L9N, L10N]`, becomes `1.9300`
 (L9N) and `1.9301` (L10N). The original stop_id is dropped everywhere.
@@ -18,7 +18,7 @@ Inputs and outputs (outputs are written to `data/5_shared_platforms/`):
 - stop_times_doors.txt  -> stop_times_shared.txt
 - stops_subway.txt      -> stops_shared.txt
 - transfers.txt         -> transfers_shared.txt
-- (none)                -> equivalences_shared.txt
+- (none)                -> equivalences.txt
 
 EQUIVALENCES: a lookup table with one row per (original_stop_id, line,
 new_stop_id), so the mapping this script applies can be looked back up later
@@ -41,7 +41,7 @@ correspondences in this dataset.
 
 STOP_TIMES: a stop_id at a shared platform is replaced by the new stop_id of
 the line that trip belongs to (resolved via `load_trip_to_line`, exactly as
-`4_doors_time.py` already does for door times) — not duplicated like the
+`4_doors_time.py` already does for door times), not duplicated like the
 other files, since each row belongs to a single trip on a single line.
 """
 
@@ -57,7 +57,7 @@ if _PROJECT_ROOT not in sys.path:
     sys.path.insert(0, _PROJECT_ROOT)
 
 from data_validation.gtfs_utils import (  # noqa: E402
-    EQUIVALENCES_SHARED_FILE,
+    EQUIVALENCES_FILE,
     PATHWAYS_FILE,
     PATHWAYS_RAW_FILE,
     STOP_TIMES_DOORS_FILE,
@@ -129,7 +129,7 @@ def write_equivalences(
     """Write a lookup table of original_stop_id -> (line, new_stop_id).
 
     args:
-            output_path: Path to write equivalences_shared.txt.
+            output_path: Path to write equivalences.txt.
             shared_platform_lines: Shared stop_id -> ordered list of lines.
             new_id_by_stop_line: (stop_id, line) -> new stop_id.
 
@@ -435,9 +435,9 @@ def main() -> None:
     min_transfer_time = compute_min_transfer_time(TRANSFERS_RAW_FILE)
 
     equivalences_created = write_equivalences(
-        EQUIVALENCES_SHARED_FILE, shared_platform_lines, new_id_by_stop_line
+        EQUIVALENCES_FILE, shared_platform_lines, new_id_by_stop_line
     )
-    print(f"equivalences_shared.txt: rows_created={equivalences_created}\n")
+    print(f"equivalences.txt: rows_created={equivalences_created}\n")
 
     rid_to_name = {rid: name for name, rid in subway_routes_names_ids.items()}
     trip_to_line = load_trip_to_line(TRIPS_FILE, rid_to_name)
