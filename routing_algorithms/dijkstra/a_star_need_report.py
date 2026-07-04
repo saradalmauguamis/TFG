@@ -1,4 +1,4 @@
-"""Report, for every directed entrance-to-entrance route, how much a heuristic could help.
+"""Report, for every directed platform-to-platform route, how much a heuristic could help.
 
 Output_name: dijkstra_report.txt saved into 'routing_algorithms/dijkstra/resources'
 
@@ -10,7 +10,7 @@ source_name, target_name, proportion, source_id, target_id, cut_iterations,
 path_vertices, optimum_weight, path
 
 - source_name / target_name: labels for source/target given by the same
-  node_fmt (stop_names + line + entrance-by-platform) used in dijkstra.py.
+  node_fmt (stop_names + line) used in dijkstra.py.
 - source_id / target_id: their stop_ids.
 - path: output of rebuild_path (routing_algorithms/algorithms_utils.py), raw
   stop_ids joined by " -> ". "NA" if no path is found.
@@ -46,15 +46,28 @@ iterations as vertices in the path. I.e. a proportion near 1 means Dijkstra is b
 ultra efficient already, while a low proportion near 0 is where we should focus our
 attention to see whether a heuristic could improve Dijkstra there without hurting the
 routes that already sit near 1.
-Important: we only compute routes from an entrance to an entrance, since that is the
-route an actual user takes, and it is how routes are modelled/optimised in Barcelona's
-subway network.
+
+Why platforms instead of entrances:
+a real user journey goes from an entrance to an entrance, not platform to platform, so
+this report is technically a proxy: an entrance-to-entrance path is exactly its
+underlying platform-to-platform path with one fixed extra hop bolted onto each end
+(entrance -> first platform, last platform -> entrance). That hop shifts path_vertices
+and cut_iterations by a small constant, so proportion barely moves, except when
+cut_iterations is itself tiny, i.e. exactly where proportion is already near 1.
+That is precisely the region we do not need precision in: proportion is computed for
+every pair so we can see which pairs sit near 1 (Dijkstra already efficient there)
+versus which sit near 0 (where a heuristic is worth designing), but it is only the
+low-proportion pairs we actually need to focus on to think about that heuristic, and
+there cut_iterations is in the hundreds, where a small constant shift is negligible.
+Restricting to platforms is also a large reduction on its own: 502 entries give
+251,502 directed entry pairs, versus 171 platforms giving 29,070 directed platform
+pairs, an ~8.65x smaller file, far easier to scan and draw conclusions from.
 
 Methodology:
 1. Build the graph from WEIGHTS_FILE with build_graph_from_weights
    (routing_algorithms/algorithms_utils.py), shared with dijkstra.py.
-2. Restrict the graph's vertex set to entries (stop_ids starting with "E.").
-3. Build every directed pair (u, v) of distinct entries.
+2. Restrict the graph's vertex set to platforms (stop_ids starting with "1.").
+3. Build every directed pair (u, v) of distinct platforms.
 4. Run cut_dijkstra(graph, u, v, verbose=False) for each pair (no changes needed
    in dijkstra_utils.py, cut_dijkstra already supports a silent run), then rebuild_path
    to get the path (or lack of one).
@@ -62,9 +75,9 @@ Methodology:
 6. Sort all rows ascending by proportion, NA last, and write them to dijkstra_report.txt.
 
 Note on parallelism: a single cut_dijkstra call on this graph takes well under 1ms
-(measured empirically, ~0.7ms), so ~250k directed entry pairs run in a few minutes
-single-threaded. Parallelising this one-off analysis script wouldn't be worth the added
-complexity, so it is intentionally left sequential.
+(measured empirically, ~0.7ms), so ~29k directed platform pairs run in well under a
+minute single-threaded. Parallelising this one-off analysis script wouldn't be worth
+the added complexity, so it is intentionally left sequential.
 """
 
 from __future__ import annotations
@@ -73,7 +86,7 @@ import sys
 from functools import partial
 from pathlib import Path
 from time import perf_counter
-from typing import Dict, List, NamedTuple, Optional, Set, Tuple
+from typing import Dict, List, NamedTuple, Optional, Tuple
 
 _PROJECT_ROOT = str(Path(__file__).resolve().parents[2])
 if _PROJECT_ROOT not in sys.path:
@@ -82,14 +95,10 @@ if _PROJECT_ROOT not in sys.path:
 from scripts.basics import subway_route_names_stop_ids_artificial  # noqa: E402
 
 from data_validation.gtfs_utils import (  # noqa: E402
-    PATHWAYS_FILE,
     STOPS_FILE,
     WEIGHTS_FILE,
-    build_graph_and_coverage,
     build_stop_to_lines,
     check_missing_files,
-    invert_entries,
-    load_pathway_ids,
     load_stop_names,
     print_file_disclaimer,
     write_rows,
@@ -119,7 +128,7 @@ FIELDNAMES = [
 
 
 class ReportRow(NamedTuple):
-    """One directed entrance-to-entrance route and its cut_dijkstra outcome."""
+    """One directed platform-to-platform route and its cut_dijkstra outcome."""
 
     source_id: Node
     target_id: Node
@@ -132,31 +141,34 @@ class ReportRow(NamedTuple):
     path: List[Node]
 
 
-def collect_entry_pairs(graph: Graph) -> List[Tuple[Node, Node]]:
-    """Return every directed pair of distinct entrance vertices in the graph.
+def collect_platform_pairs(graph: Graph) -> List[Tuple[Node, Node]]:
+    """Return every directed pair of distinct platform vertices in the graph.
 
     args:
         graph: A directed, weighted graph (build_graph_from_weights output),
-            keyed by every stop_id, including entries (stop_ids starting with "E.").
+            keyed by every stop_id, including platforms (stop_ids starting with "1.").
 
     returns:
-        Sorted list of (source, target) pairs with source != target, both entries.
+        Sorted list of (source, target) pairs with source != target, both platforms.
     """
-    entries = sorted(node for node in graph if node.startswith("E."))
+    platforms = sorted(node for node in graph if node.startswith("1."))
     return [
-        (source, target) for source in entries for target in entries if source != target
+        (source, target)
+        for source in platforms
+        for target in platforms
+        if source != target
     ]
 
 
 def compute_report_row(
     graph: Graph, source: Node, target: Node, node_fmt: NodeFmt
 ) -> ReportRow:
-    """Run cut_dijkstra for one entrance pair and compute this report's columns.
+    """Run cut_dijkstra for one platform pair and compute this report's columns.
 
     args:
         graph: A directed, weighted graph.
-        source: Entrance stop_id to start from.
-        target: Entrance stop_id to reach.
+        source: Platform stop_id to start from.
+        target: Platform stop_id to reach.
         node_fmt: Callable to label a node (stop name and line), as in dijkstra.py.
 
     returns:
@@ -223,33 +235,25 @@ def row_to_csv_dict(row: ReportRow) -> Dict[str, str]:
 
 
 def main() -> Tuple[List[ReportRow], float]:
-    """Compute the entrance-to-entrance dijkstra report and write it to OUTPUT_NAME.
+    """Compute the platform-to-platform dijkstra report and write it to OUTPUT_NAME.
 
     returns:
         The sorted report rows, and the total elapsed time (seconds) spent
-        running cut_dijkstra over every entry pair.
+        running cut_dijkstra over every platform pair.
     """
     graph: Graph
     stop_names: Dict[str, str]
     stop_to_lines: Dict[str, List[str]]
-    entrance_to_platform: Dict[str, Set[str]]
     pairs: List[Tuple[Node, Node]]
     rows: List[ReportRow]
     elapsed: float
 
     stop_names = load_stop_names(STOPS_FILE)
     stop_to_lines = build_stop_to_lines(subway_route_names_stop_ids_artificial)
-    platform_to_entries, _ = build_graph_and_coverage(load_pathway_ids(PATHWAYS_FILE))
-    entrance_to_platform = invert_entries(platform_to_entries)
-    node_fmt = partial(
-        stop_label,
-        stop_names=stop_names,
-        stop_to_lines=stop_to_lines,
-        entrance_to_platform=entrance_to_platform,
-    )
+    node_fmt = partial(stop_label, stop_names=stop_names, stop_to_lines=stop_to_lines)
 
     graph = build_graph_from_weights(WEIGHTS_FILE)
-    pairs = collect_entry_pairs(graph)
+    pairs = collect_platform_pairs(graph)
 
     start = perf_counter()
     rows = [
@@ -268,8 +272,8 @@ def main() -> Tuple[List[ReportRow], float]:
 
 
 if __name__ == "__main__":
-    check_missing_files([WEIGHTS_FILE, STOPS_FILE, PATHWAYS_FILE])
-    print_file_disclaimer([WEIGHTS_FILE, STOPS_FILE, PATHWAYS_FILE])
+    check_missing_files([WEIGHTS_FILE, STOPS_FILE])
+    print_file_disclaimer([WEIGHTS_FILE, STOPS_FILE])
 
     print(f"Starting {OUTPUT_NAME} generation...")
     report_rows, elapsed_seconds = main()
