@@ -33,7 +33,7 @@ if _PROJECT_ROOT not in sys.path:
     sys.path.insert(0, _PROJECT_ROOT)
 
 from data_validation.gtfs_utils import (  # noqa: E402
-    EQUIVALENCES_SHARED_FILE,
+    EQUIVALENCES_FILE,
     ROUTES_FILE,
     STOPS_FILE,
     SUBWAY_WEIGHTS_FILE,
@@ -57,13 +57,13 @@ SYNTHETIC_PLATFORM_NODE_COLOR = "#FFD700"
 JITTER_DEGREES = 0.0015
 
 # Manual jitter angle (radians) for the synthetic platforms in the shared-platform groups
-# produced by the L9/L10 split in EQUIVALENCES_SHARED_FILE, keyed by stop_id. Each pair
+# produced by the L9/L10 split in EQUIVALENCES_FILE, keyed by stop_id. Each pair
 # shares an axis (angle and angle + pi) so the two platforms sit side-by-side along their
 # line instead of drifting across the other line's path (a derived angle was tried and
 # produced visible crossings).
 #
 # NOT SCALABLE: this is tied to the current data_validation/processing output (specifically
-# weights.txt and equivalences_shared.txt). If that pipeline ever changes which stops get
+# weights.txt and equivalences.txt). If that pipeline ever changes which stops get
 # split or how, this table must be recomputed or removed; any duplicate-coordinate group
 # without both members listed here falls back to a uniformly random offset.
 SYNTHETIC_PLATFORM_JITTER_ANGLE: dict[str, float] = {
@@ -131,9 +131,9 @@ def load_synthetic_platform_ids() -> set[str]:
     """List platform stop_ids artificially created to split a shared platform per line.
 
     returns:
-        The set of "new_stop_id" values from EQUIVALENCES_SHARED_FILE.
+        The set of "new_stop_id" values from EQUIVALENCES_FILE.
     """
-    equivalences = pd.read_csv(EQUIVALENCES_SHARED_FILE, dtype={"new_stop_id": str})
+    equivalences = pd.read_csv(EQUIVALENCES_FILE, dtype={"new_stop_id": str})
     return set(equivalences["new_stop_id"])
 
 

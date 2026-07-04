@@ -75,15 +75,15 @@ For every row where `arrival_time == departure_time` at a terminal stop, the scr
 | `stop_times_doors.txt` | `stop_times_shared.txt` |
 | `stops_subway.txt` | `stops_shared.txt` |
 | `transfers.txt` | `transfers_shared.txt` |
-| — | `equivalences_shared.txt` |
+| — | `equivalences.txt` |
 
 Also reads `trips_cleaned.txt` from `data/2_duplicated_trips` to resolve each stop_times row's trip to its line.
 
-Shared platforms (stops served by more than one line, e.g. the L9S/L10S and L9N/L10N overlaps) are detected generically from `scripts/basics.py`'s `subway_route_names_stop_ids` — no line names are hardcoded, so any future shared platform is picked up automatically. Each shared `stop_id` (e.g. `1.930`) is split into one new id per serving line (`1.9300`, `1.9301`, ...):
+Shared platforms (stops served by more than one line, e.g. the L9S/L10S and L9N/L10N overlaps) are detected generically from `scripts/basics.py`'s `subway_route_names_stop_ids`; no line names are hardcoded, so any future shared platform is picked up automatically. Each shared `stop_id` (e.g. `1.930`) is split into one new id per serving line (`1.9300`, `1.9301`, ...):
 
 - **STOPS / PATHWAYS / TRANSFERS**: one duplicated row per line. PATHWAYS/TRANSFERS additionally get a direct correspondence edge between every pair of a platform's new ids, using the minimum `min_transfer_time` found in `transfers.txt` as the traversal time.
 - **STOP_TIMES**: the shared `stop_id` is *replaced* (not duplicated) with the single new id matching that row's own trip's line, since a trip belongs to exactly one line.
-- **`equivalences_shared.txt`**: a lookup table of `original_stop_id, line, new_stop_id` for every split platform, so the mapping can be looked back up later.
+- **`equivalences.txt`**: a lookup table of `original_stop_id, line, new_stop_id` for every split platform, so the mapping can be looked back up later.
 
 ### `6_weights.py` — build the weighted graph edges
 
@@ -128,6 +128,6 @@ Each line traces one logical file across the stages where it actually exists (st
 - **stops**: `0_raw/stops.txt` → `1_subway/stops_subway.txt` → `5_shared_platforms/stops_shared.txt`
 - **transfers**: `0_raw/transfers.txt` → `5_shared_platforms/transfers_shared.txt`
 - **trips**: `0_raw/trips.txt` → `1_subway/trips_subway.txt` → `2_duplicated_trips/trips_cleaned.txt`
-- **equivalences** *(new, no upstream file)*: `5_shared_platforms/equivalences_shared.txt`
+- **equivalences** *(new, no upstream file)*: `5_shared_platforms/equivalences.txt`
 - **subway_weights** *(new, no upstream file)*: `6_weights/subway_weights.txt`
 - **weights** *(new, no upstream file)*: `6_weights/weights.txt`
