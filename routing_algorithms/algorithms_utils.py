@@ -1,7 +1,9 @@
 """Shared graph types, binary heap, and display utilities used by Dijkstra and A*."""
 
 from __future__ import annotations
-from typing import Callable, Dict, List, Optional, Tuple
+from typing import Callable, Dict, List, Optional, Set, Tuple
+
+from data_validation.gtfs_utils import format_stop_label, label_entrance_by_platform
 
 Node = str
 Weight = int
@@ -288,6 +290,88 @@ def rebuild_path(
     return path
 
 
+def stop_label(
+    node: Node,
+    stop_names: Dict[str, str],
+    stop_to_lines: Dict[str, List[str]],
+    entrance_to_platform: Optional[Dict[str, Set[str]]] = None,
+) -> str:
+    """Combine a stop's name and line(s) into one label, via format_stop_label.
+
+    Shared between Dijkstra and A* (both bind these mappings with
+    `functools.partial` to get a plain node_fmt callable for the print helpers).
+
+    args:
+        node: The stop_id to label.
+        stop_names: Mapping from stop_id to stop_name, from `load_stop_names`.
+        stop_to_lines: Mapping from stop_id to line names, from `build_stop_to_lines`.
+        entrance_to_platform: Optional mapping from entrance stop_id to the
+            platform(s) it connects to, from `build_directed_entrance_edges`.
+            When given, an E.* node is labeled via `label_entrance_by_platform`
+            (its own stop_name is uninformative on its own); otherwise it falls
+            back to its plain stop_name, like any other node without a line.
+
+    returns:
+        "{line1}-{line2}-...-{stop_name}" for a platform on a line; the
+        connected platform's label for an entrance (with entrance_to_platform);
+        otherwise the plain stop_name, or "(no name)" if node has no entry.
+    """
+    if entrance_to_platform is not None and node in entrance_to_platform:
+        return label_entrance_by_platform(
+            node, entrance_to_platform, stop_names, stop_to_lines
+        )
+    return format_stop_label(node, stop_names.get(node, "(no name)"), stop_to_lines)
+
+
+def format_node_label(
+    node: Node, node_fmt: Optional[Callable[[Node], str]], width: int = 0
+) -> str:
+    """Return a space-prefixed, parenthesized label for a node, or "" without node_fmt.
+
+    Shared by every print helper below so a node's label (e.g. stop name and
+    line) lines up in its own column wherever it's shown, instead of each
+    caller re-deriving the same " (label)" formatting.
+
+    args:
+        node: The node to label.
+        node_fmt: Optional callable producing the label text (e.g. stop name
+            and line, via `format_stop_label`). When None, returns "".
+        width: Minimum width to left-pad the label text to, for column alignment.
+
+    returns:
+        " (label)" (padded to width) when node_fmt is given, otherwise "".
+    """
+    if not node_fmt:
+        return ""
+    return f" ({node_fmt(node):<{width}})"
+
+
+def print_header(
+    source: Node,
+    target: Optional[Node] = None,
+    width: int = 50,
+    node_fmt: Optional[Callable[[Node], str]] = None,
+) -> None:
+    """Print a large banner announcing the run's source (and target, if given).
+
+    args:
+        source: The starting node for the run.
+        target: When provided, the banner also names the destination node.
+        width: Minimum length of the "=" separator line; widened to fit the
+            title when the (possibly labeled) title is longer.
+        node_fmt: Optional callable to label a node (e.g. stop name and line,
+            via `format_stop_label`). When omitted, only raw node ids are shown.
+    """
+    title: str
+    line: str
+
+    title = f"From {source}{format_node_label(source, node_fmt)}"
+    if target is not None:
+        title += f" --> to {target}{format_node_label(target, node_fmt)}"
+    line = "=" * (max(width, len(title)) + 2)
+    print(f"{line}\n{title}\n{line}\n\n")
+
+
 def print_graph_size(graph: Graph) -> None:
     """Print the number of vertices and edges in the graph.
 
@@ -305,29 +389,75 @@ def print_distances(
     show_unreachable: bool = True,
     source: Optional[Node] = None,
     dist_fmt: Optional[Callable[[int], str]] = None,
+    label: str = "dijkstra",
+    expanded: Optional[Dict[Node, bool]] = None,
+    node_fmt: Optional[Callable[[Node], str]] = None,
 ) -> None:
-    """Print the shortest distance from the source to every node in the graph.
+    """Print the distance (and stop label, if node_fmt is given) from the source
+    to every node in the graph, ordered by ascending distance found.
 
     args:
         graph: A directed, weighted graph represented as an adjacency list.
-        dist: A mapping from each node to its shortest distance from the source.
+        dist: A mapping from each node to its distance from the source.
         show_unreachable: Whether to also print nodes still at distance INF.
         source: When provided, the header names the source node explicitly.
         dist_fmt: Optional callable to format distance values (e.g. seconds_to_hms).
             When omitted, raw integers are printed.
+        label: "dijkstra" or "a_star" for a full run, where every reachable node's
+            distance is final. "cut" for cut_dijkstra, where the search stops as
+            soon as the target is extracted, so some reached nodes were only
+            relaxed and never extracted: by the convergence theorem their distance
+            isn't guaranteed optimal yet, unlike already-extracted ones.
+        expanded: Required when label="cut". Marks, per node, whether it was
+            extracted before the search stopped (and so has an optimal distance).
+        node_fmt: Optional callable to label a node (e.g. stop name and line,
+            via `format_stop_label`). When omitted, only the raw node id is shown.
     """
-    nodes = list(graph.keys())
-    width = max(len(n) for n in nodes)
-    label = source if source is not None else "source"
-    print(f"\nShortest distances from {label}:")
-    for node in nodes:
-        value = dist[node]
-        if value == INF and not show_unreachable:
-            continue
+    source_label: object
+    header_suffix: str
+    suffix: str
+    rows: List[Tuple[int, Node]]
+    id_width: int
+    label_width: int
+
+    source_label = source if source is not None else "source"
+    header_suffix = format_node_label(source, node_fmt) if source is not None else ""
+    suffix = " (format: HH:MM:SS)" if dist_fmt else ""
+    if label == "cut":
+        print(
+            f"\nDistances found from {source_label}{header_suffix} before extracting"
+            f" the target (cut Dijkstra, not all optimal yet):{suffix}"
+        )
+    else:
+        print(f"\nOptimum weight from {source_label}{header_suffix}:{suffix}")
+
+    rows = [
+        (dist[node], node) for node in graph if dist[node] != INF or show_unreachable
+    ]
+    rows.sort(key=lambda row: row[0])
+    if not rows:
+        return
+
+    id_width = max(len(node) for _, node in rows)
+    label_width = (
+        max((len(node_fmt(node)) for _, node in rows), default=0) if node_fmt else 0
+    )
+
+    for value, node in rows:
         shown: object = (
             "inf" if value == INF else (dist_fmt(value) if dist_fmt else value)
         )
-        print(f"- {node:<{width}} : {shown}")
+        status = ""
+        if (
+            label == "cut" and expanded is not None
+        ):  # last condition = if expanded has been provided
+            status = (
+                " (extracted --> optimum)"
+                if expanded[node]
+                else " "  # relaxed only --> not guaranteed optimum
+            )
+        node_label = format_node_label(node, node_fmt, label_width)
+        print(f"- {node:<{id_width}}{node_label} : {shown}{status}")
 
 
 def print_path_summary(
@@ -336,6 +466,7 @@ def print_path_summary(
     path: List[Node],
     dist: Dict[Node, int],
     dist_fmt: Optional[Callable[[int], str]] = None,
+    node_fmt: Optional[Callable[[Node], str]] = None,
 ) -> None:
     """Print the rebuilt path from source to target and weight.
 
@@ -346,14 +477,33 @@ def print_path_summary(
         dist: A mapping from each node to its shortest distance from the source.
         dist_fmt: Optional callable to format the total distance (e.g. seconds_to_hms).
             When omitted, the raw integer is printed.
+        node_fmt: Optional callable to label a node (e.g. stop name and line,
+            via `format_stop_label`). When provided, each node in the path is
+            printed on its own line for readability.
     """
+    source_suffix = format_node_label(source, node_fmt)
+    target_suffix = format_node_label(target, node_fmt)
     if path:
-        print(f"\nShortest path from {source} to {target}:")
-        print("  ", " -> ".join(path))
+        print(
+            f"\nShortest path (not necessarily unique) from {source}{source_suffix}"
+            f" to {target}{target_suffix}:"
+        )
+        if node_fmt:
+            print(
+                "  "
+                + "\n  -> ".join(
+                    f"{node}{format_node_label(node, node_fmt)}" for node in path
+                )
+            )
+        else:
+            print("  ", " -> ".join(path))
         total = dist[target]
         shown_total: object = (
             "inf" if total == INF else (dist_fmt(total) if dist_fmt else total)
         )
-        print(f"Optimum weight: {shown_total}")
+        suffix = " (format: HH:MM:SS)" if dist_fmt else ""
+        print(f"Optimum weight: {shown_total}{suffix}")
     else:
-        print(f"\nNo path found from {source} to {target}.")
+        print(
+            f"\nNo path found from {source}{source_suffix} to {target}{target_suffix}."
+        )
