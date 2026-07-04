@@ -83,7 +83,7 @@ __all__ = [
     "TRIP_IDS_TO_ELIMINATE_FILE",
     "WRONG_STOP_SEQUENCES_FILE",
     "DOORS_FILE",
-    "EQUIVALENCES_SHARED_FILE",
+    "EQUIVALENCES_FILE",
     "_DEFAULT_WEIGHTS_DATA_DIR",
     "WEIGHTS_BASE",
     "SUBWAY_WEIGHTS_FILE",
@@ -228,9 +228,7 @@ TRIP_IDS_TO_ELIMINATE_FILE = os.path.join(
 )
 WRONG_STOP_SEQUENCES_FILE = os.path.join(STOP_SEQUENCE_BASE, "wrong_stop_sequences.txt")
 DOORS_FILE = os.path.join(DOORS_BASE, "doors.txt")
-EQUIVALENCES_SHARED_FILE = os.path.join(
-    SHARED_PLATFORMS_BASE, "equivalences_shared.txt"
-)
+EQUIVALENCES_FILE = os.path.join(SHARED_PLATFORMS_BASE, "equivalences.txt")
 
 SUBWAY_WEIGHTS_FILE = os.path.join(WEIGHTS_BASE, "subway_weights.txt")
 WEIGHTS_FILE = os.path.join(WEIGHTS_BASE, "weights.txt")

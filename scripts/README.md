@@ -18,7 +18,7 @@ Static reference data for Barcelona's subway lines: a `route_short_name` → `ro
 (`subway_routes_names_ids`), and the ordered sequence of platform `stop_id`s per line
 (`subway_route_names_stop_ids`, plus an `_artificial` variant matching stop_ids after
 `5_shared_platforms_duplication.py` splits shared platforms). Imported across `data_validation/`
-and `routing_algotithms/` whenever a line's stop order is needed.
+and `routing_algorithms/` whenever a line's stop order is needed.
 
 ### `stops_report.py`
 
@@ -29,12 +29,12 @@ from `data_validation/gtfs_utils.py`. Used to sanity-check that platform-entranc
 
 ### `utils.py`
 
-Generic CSV helpers — delimiter sniffing with a comma fallback — used by GTFS file readers
+Generic CSV helpers (delimiter sniffing with a comma fallback), used by GTFS file readers
 elsewhere in the repo.
 
 ### `from_txt_to_xlsx.py`
 
 Converts GTFS `.txt` files into `.xlsx` workbooks for manual inspection. Any folder under `data/`
-can be converted — set `DATA_DIR` to the pipeline stage you want (e.g. `0_raw`, `1_subway`,
+can be converted: set `DATA_DIR` to the pipeline stage you want (e.g. `0_raw`, `1_subway`,
 `5_shared_platforms_duplication`). Can convert a single file or all `.txt` files in the data
 folder; large files are split across multiple sheets automatically.

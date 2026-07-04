@@ -41,7 +41,7 @@ Shared path constants, file I/O helpers, and data loading functions used across 
 
 Scripts that validate data at each stage of the
 pipeline. `file_connection_checks.py`, `pathways_checks.py`, and `trips_checks.py` are
-independent of pipeline order — they only need `processing/1_subway.py` to have run. `stop_times/`
+independent of pipeline order: they only need `processing/1_subway.py` to have run. `stop_times/`
 is the only one with a fixed position, since most of its scripts are interleaved with three
 processing scripts (see [`WORKFLOW.md`](WORKFLOW.md)).
 

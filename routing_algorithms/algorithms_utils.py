@@ -173,8 +173,8 @@ class MinHeap:
         Corresponds to dequeue in Alsedà (slide 87) via the three-step procedure
         (slide 94):
         Step 1: Read the root node (minimum by heap property, Alsedà slide 85).
-        Step 2: Replace root with last node — preserves shape property without search.
-        Step 3: heapify_down from root — restores heap property.
+        Step 2: Replace root with last node, which preserves the shape property without search.
+        Step 3: heapify_down from root, which restores the heap property.
 
         Called as Pq.extract_min in Dijkstra (slide 18) and Open.extract_min in
         A* (slide 45). In A* the pseudocode writes extract_min(g, h) because the
@@ -201,7 +201,7 @@ class MinHeap:
             del self._pos[vertex]
             return vertex, dist
 
-        # Step 1: save the root — this is what we'll return
+        # Step 1: save the root, since this is what we'll return
         root_priority, root_vertex = self._heap[0]
 
         # Step 2: pop the last element and place it at the root
@@ -272,12 +272,15 @@ def rebuild_path(
     path: List[Node] = []
     current: Optional[Node] = target
 
+    # If target is unreachable, its parent chain hits None (never relaxed) before
+    # reaching source, so the loop exits here instead of appending None.
     while current is not None:
         path.append(current)
         if current == source:
             break
         current = parent[current]
 
+    # Catches that unreachable case: path[-1] is target, not source.
     if not path or path[-1] != source:
         return []
 
@@ -334,7 +337,7 @@ def print_path_summary(
     dist: Dict[Node, int],
     dist_fmt: Optional[Callable[[int], str]] = None,
 ) -> None:
-    """Print the rebuilt path from source to target and its total distance.
+    """Print the rebuilt path from source to target and weight.
 
     args:
         source: The starting node.
@@ -351,6 +354,6 @@ def print_path_summary(
         shown_total: object = (
             "inf" if total == INF else (dist_fmt(total) if dist_fmt else total)
         )
-        print(f"Minimum distance found: {shown_total}")
+        print(f"Optimum weight: {shown_total}")
     else:
         print(f"\nNo path found from {source} to {target}.")

@@ -10,17 +10,19 @@ _PROJECT_ROOT = str(Path(__file__).resolve().parents[2])
 if _PROJECT_ROOT not in sys.path:
     sys.path.insert(0, _PROJECT_ROOT)
 
+from routing_algorithms.algorithms_utils import (  # noqa: E402
+    print_distances,
+    print_graph_size,
+    print_path_summary,
+    rebuild_path,
+)
 from dijkstra_utils import (  # noqa: E402
     Graph,
     Node,
     cut_dijkstra,
     dijkstra,
     print_disclaimer,
-    print_distances,
-    print_graph_size,
-    print_path_summary,
     print_summary,
-    rebuild_path,
 )
 
 

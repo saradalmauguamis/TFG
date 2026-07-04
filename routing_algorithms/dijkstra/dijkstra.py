@@ -17,21 +17,23 @@ from data_validation.gtfs_utils import (  # noqa: E402
     read_dict_rows,
     seconds_to_hms,
 )
+from routing_algorithms.algorithms_utils import (  # noqa: E402
+    print_distances,
+    print_graph_size,
+    print_path_summary,
+    rebuild_path,
+)
 from dijkstra_utils import (  # noqa: E402
     Graph,
     Node,
     cut_dijkstra,
     dijkstra,
     print_disclaimer,
-    print_distances,
-    print_graph_size,
-    print_path_summary,
     print_summary,
-    rebuild_path,
 )
 
-SOURCE = "1.555"
-TARGET = "1.116"
+SOURCE = "E.12001"
+TARGET = "1.120"
 
 
 def build_graph_from_weights(file_path: str) -> Graph:
@@ -97,3 +99,4 @@ if __name__ == "__main__":
     with output_path.open("w", encoding="utf-8") as file_handle:
         with redirect_stdout(file_handle):
             main()
+    print(f"{output_path.name} generated into {output_path.relative_to(_PROJECT_ROOT)}")

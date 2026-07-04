@@ -23,8 +23,8 @@ def a_star(
     """Run A* algorithm from start to goal using heuristic h.
 
     Follows the Alsedà pseudocode (slide 45) exactly. Stops as soon as goal
-    is extracted from the Open queue — guaranteed optimal when h is admissible
-    (Alsedà, slide 45: 'if current is goal then return g, parent').
+    is extracted from the Open queue, which is guaranteed optimal when h is
+    admissible (Alsedà, slide 45: 'if current is goal then return g, parent').
 
     Unlike Dijkstra, there is no 'full' version that explores all nodes: A* is
     specifically designed for the routing problem (start -> goal), so a single

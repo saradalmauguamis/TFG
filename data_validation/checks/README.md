@@ -1,12 +1,12 @@
 # Split Data Checks
 
-Each script/folder is keyed to one GTFS file or concept — `pathways_checks.py` to
+Each script/folder is keyed to one GTFS file or concept: `pathways_checks.py` to
 `pathways`/`transfers`, `stop_times/` to `stop_times`, `trips_checks.py` to `trips`.
 `file_connection_checks.py` is the deliberate exception: its entire purpose is checking that
 `stop_id`/`route_id`/`trip_id` references agree *across* files, so it's the one script that has
 to span more than one `.txt`.
 
-Independent of run order — `file_connection_checks.py`, `pathways_checks.py`,
+Independent of run order: `file_connection_checks.py`, `pathways_checks.py`,
 `trips_checks.py`, and `stop_times/sequence_increment_check.py` only need
 `processing/1_subway.py` to have run; they don't gate each other or the rest of the pipeline. The
 rest of `stop_times/` is tied to a fixed position, since it's interleaved with
