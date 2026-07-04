@@ -1,10 +1,16 @@
 """Dijkstra's algorithm based on Lluís Alsedà pseudo-code"""
 
 from __future__ import annotations
+import sys
+from pathlib import Path
 from time import perf_counter
 from typing import Dict, List, Optional
 
-from dijkstra_utils import (
+_PROJECT_ROOT = str(Path(__file__).resolve().parents[2])
+if _PROJECT_ROOT not in sys.path:
+    sys.path.insert(0, _PROJECT_ROOT)
+
+from dijkstra_utils import (  # noqa: E402
     Graph,
     Node,
     cut_dijkstra,

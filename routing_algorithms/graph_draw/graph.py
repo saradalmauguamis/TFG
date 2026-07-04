@@ -83,6 +83,8 @@ SYNTHETIC_PLATFORM_JITTER_ANGLE: dict[str, float] = {
     "1.9331": 0,
 }
 
+# What gets drawn is controlled by these module-level constants instead of CLI flags.
+
 # Set to True to also draw entry/exit nodes and PW/TF edges, not just platforms and SW.
 SHOW_ALL_NODES_AND_EDGES = False
 
@@ -93,6 +95,8 @@ SHOW_TF_EDGES = True
 CENTER_STOP_ID: str | None = None
 # Half-width of the zoom window in degrees (0.004 ~ 400m). Only used when CENTER_STOP_ID is set.
 RADIUS_DEGREES = 0.004
+
+# The PNG is saved to resources/graph.png, or resources/graph_zoom_<stop>.png when zoomed.
 
 
 def load_line_colors() -> dict[str, str]:
@@ -195,7 +199,9 @@ def draw_graph(
     graph: nx.DiGraph,
     center_stop_id: str | None = None,
     radius_degrees: float = 0.004,
-    output_path: str = "routing_algotithms/graph_draw/graph.png",
+    output_path: str | Path = Path(__file__).resolve().parent
+    / "resources"
+    / "graph.png",
 ) -> None:
     """Draw the stop graph and save it as a PNG, optionally zoomed on a stop.
 
@@ -402,10 +408,12 @@ def draw_graph(
 
 
 if __name__ == "__main__":
+    resources_dir = Path(__file__).resolve().parent / "resources"
+    resources_dir.mkdir(exist_ok=True)
     if CENTER_STOP_ID is not None:
-        output_path = f"routing_algotithms/graph_draw/graph_zoom_{CENTER_STOP_ID}.png"
+        output_path = resources_dir / f"graph_zoom_{CENTER_STOP_ID}.png"
     else:
-        output_path = "routing_algotithms/graph_draw/graph.png"
+        output_path = resources_dir / "graph.png"
 
     g = load_graph()
     draw_graph(
