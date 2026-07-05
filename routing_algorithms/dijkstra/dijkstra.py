@@ -46,8 +46,8 @@ from dijkstra_utils import (  # noqa: E402
     print_summary,
 )
 
-SOURCE = "E.11101"
-TARGET = "E.14001"
+SOURCE = "E.50901"
+TARGET = "E.55501"
 
 
 def main() -> None:

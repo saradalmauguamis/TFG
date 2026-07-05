@@ -84,6 +84,8 @@ def _run_dijkstra(
             visited.add(node)
 
         if stop_at is not None and node == stop_at:
+            if verbose:
+                print("  -> goal reached!")
             break
 
         for adj, weight in graph[

@@ -82,6 +82,7 @@ the added complexity, so it is intentionally left sequential.
 
 from __future__ import annotations
 
+import statistics
 import sys
 from functools import partial
 from pathlib import Path
@@ -247,6 +248,7 @@ def main() -> Tuple[List[ReportRow], float]:
     pairs: List[Tuple[Node, Node]]
     rows: List[ReportRow]
     elapsed: float
+    proportions: List[float]
 
     stop_names = load_stop_names(STOPS_FILE)
     stop_to_lines = build_stop_to_lines(subway_route_names_stop_ids_artificial)
@@ -266,6 +268,10 @@ def main() -> Tuple[List[ReportRow], float]:
     rows.sort(
         key=lambda row: row.proportion if row.proportion is not None else float("inf")
     )
+
+    proportions = [row.proportion for row in rows if row.proportion is not None]
+    print(f"proportion mean: {statistics.mean(proportions):.5f}")
+    print(f"proportion median: {statistics.median(proportions):.5f}")
 
     write_rows(OUTPUT_PATH, FIELDNAMES, (row_to_csv_dict(row) for row in rows))
     return rows, elapsed

@@ -49,7 +49,6 @@ def a_star(
         node: None for node in nodes
     }  # pseudocode: parent[G.order] <- uninitialized
     g: Dict[Node, int] = {node: INF for node in nodes}  # pseudocode: g[G.order] <- ∞
-    # MAYBE CHANGE IT TO FLOAT??
 
     iteration = 0
 

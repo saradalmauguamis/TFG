@@ -18,11 +18,15 @@ INF = (
 )  # int equivalent of float('inf'); keeps dist/g arithmetic and equality in pure int
 
 
+# ---------------------------------------------------------------------------
+# Graph construction
+# ---------------------------------------------------------------------------
+
+
 def build_graph_from_weights(file_path: str) -> Graph:
     """Build a directed, weighted graph from a GTFS-style weights file.
 
-    Shared by dijkstra.py and a_star_need_report.py (any script running against the
-    real subway graph rather than a toy example).
+    Shared by any script running against the real subway graph rather than a toy example.
 
     args:
         file_path: Path to a CSV with from_stop_id, to_stop_id, weight_seconds columns.
@@ -429,11 +433,11 @@ def print_distances(
         source: When provided, the header names the source node explicitly.
         dist_fmt: Optional callable to format distance values (e.g. seconds_to_hms).
             When omitted, raw integers are printed.
-        label: "dijkstra" or "a_star" for a full run, where every reachable node's
-            distance is final. "cut" for cut_dijkstra, where the search stops as
-            soon as the target is extracted, so some reached nodes were only
-            relaxed and never extracted: by the convergence theorem their distance
-            isn't guaranteed optimal yet, unlike already-extracted ones.
+        label: "dijkstra" for a full run, where every reachable node's distance is
+            final. "cut" for cut_dijkstra, where the search stops as soon as the
+            target is extracted, so some reached nodes were only relaxed and never
+            extracted: by the convergence theorem their distance isn't guaranteed
+            optimal yet, unlike already-extracted ones.
         expanded: Required when label="cut". Marks, per node, whether it was
             extracted before the search stopped (and so has an optimal distance).
         node_fmt: Optional callable to label a node (e.g. stop name and line,
