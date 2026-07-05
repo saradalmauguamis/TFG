@@ -5,48 +5,20 @@ Output_name: a_star_{SOURCE}_to_{TARGET}.txt saved into 'routing_algorithms/a_st
 
 Aim:
 routing_algorithms/a_star/a_star_utils.py implements A* generically, taking any
-admissible heuristic h(node, target) as a parameter. This script supplies both
-pieces needed to run it against the real subway graph: the graph itself (via
-build_graph_from_weights, shared with dijkstra.py) and a concrete geographic
-heuristic built from each stop's (lat, lon).
-
-Heuristic definition:
-h(node, target) = straight_line_distance(node, target) / v_max, where v_max is
-the fastest implied speed (in m/s) across any single edge already present in
-the graph: v_max = max over every edge (u, v) in WEIGHTS_FILE of
-straight_line_distance(u, v) / weight_seconds(u, v).
-
-Why this is admissible: for any real path v0 -> ... -> vk with total weight
-T = sum(w_i), each edge on it satisfies straight_line_distance(v_i, v_i+1) <=
-v_max * w_i (v_max is by definition the max of that ratio over every graph
-edge, including these). Summing over the path and applying the triangle
-inequality (straight_line_distance(node, target) <= sum of
-straight_line_distance(v_i, v_i+1)) gives
-straight_line_distance(node, target) <= v_max * T for any path, in particular
-the optimal one, so h(node, target) <= T always: h never overestimates the
-true remaining cost, whichever path turns out to be optimal.
-
-straight_line_distance treats the small Barcelona area as locally flat
-(equirectangular projection: longitude scaled by cos(mean latitude) before
-applying Pythagoras, then converted from degrees to meters), rather than raw
-Euclidean distance on unscaled (lat, lon) degrees. This still fits the "assume
-the earth is flat" brief, and both versions are equally admissible by the
-proof above (it only requires computing v_max and h with the exact same
-distance function) -- the reason to prefer the corrected one is that it makes
-v_max physically interpretable (printed in km/h below) and gives a tighter,
-more informative heuristic, since raw degrees mis-weight east-west vs
-north-south travel at this latitude (1 degree of longitude is only ~75% the
-length of 1 degree of latitude here).
+admissible heuristic h(node, target) as a parameter, and also builds the
+concrete geographic heuristic used here (straight_line_distance, v_max,
+build_heuristic -- see that module's docstrings for their definitions and the
+admissibility proof). This script only wires that machinery to the real
+subway graph: the graph itself (via build_graph_from_weights, shared with
+dijkstra.py), the real stop coordinates, and SOURCE/TARGET.
 
 Methodology:
 1. Build the real graph from WEIGHTS_FILE via build_graph_from_weights
    (routing_algorithms/algorithms_utils.py), shared with dijkstra.py.
-2. Load every stop's (lat, lon) via load_stops_info (data_validation/gtfs_utils.py).
-3. Compute v_max by scanning every edge already present in the graph.
-4. Build h as a closure over the coordinates and v_max, floored to an int (a
-   floor can only shrink h, so it cannot break admissibility) to match
-   a_star_utils.py's Heuristic = Callable[[Node, Node], int] contract.
-5. Run a_star(graph, SOURCE, TARGET, h) and print the reconstructed path and
+2. Load every stop's (lat, lon) and compute v_max via load_node_coords and
+   compute_v_max (routing_algorithms/a_star/a_star_utils.py).
+3. Build h via build_heuristic (routing_algorithms/a_star/a_star_utils.py).
+4. Run a_star(graph, SOURCE, TARGET, h) and print the reconstructed path and
    its weight, the same way dijkstra.py reports cut_dijkstra's result.
 
 Note: unlike dijkstra.py, there is no "full" run to print a whole distances
@@ -60,10 +32,9 @@ from __future__ import annotations
 import sys
 from contextlib import redirect_stdout
 from functools import partial
-from math import cos, radians, sqrt
 from pathlib import Path
 from time import perf_counter
-from typing import Dict, List, Optional, Set, Tuple
+from typing import Dict, List, Optional, Set
 
 _PROJECT_ROOT = str(Path(__file__).resolve().parents[2])
 if _PROJECT_ROOT not in sys.path:
@@ -81,7 +52,6 @@ from data_validation.gtfs_utils import (  # noqa: E402
     invert_entries,
     load_pathway_ids,
     load_stop_names,
-    load_stops_info,
     print_file_disclaimer,
     seconds_to_hms,
 )
@@ -94,112 +64,19 @@ from routing_algorithms.algorithms_utils import (  # noqa: E402
     rebuild_path,
     stop_label,
 )
-from a_star_utils import Graph, Heuristic, Node, a_star  # noqa: E402
+from a_star_utils import (  # noqa: E402
+    Coord,
+    Graph,
+    Heuristic,
+    Node,
+    a_star,
+    build_heuristic,
+    compute_v_max,
+    load_node_coords,
+)
 
-SOURCE = "E.50901"
-TARGET = "E.55501"
-
-EARTH_RADIUS_M = 6_371_000.0  # mean Earth radius, used for the flat local projection
-Coord = Tuple[float, float]  # (stop_lat, stop_lon) in degrees
-
-
-def straight_line_distance(coord_a: Coord, coord_b: Coord) -> float:
-    """Return the flat-earth straight-line distance between two points, in meters.
-
-    Treats the (small) area covered by the graph as locally flat: longitude is
-    scaled by cos(mean latitude) before applying Pythagoras, so that degrees
-    of longitude and latitude are weighted by their actual physical length at
-    this latitude, then the result is converted from degrees to meters.
-
-    args:
-        coord_a: (stop_lat, stop_lon) in degrees for the first point.
-        coord_b: (stop_lat, stop_lon) in degrees for the second point.
-
-    returns:
-        The estimated straight-line distance between the two points, in meters.
-    """
-    lat_a, lon_a = coord_a
-    lat_b, lon_b = coord_b
-    mean_lat_rad = radians((lat_a + lat_b) / 2)
-
-    dx = radians(lon_b - lon_a) * cos(mean_lat_rad) * EARTH_RADIUS_M
-    dy = radians(lat_b - lat_a) * EARTH_RADIUS_M
-    return sqrt(dx * dx + dy * dy)
-
-
-def load_node_coords(file_path: str) -> Dict[Node, Coord]:
-    """Return stop_id -> (stop_lat, stop_lon) in degrees, for every stop in file_path.
-
-    args:
-        file_path: Path to a GTFS-style stops file (STOPS_FILE).
-
-    returns:
-        Mapping from stop_id to its (lat, lon) coordinates, built on top of
-        load_stops_info (data_validation/gtfs_utils.py).
-    """
-    return {
-        stop_id: (float(lat), float(lon))
-        for stop_id, (_, lat, lon) in load_stops_info(file_path).items()
-    }
-
-
-def compute_v_max(
-    graph: Graph, coords: Dict[Node, Coord]
-) -> Tuple[float, Tuple[Node, Node]]:
-    """Return the fastest implied speed (m/s) across any single edge in graph.
-
-    Scans every directed edge already in the graph (built from WEIGHTS_FILE)
-    and takes the maximum of straight_line_distance(u, v) / weight(u, v),
-    the ratio a_star's admissibility proof (module docstring) relies on.
-
-    args:
-        graph: A directed, weighted graph, as returned by build_graph_from_weights.
-        coords: Mapping from every node in graph to its (lat, lon) coordinates.
-
-    returns:
-        The maximum straight-line-distance-per-second observed across all
-        edges, together with the (u, v) edge that achieves it.
-    """
-    # max() over (ratio, (u, v)) tuples compares lexicographically by ratio
-    # first, so it returns the whole winning tuple, not just the ratio.
-    return max(
-        (straight_line_distance(coords[u], coords[v]) / weight, (u, v))
-        for u, adjacency in graph.items()
-        for v, weight in adjacency.items()
-    )
-
-
-def heuristic(node: Node, target: Node, coords: Dict[Node, Coord], v_max: float) -> int:
-    """Return the admissible heuristic estimate from node to target.
-
-    h(node, target) = straight_line_distance(node, target) / v_max, floored to
-    an int to match a_star_utils.py's Heuristic = Callable[[Node, Node], int]
-    (flooring can only shrink h, so admissibility is preserved).
-
-    args:
-        node: The node to estimate the remaining cost from.
-        target: The target node.
-        coords: Mapping from node to its (lat, lon) coordinates.
-        v_max: Fastest implied speed (m/s) across any edge, from compute_v_max.
-
-    returns:
-        straight_line_distance(node, target) / v_max, floored to an int.
-    """
-    return int(straight_line_distance(coords[node], coords[target]) / v_max)
-
-
-def build_heuristic(coords: Dict[Node, Coord], v_max: float) -> Heuristic:
-    """Bind coords and v_max into heuristic, producing a plain Heuristic(node, target).
-
-    args:
-        coords: Mapping from node to its (lat, lon) coordinates.
-        v_max: Fastest implied speed (m/s) across any edge, from compute_v_max.
-
-    returns:
-        heuristic with coords and v_max pre-bound, matching
-        a_star_utils.py's Heuristic = Callable[[Node, Node], int].
-    """
-    return partial(heuristic, coords=coords, v_max=v_max)
+SOURCE = "E.11101"
+TARGET = "E.14001"
 
 
 def main() -> None:

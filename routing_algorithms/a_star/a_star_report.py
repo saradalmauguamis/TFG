@@ -1,0 +1,208 @@
+"""Report, for every directed platform-to-platform route, how well the geographic
+A* heuristic (routing_algorithms/a_star/a_star_utils.py) actually performs.
+
+Output_name: a_star_report.txt saved into 'routing_algorithms/a_star/resources'
+
+This is the evaluation counterpart to a_star_need_report.py
+(routing_algorithms/dijkstra/a_star_need_report.py): that report used
+cut_dijkstra to show, per pair, how far from ideal (proportion = path_vertices
+/ cut_iterations) an uninformed search already is, to find where a heuristic
+would help. This report reruns every one of those same pairs, but with A* and
+the real geographic heuristic built in a_star_utils.py, so the exact same
+proportion metric can be compared side-by-side against dijkstra_report.txt to
+see how much of that theoretical opportunity the heuristic actually captures.
+
+Columns (in this order):
+source_name, target_name, proportion, source_id, target_id, a_star_iterations,
+path_vertices, optimum_weight, path
+
+Same meaning as in a_star_need_report.py, except a_star_iterations replaces
+cut_iterations: the number of nodes extracted from A*'s Open queue before the
+target was reached (a_star_utils.py's a_star, like cut_dijkstra, always stops
+as soon as the target is extracted, so proportion = path_vertices /
+a_star_iterations is "NA" when no path is found, and rows are sorted
+ascending by proportion, NA last, exactly as in a_star_need_report.py).
+
+Methodology:
+1. Build the graph from WEIGHTS_FILE with build_graph_from_weights
+   (routing_algorithms/algorithms_utils.py), shared with a_star.py.
+2. Build the geographic heuristic once for the whole run (coords, v_max and h
+   are graph-global, not per-pair) via load_node_coords, compute_v_max and
+   build_heuristic, reused directly from a_star_utils.py.
+3. Collect every directed pair of distinct platforms via
+   collect_platform_pairs (routing_algorithms/algorithms_utils.py), shared
+   with a_star_need_report.py.
+4. Run a_star(graph, u, v, h, verbose=False) for each pair through
+   compute_report_row (routing_algorithms/algorithms_utils.py), which also
+   reconstructs the path via rebuild_path.
+5. Sort all rows ascending by proportion, NA last, and write them to
+   a_star_report.txt.
+
+Note on parallelism: a single a_star call on this graph takes well under 2ms
+even for a very long route like E.11101 (Residència sanitària -- L1-Hospital
+de Bellvitge) --> to E.14001 (Sicília -- L1-Fondo), which takes only ~1.7ms
+(measured empirically), so ~29k directed platform pairs run in well under a
+minute single-threaded. Parallelising this one-off analysis script wouldn't be
+worth the added complexity, so it is intentionally left sequential, exactly
+as in a_star_need_report.py.
+"""
+
+from __future__ import annotations
+
+import statistics
+import sys
+from functools import partial
+from pathlib import Path
+from time import perf_counter
+from typing import Dict, List, Optional, Tuple
+
+_PROJECT_ROOT = str(Path(__file__).resolve().parents[2])
+if _PROJECT_ROOT not in sys.path:
+    sys.path.insert(0, _PROJECT_ROOT)
+
+from scripts.basics import subway_route_names_stop_ids_artificial  # noqa: E402
+
+from data_validation.gtfs_utils import (  # noqa: E402
+    STOPS_FILE,
+    WEIGHTS_FILE,
+    build_stop_to_lines,
+    check_missing_files,
+    load_stop_names,
+    print_file_disclaimer,
+    write_rows,
+)
+from routing_algorithms.algorithms_utils import (  # noqa: E402
+    NodeFmt,
+    ReportRow,
+    ReportRunner,
+    build_graph_from_weights,
+    collect_platform_pairs,
+    compute_report_row,
+    report_fieldnames,
+    report_row_to_csv_dict,
+    stop_label,
+)
+from a_star_utils import (  # noqa: E402
+    Coord,
+    Graph,
+    Heuristic,
+    Node,
+    a_star,
+    build_heuristic,
+    compute_v_max,
+    load_node_coords,
+)
+
+ITERATIONS_LABEL = "a_star_iterations"
+OUTPUT_NAME = "a_star_report.txt"
+OUTPUT_PATH = Path(__file__).resolve().parent / "resources" / OUTPUT_NAME
+FIELDNAMES = report_fieldnames(ITERATIONS_LABEL)
+
+
+def run_a_star(
+    graph: Graph, source: Node, target: Node, h: Heuristic
+) -> Tuple[Dict[Node, int], Dict[Node, Optional[Node]], int]:
+    """Run a_star for one pair, dropping verbose output.
+
+    args:
+        graph: A directed, weighted graph.
+        source: Platform stop_id to start from.
+        target: Platform stop_id to reach.
+        h: Admissible heuristic, shared across every pair, from build_heuristic.
+
+    returns:
+        (g, parent, a_star_iterations) for this pair.
+    """
+    return a_star(graph, source, target, h, verbose=False)
+
+
+def build_run_a_star(h: Heuristic) -> ReportRunner:
+    """Bind h into run_a_star, matching the ReportRunner shape compute_report_row expects.
+
+    args:
+        h: Admissible heuristic, shared across every pair, from build_heuristic.
+
+    returns:
+        run_a_star with h pre-bound, i.e. Callable(graph, source, target) ->
+        (g, parent, a_star_iterations).
+    """
+    return partial(run_a_star, h=h)
+
+
+def main() -> Tuple[List[ReportRow], float]:
+    """Compute the platform-to-platform A* report and write it to OUTPUT_NAME.
+
+    returns:
+        The sorted report rows, and the total elapsed time (seconds) spent
+        running a_star over every platform pair.
+    """
+    graph: Graph
+    stop_names: Dict[str, str]
+    stop_to_lines: Dict[str, List[str]]
+    node_fmt: NodeFmt
+    coords: Dict[Node, Coord]
+    v_max: float
+    v_max_from: Node
+    v_max_to: Node
+    h: Heuristic
+    runner: ReportRunner
+    pairs: List[Tuple[Node, Node]]
+    rows: List[ReportRow]
+    start: float
+    elapsed: float
+    proportions: List[float]
+
+    stop_names = load_stop_names(STOPS_FILE)
+    stop_to_lines = build_stop_to_lines(subway_route_names_stop_ids_artificial)
+    node_fmt = partial(stop_label, stop_names=stop_names, stop_to_lines=stop_to_lines)
+
+    graph = build_graph_from_weights(WEIGHTS_FILE)
+
+    coords = load_node_coords(STOPS_FILE)
+    v_max, (v_max_from, v_max_to) = compute_v_max(graph, coords)
+    print(
+        f"v_max (fastest implied edge speed): {v_max:.3f} m/s ({v_max * 3.6:.1f} km/h)"
+        f" -- found at edge {v_max_from} ({node_fmt(v_max_from)})"
+        f" -> {v_max_to} ({node_fmt(v_max_to)})"
+    )
+    h = build_heuristic(coords, v_max)
+    runner = build_run_a_star(h)
+
+    pairs = collect_platform_pairs(graph)
+
+    start = perf_counter()
+    rows = [
+        compute_report_row(graph, source, target, node_fmt, runner)
+        for source, target in pairs
+    ]
+    elapsed = perf_counter() - start
+
+    # NA-proportion rows (no path) sort after every real value; INF is only used
+    # as the sort key here, never stored, so it never leaks into the report.
+    rows.sort(
+        key=lambda row: row.proportion if row.proportion is not None else float("inf")
+    )
+
+    proportions = [row.proportion for row in rows if row.proportion is not None]
+    print(f"proportion mean: {statistics.mean(proportions):.5f}")
+    print(f"proportion median: {statistics.median(proportions):.5f}")
+
+    write_rows(
+        OUTPUT_PATH,
+        FIELDNAMES,
+        (report_row_to_csv_dict(row, ITERATIONS_LABEL) for row in rows),
+    )
+    return rows, elapsed
+
+
+if __name__ == "__main__":
+    check_missing_files([WEIGHTS_FILE, STOPS_FILE])
+    print_file_disclaimer([WEIGHTS_FILE, STOPS_FILE])
+
+    print(f"Starting {OUTPUT_NAME} generation...")
+    report_rows, elapsed_seconds = main()
+    print(
+        f"{OUTPUT_PATH.name} generated into"
+        f" {OUTPUT_PATH.relative_to(_PROJECT_ROOT)} with {len(report_rows)} rows"
+        f" (took {elapsed_seconds:.1f}s)"
+    )

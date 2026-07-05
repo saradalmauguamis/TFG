@@ -66,16 +66,18 @@ pairs, an ~8.65x smaller file, far easier to scan and draw conclusions from.
 Methodology:
 1. Build the graph from WEIGHTS_FILE with build_graph_from_weights
    (routing_algorithms/algorithms_utils.py), shared with dijkstra.py.
-2. Restrict the graph's vertex set to platforms (stop_ids starting with "1.").
-3. Build every directed pair (u, v) of distinct platforms.
-4. Run cut_dijkstra(graph, u, v, verbose=False) for each pair (no changes needed
-   in dijkstra_utils.py, cut_dijkstra already supports a silent run), then rebuild_path
-   to get the path (or lack of one).
-5. Compute the columns above from that pair's (dist, parent, cut_iterations, path).
-6. Sort all rows ascending by proportion, NA last, and write them to dijkstra_report.txt.
+2. Restrict the graph's vertex set to platforms (stop_ids starting with "1.")
+   via collect_platform_pairs (routing_algorithms/algorithms_utils.py).
+3. Run cut_dijkstra(graph, u, v, verbose=False) for each pair through
+   compute_report_row (routing_algorithms/algorithms_utils.py), which also
+   reconstructs the path via rebuild_path.
+4. Sort all rows ascending by proportion, NA last, and write them to
+   dijkstra_report.txt.
 
-Note on parallelism: a single cut_dijkstra call on this graph takes well under 1ms
-(measured empirically, ~0.7ms), so ~29k directed platform pairs run in well under a
+Note on parallelism: a single cut_dijkstra call on this graph takes well under
+1ms even for a very long route like E.11101 (Residència sanitària -- L1-Hospital
+de Bellvitge) --> to E.14001 (Sicília -- L1-Fondo), which takes only ~0.7ms
+(measured empirically), so ~29k directed platform pairs run in well under a
 minute single-threaded. Parallelising this one-off analysis script wouldn't be worth
 the added complexity, so it is intentionally left sequential.
 """
@@ -87,7 +89,7 @@ import sys
 from functools import partial
 from pathlib import Path
 from time import perf_counter
-from typing import Dict, List, NamedTuple, Optional, Tuple
+from typing import Dict, List, Optional, Tuple
 
 _PROJECT_ROOT = str(Path(__file__).resolve().parents[2])
 if _PROJECT_ROOT not in sys.path:
@@ -107,132 +109,41 @@ from data_validation.gtfs_utils import (  # noqa: E402
 from routing_algorithms.algorithms_utils import (  # noqa: E402
     Node,
     NodeFmt,
+    ReportRow,
+    ReportRunner,
     build_graph_from_weights,
-    rebuild_path,
+    collect_platform_pairs,
+    compute_report_row,
+    report_fieldnames,
+    report_row_to_csv_dict,
     stop_label,
 )
 from dijkstra_utils import Graph, cut_dijkstra  # noqa: E402
 
+ITERATIONS_LABEL = "cut_iterations"
 OUTPUT_NAME = "dijkstra_report.txt"
 OUTPUT_PATH = Path(__file__).resolve().parent / "resources" / OUTPUT_NAME
-FIELDNAMES = [
-    "source_name",
-    "target_name",
-    "proportion",
-    "source_id",
-    "target_id",
-    "cut_iterations",
-    "path_vertices",
-    "optimum_weight",
-    "path",
-]
+FIELDNAMES = report_fieldnames(ITERATIONS_LABEL)
 
 
-class ReportRow(NamedTuple):
-    """One directed platform-to-platform route and its cut_dijkstra outcome."""
+def run_cut_dijkstra(
+    graph: Graph, source: Node, target: Node
+) -> Tuple[Dict[Node, int], Dict[Node, Optional[Node]], int]:
+    """Run cut_dijkstra for one pair, dropping its 4th (`expanded`) return value.
 
-    source_id: Node
-    target_id: Node
-    source_name: str
-    target_name: str
-    cut_iterations: int
-    path_vertices: Optional[int]
-    optimum_weight: Optional[int]
-    proportion: Optional[float]
-    path: List[Node]
-
-
-def collect_platform_pairs(graph: Graph) -> List[Tuple[Node, Node]]:
-    """Return every directed pair of distinct platform vertices in the graph.
-
-    args:
-        graph: A directed, weighted graph (build_graph_from_weights output),
-            keyed by every stop_id, including platforms (stop_ids starting with "1.").
-
-    returns:
-        Sorted list of (source, target) pairs with source != target, both platforms.
-    """
-    platforms = sorted(node for node in graph if node.startswith("1."))
-    return [
-        (source, target)
-        for source in platforms
-        for target in platforms
-        if source != target
-    ]
-
-
-def compute_report_row(
-    graph: Graph, source: Node, target: Node, node_fmt: NodeFmt
-) -> ReportRow:
-    """Run cut_dijkstra for one platform pair and compute this report's columns.
+    Matches the ReportRunner shape compute_report_row expects
+    (routing_algorithms/algorithms_utils.py).
 
     args:
         graph: A directed, weighted graph.
         source: Platform stop_id to start from.
         target: Platform stop_id to reach.
-        node_fmt: Callable to label a node (stop name and line), as in dijkstra.py.
 
     returns:
-        The ReportRow for this (source, target) pair.
+        (dist, parent, cut_iterations) for this pair.
     """
-    dist, parent, cut_iterations, _ = cut_dijkstra(graph, source, target, verbose=False)
-    path = rebuild_path(parent, source, target)
-
-    path_vertices: Optional[int] = None
-    optimum_weight: Optional[int] = None
-    proportion: Optional[float] = None
-    if path:
-        path_vertices = len(path)
-        optimum_weight = dist[target]
-        proportion = path_vertices / cut_iterations
-
-    return ReportRow(
-        source_id=source,
-        target_id=target,
-        source_name=node_fmt(source),
-        target_name=node_fmt(target),
-        cut_iterations=cut_iterations,
-        path_vertices=path_vertices,
-        optimum_weight=optimum_weight,
-        proportion=proportion,
-        path=path,
-    )
-
-
-def _na_or(value: object, fmt: str = "{}") -> str:
-    """Return "NA" for a None value, otherwise the formatted value.
-
-    args:
-        value: The value to format, or None.
-        fmt: A str.format template applied to value when it is not None.
-
-    returns:
-        "NA" if value is None, otherwise fmt.format(value).
-    """
-    return "NA" if value is None else fmt.format(value)
-
-
-def row_to_csv_dict(row: ReportRow) -> Dict[str, str]:
-    """Convert one ReportRow into the string dict write_rows expects.
-
-    args:
-        row: A single report row.
-
-    returns:
-        Dict keyed by FIELDNAMES, "NA" standing in for every missing value.
-    """
-    path_str = "NA" if not row.path else " -> ".join(row.path)
-    return {
-        "source_name": row.source_name,
-        "target_name": row.target_name,
-        "proportion": _na_or(row.proportion, "{:.5f}"),
-        "source_id": row.source_id,
-        "target_id": row.target_id,
-        "cut_iterations": str(row.cut_iterations),
-        "path_vertices": _na_or(row.path_vertices),
-        "optimum_weight": _na_or(row.optimum_weight),
-        "path": path_str,
-    }
+    dist, parent, iterations, _ = cut_dijkstra(graph, source, target, verbose=False)
+    return dist, parent, iterations
 
 
 def main() -> Tuple[List[ReportRow], float]:
@@ -245,8 +156,11 @@ def main() -> Tuple[List[ReportRow], float]:
     graph: Graph
     stop_names: Dict[str, str]
     stop_to_lines: Dict[str, List[str]]
+    node_fmt: NodeFmt
+    runner: ReportRunner
     pairs: List[Tuple[Node, Node]]
     rows: List[ReportRow]
+    start: float
     elapsed: float
     proportions: List[float]
 
@@ -256,10 +170,12 @@ def main() -> Tuple[List[ReportRow], float]:
 
     graph = build_graph_from_weights(WEIGHTS_FILE)
     pairs = collect_platform_pairs(graph)
+    runner = run_cut_dijkstra
 
     start = perf_counter()
     rows = [
-        compute_report_row(graph, source, target, node_fmt) for source, target in pairs
+        compute_report_row(graph, source, target, node_fmt, runner)
+        for source, target in pairs
     ]
     elapsed = perf_counter() - start
 
@@ -273,7 +189,11 @@ def main() -> Tuple[List[ReportRow], float]:
     print(f"proportion mean: {statistics.mean(proportions):.5f}")
     print(f"proportion median: {statistics.median(proportions):.5f}")
 
-    write_rows(OUTPUT_PATH, FIELDNAMES, (row_to_csv_dict(row) for row in rows))
+    write_rows(
+        OUTPUT_PATH,
+        FIELDNAMES,
+        (report_row_to_csv_dict(row, ITERATIONS_LABEL) for row in rows),
+    )
     return rows, elapsed
 
 
