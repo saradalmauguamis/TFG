@@ -129,6 +129,8 @@ __all__ = [
     "build_stop_to_lines",
     "build_shared_platform_lines",
     "format_stop_label",
+    "invert_entries",
+    "label_entrance_by_platform",
     # Directed pair travel-time helpers
     "consecutive_pairs",
     "build_trip_groups_by_line",
@@ -742,6 +744,23 @@ def build_graph_and_coverage(
     return platform_to_entries, covered_platforms
 
 
+def invert_entries(entries_by_key: Dict[str, Set[str]]) -> Dict[str, Set[str]]:
+    """Invert a one-to-many mapping, e.g. platform_to_entries -> entrance_to_platforms.
+
+    args:
+        entries_by_key: Mapping from a key to its set of associated values,
+            e.g. `platform_to_entries` from `build_graph_and_coverage`.
+
+    returns:
+        Mapping from each value back to the set of keys it was found under.
+    """
+    inverted: Dict[str, Set[str]] = {}
+    for key, values in entries_by_key.items():
+        for value in values:
+            inverted.setdefault(value, set()).add(key)
+    return inverted
+
+
 def build_directed_entrance_edges(
     pathway_ids: Set[str],
 ) -> Tuple[Dict[str, Set[str]], Dict[str, Set[str]]]:
@@ -944,6 +963,69 @@ def format_stop_label(
     if not lines:
         return stop_name
     return f"{'-'.join(lines)}-{stop_name}"
+
+
+def label_entrance_by_platform(
+    entrance_id: str,
+    entrance_to_platform: Dict[str, Set[str]],
+    stop_names: Dict[str, str],
+    stop_to_lines: Dict[str, List[str]],
+) -> str:
+    """Label an entrance by the platform(s) it connects to, via format_stop_label.
+
+    An entrance's own stop_name (e.g. a street name) is uninformative unless
+    you already know that entrance; the connected platform's line-prefixed
+    name (e.g. "L3-Trinitat Nova") is what actually locates it in the network.
+    Platforms sharing the same stop_name (e.g. two directional platforms of
+    the same station) have their lines merged under that one name instead of
+    repeating it, e.g. "L9N/L10N-Onze de Setembre" rather than
+    "L9N-Onze de Setembre / L10N-Onze de Setembre".
+
+    args:
+        entrance_id: Entrance stop_id (E.*) to label.
+        entrance_to_platform: Mapping from entrance stop_id to the platform
+            stop_ids (1.*) it connects to, i.e. `invert_entries` applied to
+            `build_graph_and_coverage`'s platform_to_entries.
+        stop_names: Mapping from stop_id to stop_name, from `load_stop_names`.
+        stop_to_lines: Mapping from stop_id to line names, from `build_stop_to_lines`.
+
+    returns:
+        "{entrance stop_name} -- {platform format_stop_label(s)}", one label
+        per distinct platform stop_name (merging lines of same-named
+        platforms), joined by " / " when an entrance serves more than one
+        distinctly-named platform; plain entrance stop_name if it isn't
+        connected to any platform.
+    """
+    entrance_name: str
+    platforms: List[str]
+    platforms_by_name: Dict[str, List[str]]
+    labels: List[str]
+
+    entrance_name = stop_names.get(entrance_id, "(no name)")
+    platforms = sorted(entrance_to_platform.get(entrance_id, ()))
+    if not platforms:
+        return entrance_name
+
+    platforms_by_name = {}
+    for platform in platforms:
+        name = stop_names.get(platform, "(no name)")
+        platforms_by_name.setdefault(name, []).append(platform)
+
+    labels = []
+    for name, same_name_platforms in platforms_by_name.items():
+        if len(same_name_platforms) == 1:
+            labels.append(
+                format_stop_label(same_name_platforms[0], name, stop_to_lines)
+            )
+            continue
+        lines: List[str] = []
+        for platform in same_name_platforms:
+            for line in stop_to_lines.get(platform, ()):
+                if line not in lines:
+                    lines.append(line)
+        labels.append(f"{'/'.join(lines)}-{name}" if lines else name)
+
+    return f"{entrance_name} -- {' / '.join(labels)}"
 
 
 # -----------------------------
