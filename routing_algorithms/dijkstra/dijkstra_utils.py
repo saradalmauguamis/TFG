@@ -1,13 +1,15 @@
 """Shared Dijkstra implementations, helpers, and display utilities."""
 
 from __future__ import annotations
-from typing import Dict, Optional, Tuple
+from typing import Dict, List, Optional, Set, Tuple
 
 from routing_algorithms.algorithms_utils import (  # shared with a_star_utils.py
     INF,
     Graph,
     MinHeap,
     Node,
+    NodeFmt,
+    format_node_label,
 )
 
 
@@ -21,7 +23,8 @@ def _run_dijkstra(
     source: Node,
     verbose: bool = True,
     stop_at: Optional[Node] = None,
-) -> Tuple[Dict[Node, int], Dict[Node, Optional[Node]], int]:
+    node_fmt: Optional[NodeFmt] = None,
+) -> Tuple[Dict[Node, int], Dict[Node, Optional[Node]], int, Dict[Node, bool]]:
     """Run Dijkstra's algorithm, following the Alsedà pseudocode exactly.
 
     The only intentional deviation: parent[source] is set to None instead of
@@ -32,13 +35,26 @@ def _run_dijkstra(
         source: The starting node for the algorithm.
         verbose: Whether to print iterations and updates while running.
         stop_at: Optional node that stops the search when settled.
+        node_fmt: Optional callable to label a node (e.g. stop name and line,
+            via `format_stop_label`) in the verbose trace. Ignored when
+            verbose is False.
 
     returns:
         distances: A mapping from each node to its shortest distance from the source.
         parents: A mapping from each node to its parent in the shortest path tree.
         iterations: Number of extracted nodes processed by the algorithm.
+        expanded: A mapping from each node to whether it was extracted (settled)
+            before the algorithm stopped. Only extracted nodes have an optimal
+            distance, per the convergence theorem; when stop_at cuts the search
+            short, some reached nodes may only have been relaxed, not extracted.
     """
     nodes = list(graph.keys())
+
+    # Verbose lines are buffered and only printed once the run is over, so the
+    # stop_id/label columns can be sized from the nodes actually visited this
+    # run (few, for a cut search) instead of every node in the whole graph.
+    log_lines: List[Tuple] = []
+    visited: Set[Node] = set()
 
     pq = MinHeap()
     expanded: Dict[Node, bool] = {
@@ -64,9 +80,12 @@ def _run_dijkstra(
 
         iteration += 1
         if verbose:
-            print(f"\nIteration {iteration}: extract {node} with distance {best_dist}")
+            log_lines.append(("extract", iteration, node, best_dist))
+            visited.add(node)
 
         if stop_at is not None and node == stop_at:
+            if verbose:
+                print("  -> goal reached!")
             break
 
         for adj, weight in graph[
@@ -98,34 +117,68 @@ def _run_dijkstra(
 
                 if verbose:
                     old_shown = old_dist_adj if old_dist_adj != INF else "inf"
-                    print(
-                        f"  -> update {adj}: {old_shown} -> {dist_aux} (w={weight}) via {node}"
-                    )
+                    log_lines.append(("update", adj, old_shown, dist_aux, weight, node))
+                    visited.update((adj, node))
 
-    return dist, parent, iteration
+    if verbose:
+        id_width = max((len(n) for n in visited), default=0)
+        label_width = (
+            max((len(node_fmt(n)) for n in visited), default=0) if node_fmt else 0
+        )
+        for entry in log_lines:
+            if entry[0] == "extract":
+                _, iteration_no, node, best_dist = entry
+                node_label = format_node_label(node, node_fmt, label_width)
+                print(
+                    f"\nIteration {iteration_no}: extract {node:<{id_width}}{node_label}"
+                    f" with distance {best_dist}"
+                )
+            else:
+                _, adj, old_shown, dist_aux, weight, via_node = entry
+                adj_label = format_node_label(adj, node_fmt, label_width)
+                via_label = format_node_label(via_node, node_fmt)
+                print(
+                    f"  -> update {adj:<{id_width}}{adj_label}: {old_shown} ->"
+                    f" {dist_aux} (w={weight}) via {via_node}{via_label}"
+                )
+
+    return dist, parent, iteration, expanded
 
 
 def dijkstra(
-    graph: Graph, source: Node, verbose: bool = True
-) -> Tuple[Dict[Node, int], Dict[Node, Optional[Node]], int]:
+    graph: Graph,
+    source: Node,
+    verbose: bool = True,
+    node_fmt: Optional[NodeFmt] = None,
+) -> Tuple[Dict[Node, int], Dict[Node, Optional[Node]], int, Dict[Node, bool]]:
     """Run Dijkstra's algorithm from source and return distance and parent maps.
 
     args:
         graph: A directed, weighted graph represented as an adjacency list.
         source: The starting node for the algorithm.
         verbose: Whether to print iterations and updates while running.
+        node_fmt: Optional callable to label a node (e.g. stop name and line)
+            in the verbose trace.
 
     returns:
         distances: A mapping from each node to its shortest distance from the source.
         parents: A mapping from each node to its parent in the shortest path tree.
         iterations: Number of extracted nodes processed by the algorithm.
+        expanded: A mapping from each node to whether it was extracted. All
+            reachable nodes end up extracted in a full run.
     """
-    return _run_dijkstra(graph, source, verbose=verbose, stop_at=None)
+    return _run_dijkstra(
+        graph, source, verbose=verbose, stop_at=None, node_fmt=node_fmt
+    )
 
 
 def cut_dijkstra(
-    graph: Graph, source: Node, target: Node, verbose: bool = True
-) -> Tuple[Dict[Node, int], Dict[Node, Optional[Node]], int]:
+    graph: Graph,
+    source: Node,
+    target: Node,
+    verbose: bool = True,
+    node_fmt: Optional[NodeFmt] = None,
+) -> Tuple[Dict[Node, int], Dict[Node, Optional[Node]], int, Dict[Node, bool]]:
     """Run Dijkstra's algorithm and stop when the target is settled.
 
     args:
@@ -133,13 +186,20 @@ def cut_dijkstra(
         source: The starting node for the algorithm.
         target: The target node that stops the search when settled.
         verbose: Whether to print iterations and updates while running.
+        node_fmt: Optional callable to label a node (e.g. stop name and line)
+            in the verbose trace.
 
     returns:
-        distances: A mapping from each node to its shortest distance from the source.
+        distances: A mapping from each node to its distance from the source (not
+            all optimal, see expanded).
         parents: A mapping from each node to its parent in the shortest path tree.
         iterations: Number of extracted nodes processed by the algorithm.
+        expanded: A mapping from each node to whether it was extracted before the
+            target was reached. Only these nodes have an optimal distance.
     """
-    return _run_dijkstra(graph, source, verbose=verbose, stop_at=target)
+    return _run_dijkstra(
+        graph, source, verbose=verbose, stop_at=target, node_fmt=node_fmt
+    )
 
 
 # ---------------------------------------------------------------------------
@@ -171,6 +231,7 @@ def print_disclaimer() -> None:
     )
     print("  • Verbose output (print statements) significantly impacts execution time")
     print(
-        "  • When iterations match, normal Dijkstra computes ALL distances, while"
-        " cut_dijkstra computes only distances needed to reach the target"
+        "  • Remind that matching iteration counts don't mean equal work: normal"
+        " Dijkstra always relaxes every remaining edge to compute ALL distances,"
+        " while cut_dijkstra stops the instant the target is settled"
     )
