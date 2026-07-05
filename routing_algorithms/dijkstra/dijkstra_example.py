@@ -127,12 +127,12 @@ def main() -> None:
         print_graph_size(graph)
 
         start = perf_counter()
-        dist, parent, iterations = dijkstra(graph, source, verbose=True)
+        dist, parent, iterations, _ = dijkstra(graph, source, verbose=True)
         elapsed_ms = (perf_counter() - start) * 1000
         path = rebuild_path(parent, source, target)
 
         cut_start = perf_counter()
-        _, _, cut_iterations = cut_dijkstra(graph, source, target, verbose=False)
+        _, _, cut_iterations, _ = cut_dijkstra(graph, source, target, verbose=False)
         cut_elapsed_ms = (perf_counter() - cut_start) * 1000
 
         print_distances(graph, dist)

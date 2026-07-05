@@ -22,13 +22,13 @@ if str(REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(REPO_ROOT))
 
 from data_validation.gtfs_utils import BASE, check_missing_files  # noqa: E402
+from routing_algorithms.reports.paths import REPORTS_BASE  # noqa: E402
 
-# DATA_DIR defaults to the shared-platforms stage; point it at any other
-# `_DEFAULT_*_DATA_DIR` constant from data_validation.gtfs_utils (e.g.
-# `_DEFAULT_RAW_DATA_DIR`, `_DEFAULT_SUBWAY_DATA_DIR`) to convert that stage,
-# or at any other folder of comma-separated .txt files, such as
-# routing_algorithms/dijkstra/resources
-DATA_DIR = REPO_ROOT / "routing_algorithms" / "dijkstra" / "resources"
+# DATA_DIR defaults to the platform-to-platform reports; point it at any
+# other `_DEFAULT_*_DATA_DIR` constant from data_validation.gtfs_utils (e.g.
+# `_DEFAULT_RAW_DATA_DIR`, `_DEFAULT_SUBWAY_DATA_DIR`) to convert that stage
+# instead, or at any other folder of comma-separated .txt files.
+DATA_DIR = Path(REPORTS_BASE)
 
 # Set this to a filename like 'trips.txt' to convert only one file.
 # Set it to None to convert every .txt file in DATA_DIR.
@@ -38,7 +38,13 @@ TXT_FILE_NAME: Optional[str] = "dijkstra_report.txt"
 EXCEL_MAX_ROWS = 800_000
 EXCEL_MAX_DATA_ROWS = EXCEL_MAX_ROWS - 1
 
-OUTPUT_DIR = Path(BASE) / "excel_exports"
+# True writes .xlsx exports next to the source .txt (DATA_DIR/excel_exports,
+# e.g. routing_algorithms/reports/resources/excel_exports); False writes them
+# to the shared data/excel_exports folder alongside every other pipeline
+# stage's exports.
+EXPORT_NEXT_TO_SOURCE: bool = False
+
+OUTPUT_DIR = (DATA_DIR if EXPORT_NEXT_TO_SOURCE else Path(BASE)) / "excel_exports"
 
 
 def get_txt_files(data_dir: Path, txt_file_name: Optional[str]) -> List[Path]:

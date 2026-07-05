@@ -1,10 +1,10 @@
 """Report, for every directed platform-to-platform route, how well the geographic
 A* heuristic (routing_algorithms/a_star/a_star_utils.py) actually performs.
 
-Output_name: a_star_report.txt saved into 'routing_algorithms/a_star/resources'
+Output_name: a_star_report.txt saved into 'routing_algorithms/reports/resources'
 
 This is the evaluation counterpart to a_star_need_report.py
-(routing_algorithms/dijkstra/a_star_need_report.py): that report used
+(routing_algorithms/reports/a_star_need_report.py): that report used
 cut_dijkstra to show, per pair, how far from ideal (proportion = path_vertices
 / cut_iterations) an uninformed search already is, to find where a heuristic
 would help. This report reruns every one of those same pairs, but with A* and
@@ -30,11 +30,12 @@ Methodology:
    are graph-global, not per-pair) via load_node_coords, compute_v_max and
    build_heuristic, reused directly from a_star_utils.py.
 3. Collect every directed pair of distinct platforms via
-   collect_platform_pairs (routing_algorithms/algorithms_utils.py), shared
+   collect_platform_pairs (routing_algorithms/reports/report_utils.py), shared
    with a_star_need_report.py.
 4. Run a_star(graph, u, v, h, verbose=False) for each pair through
-   compute_report_row (routing_algorithms/algorithms_utils.py), which also
-   reconstructs the path via rebuild_path.
+   run_platform_pair_report (routing_algorithms/reports/report_utils.py), which
+   builds each row via compute_report_row (reconstructing the path via
+   rebuild_path from routing_algorithms/algorithms_utils.py).
 5. Sort all rows ascending by proportion, NA last, and write them to
    a_star_report.txt.
 
@@ -49,11 +50,9 @@ as in a_star_need_report.py.
 
 from __future__ import annotations
 
-import statistics
 import sys
 from functools import partial
 from pathlib import Path
-from time import perf_counter
 from typing import Dict, List, Optional, Tuple
 
 _PROJECT_ROOT = str(Path(__file__).resolve().parents[2])
@@ -69,20 +68,20 @@ from data_validation.gtfs_utils import (  # noqa: E402
     check_missing_files,
     load_stop_names,
     print_file_disclaimer,
-    write_rows,
 )
 from routing_algorithms.algorithms_utils import (  # noqa: E402
     NodeFmt,
-    ReportRow,
-    ReportRunner,
     build_graph_from_weights,
-    collect_platform_pairs,
-    compute_report_row,
-    report_fieldnames,
-    report_row_to_csv_dict,
     stop_label,
 )
-from a_star_utils import (  # noqa: E402
+from routing_algorithms.reports.report_utils import (  # noqa: E402
+    ReportRow,
+    ReportRunner,
+    collect_platform_pairs,
+    report_fieldnames,
+    run_platform_pair_report,
+)
+from routing_algorithms.a_star.a_star_utils import (  # noqa: E402
     Coord,
     Graph,
     Heuristic,
@@ -92,10 +91,11 @@ from a_star_utils import (  # noqa: E402
     compute_v_max,
     load_node_coords,
 )
+from routing_algorithms.reports.paths import A_STAR_REPORT_FILE  # noqa: E402
 
 ITERATIONS_LABEL = "a_star_iterations"
-OUTPUT_NAME = "a_star_report.txt"
-OUTPUT_PATH = Path(__file__).resolve().parent / "resources" / OUTPUT_NAME
+OUTPUT_PATH = Path(A_STAR_REPORT_FILE)
+OUTPUT_NAME = OUTPUT_PATH.name
 FIELDNAMES = report_fieldnames(ITERATIONS_LABEL)
 
 
@@ -117,7 +117,7 @@ def run_a_star(
 
 
 def build_run_a_star(h: Heuristic) -> ReportRunner:
-    """Bind h into run_a_star, matching the ReportRunner shape compute_report_row expects.
+    """Bind h into run_a_star, matching the ReportRunner shape run_platform_pair_report expects.
 
     args:
         h: Admissible heuristic, shared across every pair, from build_heuristic.
@@ -147,10 +147,6 @@ def main() -> Tuple[List[ReportRow], float]:
     h: Heuristic
     runner: ReportRunner
     pairs: List[Tuple[Node, Node]]
-    rows: List[ReportRow]
-    start: float
-    elapsed: float
-    proportions: List[float]
 
     stop_names = load_stop_names(STOPS_FILE)
     stop_to_lines = build_stop_to_lines(subway_route_names_stop_ids_artificial)
@@ -170,29 +166,9 @@ def main() -> Tuple[List[ReportRow], float]:
 
     pairs = collect_platform_pairs(graph)
 
-    start = perf_counter()
-    rows = [
-        compute_report_row(graph, source, target, node_fmt, runner)
-        for source, target in pairs
-    ]
-    elapsed = perf_counter() - start
-
-    # NA-proportion rows (no path) sort after every real value; INF is only used
-    # as the sort key here, never stored, so it never leaks into the report.
-    rows.sort(
-        key=lambda row: row.proportion if row.proportion is not None else float("inf")
+    return run_platform_pair_report(
+        graph, pairs, node_fmt, runner, OUTPUT_PATH, FIELDNAMES, ITERATIONS_LABEL
     )
-
-    proportions = [row.proportion for row in rows if row.proportion is not None]
-    print(f"proportion mean: {statistics.mean(proportions):.5f}")
-    print(f"proportion median: {statistics.median(proportions):.5f}")
-
-    write_rows(
-        OUTPUT_PATH,
-        FIELDNAMES,
-        (report_row_to_csv_dict(row, ITERATIONS_LABEL) for row in rows),
-    )
-    return rows, elapsed
 
 
 if __name__ == "__main__":

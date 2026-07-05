@@ -1,6 +1,6 @@
 """Report, for every directed platform-to-platform route, how much a heuristic could help.
 
-Output_name: dijkstra_report.txt saved into 'routing_algorithms/dijkstra/resources'
+Output_name: dijkstra_report.txt saved into 'routing_algorithms/reports/resources'
 
 Written as a standard comma-separated GTFS-style .txt file so it can be converted to
 .xlsx by scripts/from_txt_to_xlsx.py.
@@ -67,10 +67,11 @@ Methodology:
 1. Build the graph from WEIGHTS_FILE with build_graph_from_weights
    (routing_algorithms/algorithms_utils.py), shared with dijkstra.py.
 2. Restrict the graph's vertex set to platforms (stop_ids starting with "1.")
-   via collect_platform_pairs (routing_algorithms/algorithms_utils.py).
+   via collect_platform_pairs (routing_algorithms/reports/report_utils.py).
 3. Run cut_dijkstra(graph, u, v, verbose=False) for each pair through
-   compute_report_row (routing_algorithms/algorithms_utils.py), which also
-   reconstructs the path via rebuild_path.
+   run_platform_pair_report (routing_algorithms/reports/report_utils.py), which
+   builds each row via compute_report_row (reconstructing the path via
+   rebuild_path from routing_algorithms/algorithms_utils.py).
 4. Sort all rows ascending by proportion, NA last, and write them to
    dijkstra_report.txt.
 
@@ -84,11 +85,9 @@ the added complexity, so it is intentionally left sequential.
 
 from __future__ import annotations
 
-import statistics
 import sys
 from functools import partial
 from pathlib import Path
-from time import perf_counter
 from typing import Dict, List, Optional, Tuple
 
 _PROJECT_ROOT = str(Path(__file__).resolve().parents[2])
@@ -104,25 +103,26 @@ from data_validation.gtfs_utils import (  # noqa: E402
     check_missing_files,
     load_stop_names,
     print_file_disclaimer,
-    write_rows,
 )
 from routing_algorithms.algorithms_utils import (  # noqa: E402
     Node,
     NodeFmt,
-    ReportRow,
-    ReportRunner,
     build_graph_from_weights,
-    collect_platform_pairs,
-    compute_report_row,
-    report_fieldnames,
-    report_row_to_csv_dict,
     stop_label,
 )
-from dijkstra_utils import Graph, cut_dijkstra  # noqa: E402
+from routing_algorithms.reports.report_utils import (  # noqa: E402
+    ReportRow,
+    ReportRunner,
+    collect_platform_pairs,
+    report_fieldnames,
+    run_platform_pair_report,
+)
+from routing_algorithms.dijkstra.dijkstra_utils import Graph, cut_dijkstra  # noqa: E402
+from routing_algorithms.reports.paths import DIJKSTRA_REPORT_FILE  # noqa: E402
 
 ITERATIONS_LABEL = "cut_iterations"
-OUTPUT_NAME = "dijkstra_report.txt"
-OUTPUT_PATH = Path(__file__).resolve().parent / "resources" / OUTPUT_NAME
+OUTPUT_PATH = Path(DIJKSTRA_REPORT_FILE)
+OUTPUT_NAME = OUTPUT_PATH.name
 FIELDNAMES = report_fieldnames(ITERATIONS_LABEL)
 
 
@@ -131,8 +131,8 @@ def run_cut_dijkstra(
 ) -> Tuple[Dict[Node, int], Dict[Node, Optional[Node]], int]:
     """Run cut_dijkstra for one pair, dropping its 4th (`expanded`) return value.
 
-    Matches the ReportRunner shape compute_report_row expects
-    (routing_algorithms/algorithms_utils.py).
+    Matches the ReportRunner shape run_platform_pair_report expects
+    (routing_algorithms/reports/report_utils.py).
 
     args:
         graph: A directed, weighted graph.
@@ -159,10 +159,6 @@ def main() -> Tuple[List[ReportRow], float]:
     node_fmt: NodeFmt
     runner: ReportRunner
     pairs: List[Tuple[Node, Node]]
-    rows: List[ReportRow]
-    start: float
-    elapsed: float
-    proportions: List[float]
 
     stop_names = load_stop_names(STOPS_FILE)
     stop_to_lines = build_stop_to_lines(subway_route_names_stop_ids_artificial)
@@ -172,29 +168,9 @@ def main() -> Tuple[List[ReportRow], float]:
     pairs = collect_platform_pairs(graph)
     runner = run_cut_dijkstra
 
-    start = perf_counter()
-    rows = [
-        compute_report_row(graph, source, target, node_fmt, runner)
-        for source, target in pairs
-    ]
-    elapsed = perf_counter() - start
-
-    # NA-proportion rows (no path) sort after every real value; INF is only used
-    # as the sort key here, never stored, so it never leaks into the report.
-    rows.sort(
-        key=lambda row: row.proportion if row.proportion is not None else float("inf")
+    return run_platform_pair_report(
+        graph, pairs, node_fmt, runner, OUTPUT_PATH, FIELDNAMES, ITERATIONS_LABEL
     )
-
-    proportions = [row.proportion for row in rows if row.proportion is not None]
-    print(f"proportion mean: {statistics.mean(proportions):.5f}")
-    print(f"proportion median: {statistics.median(proportions):.5f}")
-
-    write_rows(
-        OUTPUT_PATH,
-        FIELDNAMES,
-        (report_row_to_csv_dict(row, ITERATIONS_LABEL) for row in rows),
-    )
-    return rows, elapsed
 
 
 if __name__ == "__main__":
