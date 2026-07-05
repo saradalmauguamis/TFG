@@ -2,8 +2,9 @@
 
 Independent of run order (`WORKFLOW.md`): only needs `processing/1_subway.py`
 to have run. Validates platform-to-platform pathway/transfer parity, inverse
-pathway symmetry, traversal_time agreement and format, entrance-to-platform
-coverage, and same-stop platform transfers. Produces no output file.
+pathway symmetry, traversal_time agreement and format, traversal_time == 60
+for entrance-to-platform pathways, entrance-to-platform coverage, and
+same-stop platform transfers. Produces no output file.
 """
 
 from __future__ import annotations
@@ -75,6 +76,8 @@ def main() -> None:
     total_ones = 0
     groups_multi: Dict[str, List[str]] = {}
     missing_pairs: List[Tuple[str, str, str]] = []
+    entrance_platform_pairs = 0
+    not_60: List[Tuple[str, str]] = []
 
     check_missing_files([PATHWAYS_RAW_FILE, STOPS_SUBWAY_FILE, TRANSFERS_RAW_FILE])
 
@@ -234,6 +237,35 @@ def main() -> None:
             print(f"NOT multiple of 15 in {len(not_multiple_15)} pathways:")
             for pid, t_val in sorted(not_multiple_15):
                 print(f"- {pid}: traversal_time={t_val}")
+
+    # Check that every entrance-to-platform pathway ('PW.E.xxx_1.yyy' or 'PW.1.yyy_E.xxx')
+    # has traversal_time == 60.
+    entrance_platform_pairs = 0
+    not_60 = []
+    for pid in sorted(candidate_pids):
+        m = PW_PAIR.match(pid)
+        a, b = m.group("a"), m.group("b")
+        if (a.startswith("E.") and b.startswith("1.")) or (
+            a.startswith("1.") and b.startswith("E.")
+        ):
+            entrance_platform_pairs += 1
+            t_raw = traversal_by_pid.get(pid, "")
+            if t_raw != "60":
+                not_60.append((pid, t_raw))
+
+    print("\n----- traversal_time is 60 for all entrance-to-platform pathways? -----")
+    print(
+        "Entrance-to-platform pathways ('PW.E.xxx_1.yyy' or 'PW.1.yyy_E.xxx'):"
+        f" {entrance_platform_pairs}"
+    )
+    if not not_60:
+        print(
+            "All correct: traversal_time is 60 for all entrance-to-platform pathways."
+        )
+    else:
+        print(f"NOT 60 in {len(not_60)} entrance-to-platform pathways:")
+        for pid, t_raw in sorted(not_60):
+            print(f"- {pid}: traversal_time={t_raw!r}")
 
     # Check that each stop_id starting with 'E.' has at least one pathway with a platform '1.'
     # Requirement: pathway_id of the type 'PW.E.xxx_1.yyy' or 'PW.1.yyy_E.xxx'

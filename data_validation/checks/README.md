@@ -25,6 +25,8 @@ rest of `stop_times/` is tied to a fixed position, since it's interleaved with
     exactly, this also covers `min_transfer_time` in `transfers`
   - `traversal_time` is present, numeric, and multiple of 15? → since platform-to-platform pairs
     match exactly, this also covers `min_transfer_time` in `transfers`
+  - `traversal_time` is 60 for all entrance-to-platform pathways (`PW.E.xxx_1.yyy` /
+    `PW.1.yyy_E.xxx`)?
   - Each entrance (`E.*`) is connected to a platform (`1.*`)?
   - Each platform (`1.*`) is connected to an entrance (`E.*`)?
   - There is a transfer between each pair of platforms of the same stop?
