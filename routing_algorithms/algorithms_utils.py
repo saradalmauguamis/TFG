@@ -323,6 +323,115 @@ def rebuild_path(
 
 
 # ---------------------------------------------------------------------------
+# Liceu direction fix (generic across Dijkstra and A*)
+#
+# Liceu (platform 1.325, between Drassanes 1.324 and Catalunya 1.326 on L3) is
+# the only stop in Barcelona's subway where changing direction means going
+# upstairs to a different street entrance: each of its 3 entrance pairs has
+# one member serving only the Drassanes-bound direction and one serving only
+# the Catalunya-bound direction, even though both hang off the same platform
+# node in the graph. Neither Dijkstra nor A* knows about this, so a computed
+# path may end (or start) at the entrance for the wrong direction; this fix
+# is a display-only patch applied to the already-rebuilt path afterwards.
+# Since both entrances in a pair sit a few meters apart off the same platform,
+# the walking time between them is treated as equal, so the previously
+# computed weight (from/to the original, wrong-direction entrance) is still
+# reported as-is: only the entrance shown in the path changes, not the weight.
+# ---------------------------------------------------------------------------
+
+LICEU_PLATFORM: Node = "1.325"
+LICEU_DIRECTION_NEIGHBOR: Dict[Node, int] = {"1.324": 0, "1.326": 1}
+LICEU_ENTRANCE_PAIRS: List[Tuple[Node, Node]] = [
+    ("E.32511", "E.32501"),
+    ("E.1032531", "E.1032521"),
+    ("E.32531", "E.32521"),
+]
+LICEU_ENTRANCE_DIRECTION: Dict[Node, int] = {}
+LICEU_ENTRANCE_PAIR: Dict[Node, Node] = {}
+for _direction_0_entrance, _direction_1_entrance in LICEU_ENTRANCE_PAIRS:
+    LICEU_ENTRANCE_DIRECTION[_direction_0_entrance] = 0
+    LICEU_ENTRANCE_DIRECTION[_direction_1_entrance] = 1
+    LICEU_ENTRANCE_PAIR[_direction_0_entrance] = _direction_1_entrance
+    LICEU_ENTRANCE_PAIR[_direction_1_entrance] = _direction_0_entrance
+
+
+def _print_liceu_disclaimer(
+    original: Node, replacement: Node, role: str, node_fmt: Optional[NodeFmt]
+) -> None:
+    """Explain why `original` was swapped for `replacement` in the printed path.
+
+    args:
+        original: The requested entrance, which only serves the wrong direction.
+        replacement: The entrance actually enforced instead.
+        role: "enter" (source case) or "exit" (target case), for the message.
+        node_fmt: Optional callable to label a node, see `format_node_label`.
+    """
+    print(
+        f"\nNOTE: Liceu is the only stop in Barcelona's subway where changing "
+        f"direction means going upstairs to a different street entrance, so "
+        f"{original}{format_node_label(original, node_fmt)} only serves the "
+        f"opposite direction. You are enforced to {role} through "
+        f"{replacement}{format_node_label(replacement, node_fmt)} instead, a "
+        f"few meters away -- the walking time between the two is treated as "
+        f"equal, so the weight reported below is unaffected."
+    )
+
+
+def apply_liceu_entrance_fix(
+    path: List[Node], node_fmt: Optional[NodeFmt] = None
+) -> List[Node]:
+    """Swap a path's Liceu entrance endpoint(s) for the one matching its direction.
+
+    If the target is one of the 6 special entrances, the vertex before it is
+    always LICEU_PLATFORM; the vertex before that (1.324 or 1.326) reveals the
+    direction the path arrives from, and thus which entrance is actually usable.
+    Symmetrically for the source, using the 2nd and 3rd vertices. Both ends are
+    checked independently, so a path that's wrong on both ends gets both fixed.
+    Prints a disclaimer (see `_print_liceu_disclaimer`) for each swap made.
+
+    args:
+        path: The rebuilt path from `rebuild_path`, left untouched if shorter
+            than 3 nodes or if neither endpoint is a Liceu special entrance.
+        node_fmt: Optional callable to label a node in the disclaimer, e.g.
+            stop name and line, via `format_stop_label`.
+
+    returns:
+        `path`, with its source and/or target replaced by the entrance
+        matching the direction the path actually travels, if needed.
+    """
+    fixed: List[Node]
+    required_direction: Optional[int]
+    entrance: Node
+    replacement: Node
+
+    if len(path) < 3:
+        return path
+    fixed = list(path)
+
+    if fixed[-2] == LICEU_PLATFORM:
+        required_direction = LICEU_DIRECTION_NEIGHBOR.get(fixed[-3])
+        entrance = fixed[-1]
+        if required_direction is not None and LICEU_ENTRANCE_DIRECTION.get(
+            entrance
+        ) not in (None, required_direction):
+            replacement = LICEU_ENTRANCE_PAIR[entrance]
+            _print_liceu_disclaimer(entrance, replacement, "exit", node_fmt)
+            fixed[-1] = replacement
+
+    if fixed[1] == LICEU_PLATFORM:
+        required_direction = LICEU_DIRECTION_NEIGHBOR.get(fixed[2])
+        entrance = fixed[0]
+        if required_direction is not None and LICEU_ENTRANCE_DIRECTION.get(
+            entrance
+        ) not in (None, required_direction):
+            replacement = LICEU_ENTRANCE_PAIR[entrance]
+            _print_liceu_disclaimer(entrance, replacement, "enter", node_fmt)
+            fixed[0] = replacement
+
+    return fixed
+
+
+# ---------------------------------------------------------------------------
 # Path and node display (generic across Dijkstra and A*)
 # ---------------------------------------------------------------------------
 

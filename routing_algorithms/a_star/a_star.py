@@ -57,6 +57,7 @@ from data_validation.gtfs_utils import (  # noqa: E402
 )
 from routing_algorithms.algorithms_utils import (  # noqa: E402
     NodeFmt,
+    apply_liceu_entrance_fix,
     build_graph_from_weights,
     print_graph_size,
     print_header,
@@ -75,8 +76,8 @@ from a_star_utils import (  # noqa: E402
     load_node_coords,
 )
 
-SOURCE = "E.11101"
-TARGET = "E.14001"
+SOURCE = "E.32501"
+TARGET = "E.32601"
 
 
 def main() -> None:
@@ -132,7 +133,7 @@ def main() -> None:
     start = perf_counter()
     g, parent, iterations = a_star(graph, SOURCE, TARGET, h, verbose=True)
     elapsed_ms = (perf_counter() - start) * 1000
-    path = rebuild_path(parent, SOURCE, TARGET)
+    path = apply_liceu_entrance_fix(rebuild_path(parent, SOURCE, TARGET), node_fmt)
 
     print_path_summary(
         SOURCE, TARGET, path, g, dist_fmt=seconds_to_hms, node_fmt=node_fmt
