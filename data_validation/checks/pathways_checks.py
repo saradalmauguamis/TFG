@@ -10,6 +10,7 @@ same-stop platform transfers. Produces no output file.
 from __future__ import annotations
 
 import sys
+from collections import Counter, defaultdict
 from pathlib import Path
 from typing import Dict, List, Set, Tuple
 
@@ -62,7 +63,8 @@ def main() -> None:
     non_numeric: List[Tuple[str, str]] = []
     not_multiple_15: List[Tuple[str, int]] = []
     e_stops_info: Dict[str, Tuple[str, str, str]] = {}
-    covered_entrances: Set[str] = set()
+    entrance_to_platforms: Dict[str, Set[str]] = defaultdict(set)
+    platform_counts: Counter = Counter()
     missing_entrances: List[str] = []
     stop_ids: Set[str] = set()
     stop_names: Dict[str, str] = {}
@@ -267,9 +269,12 @@ def main() -> None:
         for pid, t_raw in sorted(not_60):
             print(f"- {pid}: traversal_time={t_raw!r}")
 
-    # Check that each stop_id starting with 'E.' has at least one pathway with a platform '1.'
-    # Requirement: pathway_id of the type 'PW.E.xxx_1.yyy' or 'PW.1.yyy_E.xxx'
-    print("\n----- Each entrance is connected to a platform in 'pathways'? -----")
+    # Check how many platforms ('1.*') each entrance ('E.*') is connected to.
+    # A platform counts as connected if either 'PW.E.xxx_1.yyy' or 'PW.1.yyy_E.xxx'
+    # exists (a single direction is enough; symmetry is validated separately above).
+    print(
+        "\n----- How many platforms is each entrance connected to in 'pathways'? -----"
+    )
     e_stops_info = {}
     for r in read_dict_rows(STOPS_SUBWAY_FILE):
         sid = r.get("stop_id", "").strip()
@@ -281,22 +286,27 @@ def main() -> None:
             r.get("stop_lon", "").strip(),
         )
 
-    covered_entrances = set()
+    entrance_to_platforms = defaultdict(set)
     for pid in pathways_ids:
         m = PW_PAIR.match(pid)
         if not m:
             continue
         a, b = m.group("a"), m.group("b")
         if a.startswith("E.") and b.startswith("1."):
-            covered_entrances.add(a)
+            entrance_to_platforms[a].add(b)
         elif b.startswith("E.") and a.startswith("1."):
-            covered_entrances.add(b)
+            entrance_to_platforms[b].add(a)
 
-    missing_entrances = [e for e in e_stops_info if e not in covered_entrances]
-    print(f"Entrances (E.*): {len(e_stops_info)}")
-    print(
-        f"Entrances with at least one pathway to a platform (1.*): {len(covered_entrances)}"
+    platform_counts = Counter(
+        len(entrance_to_platforms.get(e, set())) for e in e_stops_info
     )
+    missing_entrances = [e for e in e_stops_info if not entrance_to_platforms.get(e)]
+    print(f"Entrances (E.*): {len(e_stops_info)}")
+    print("Distribution of entrances by nre of connected platforms:")
+    for nre_platforms, nre_entrances in sorted(platform_counts.items()):
+        label = "platform" if nre_platforms == 1 else "platforms"
+        print(f"    - {nre_platforms} {label}: {nre_entrances}")
+
     if not missing_entrances:
         print(
             "All correct: each E.* has at least one pathway"

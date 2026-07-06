@@ -27,7 +27,8 @@ rest of `stop_times/` is tied to a fixed position, since it's interleaved with
     match exactly, this also covers `min_transfer_time` in `transfers`
   - `traversal_time` is 60 for all entrance-to-platform pathways (`PW.E.xxx_1.yyy` /
     `PW.1.yyy_E.xxx`)?
-  - Each entrance (`E.*`) is connected to a platform (`1.*`)?
+  - How many platforms (`1.*`) is each entrance (`E.*`) connected to? (distribution, plus which
+    entrances have none)
   - Each platform (`1.*`) is connected to an entrance (`E.*`)?
   - There is a transfer between each pair of platforms of the same stop?
 
