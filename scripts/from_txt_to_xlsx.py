@@ -21,17 +21,20 @@ if str(REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(REPO_ROOT))
 
 from data_validation.gtfs_utils import BASE, check_missing_files  # noqa: E402
-from routing_algorithms.reports.paths import REPORTS_BASE  # noqa: E402
+from routing_algorithms.paths import ALGORITHMS_COMPARISON_REPORT_FILE  # noqa: E402
 
-# DATA_DIR defaults to the platform-to-platform reports; point it at any
-# other `_DEFAULT_*_DATA_DIR` constant from data_validation.gtfs_utils (e.g.
-# `_DEFAULT_RAW_DATA_DIR`, `_DEFAULT_SUBWAY_DATA_DIR`) to convert that stage
-# instead, or at any other folder of comma-separated .txt files.
-DATA_DIR = Path(REPORTS_BASE)
+# DATA_DIR defaults to the analysis comparison report
+# (Path(ALGORITHMS_COMPARISON_REPORT_FILE).parent); point it at
+# Path(REPORTS_BASE) (routing_algorithms.paths) to convert the
+# platform-to-platform reports instead, at any other `_DEFAULT_*_DATA_DIR`
+# constant from data_validation.gtfs_utils (e.g. `_DEFAULT_RAW_DATA_DIR`,
+# `_DEFAULT_SUBWAY_DATA_DIR`) to convert that stage, or at any other folder
+# of comma-separated .txt files.
+DATA_DIR = Path(ALGORITHMS_COMPARISON_REPORT_FILE).parent
 
 # Set this to a filename like 'trips.txt' to convert only one file.
 # Set it to None to convert every .txt file in DATA_DIR.
-TXT_FILE_NAME: Optional[str] = "a_star_h_cheat_report.txt"
+TXT_FILE_NAME: Optional[str] = "algorithms_comparison_report.txt"
 
 # Excel limits one sheet to 1,048,576 rows total, including the header.
 EXCEL_MAX_ROWS = 800_000
