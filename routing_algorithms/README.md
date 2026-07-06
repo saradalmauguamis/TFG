@@ -21,6 +21,7 @@ routing_algorithms/
 └── reports/
     ├── a_star_need_report.py
     ├── a_star_report.py
+    ├── optimum_weight_check.py
     ├── report_utils.py
     └── resources/
 ```
@@ -82,6 +83,10 @@ call since each report depends on the other's output for its analysis:
   side-by-side against `dijkstra_report.txt` to see how much of that theoretical opportunity a
   heuristic actually captures. Can do the same with either of the two heuristics defined in
   `a_star_utils.py` (`h_geo` or `h_cheat`), picked via `HEURISTIC_NAME`.
+- `optimum_weight_check.py`: sanity check across the three reports above verifying     that `optimum_weight` agrees for
+  every platform pair even when the actual path found differs, since it never reruns a search and
+  just cross-compares the reports' own columns. Exits non-zero if a weight or reachability
+  mismatch is found.
 - `resources/`: there live the reports.
 
 ## analysis/
