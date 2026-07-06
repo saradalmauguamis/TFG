@@ -103,7 +103,7 @@ from routing_algorithms.a_star.a_star_utils import (  # noqa: E402
     compute_v_max,
     load_node_coords,
 )
-from routing_algorithms.reports.paths import (  # noqa: E402
+from routing_algorithms.paths import (  # noqa: E402
     A_STAR_CHEAT_REPORT_FILE,
     A_STAR_GEO_REPORT_FILE,
 )

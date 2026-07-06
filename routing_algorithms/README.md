@@ -3,10 +3,15 @@
 ```
 routing_algorithms/
 ├── algorithms_utils.py
+├── barcelona_divison.py
+├── paths.py
 ├── a_star/
 │   ├── a_star.py
 │   ├── a_star_example.py
 │   ├── a_star_utils.py
+│   └── resources/
+├── analysis/
+│   ├── algorithms_comparison.py
 │   └── resources/
 ├── dijkstra/
 │   ├── dijkstra.py
@@ -16,20 +21,31 @@ routing_algorithms/
 └── reports/
     ├── a_star_need_report.py
     ├── a_star_report.py
-    ├── paths.py
     ├── report_utils.py
     └── resources/
 ```
 
-The aim of this thesis is to implement Dijkstra and A* on Barcelona's subway network. After the
-`data_validation` pipeline produces [`data/6_weights/weights.txt`](../data/6_weights/weights.txt),
-that file is the real, GTFS-derived weighted graph the algorithms run on.
+The aim is modelling and optimizing routes in Barcelona's subway network. For that, the graph was
+already built in `data_validation`, ending with [`WEIGHTS_FILE`](../data/6_weights/weights.txt).
+Given an entry source and an entry target, we want to find the shortest path while doing the
+minimum number of iterations: for that we need algorithms that solve the routing problem, and
+these are Dijkstra and A*.
 
 ## algorithms_utils.py
 
 Graph types (`Graph`, `Node`, `NodeFmt`), the `MinHeap` priority queue, path reconstruction
 (`rebuild_path`), and print/display helpers shared by both `dijkstra/` and `a_star/`. Nothing
 here is specific to either algorithm or to the comparison reports below (see `reports/`).
+
+## barcelona_divison.py
+
+Region/bridge partition (`Branches`, `Bridges`, `Regions`) of the Barcelona subway graph, used by
+`analysis/algorithms_comparison.py` to classify platform pairs by Center/Branch case. Lives at
+the top level, not under `a_star/`, since it isn't A*-specific.
+
+## paths.py
+
+Important paths shared across `routing_algorithms/`'s modules.
 
 ## dijkstra/
 
@@ -59,19 +75,20 @@ call since each report depends on the other's output for its analysis:
 
 - `report_utils.py`: shared reporting machinery (`ReportRow`, `compute_report_row`,
   `run_platform_pair_report`, etc.), used by both reports below.
-- `paths.py`: `REPORTS_BASE` and the `DIJKSTRA_REPORT_FILE`/`A_STAR_GEO_REPORT_FILE`/
-  `A_STAR_CHEAT_REPORT_FILE` output paths, mirroring `data_validation/gtfs_utils.py`'s constants
-  section, so the reports and `scripts/from_txt_to_xlsx.py` share one source of truth instead of
-  each recomputing the path.
 - `a_star_need_report.py`: runs `cut_dijkstra` over every directed platform pair to measure, via
   `proportion = path_vertices / cut_iterations`, where a heuristic could help. Writes
   `DIJKSTRA_REPORT_FILE`.
 - `a_star_report.py`: reruns the same pairs with A*, so its `proportion` can be compared
   side-by-side against `dijkstra_report.txt` to see how much of that theoretical opportunity a
-  heuristic actually captures. `HEURISTIC_NAME` picks which of `a_star_utils.py`'s two heuristics
-  to use: `"h_geo"` (default, writes `A_STAR_GEO_REPORT_FILE`) or `"h_cheat"` (writes
-  `A_STAR_CHEAT_REPORT_FILE` instead, so it never clobbers the `h_geo` comparison file; running it
-  in full is much slower, since every heuristic call triggers a fresh `cut_dijkstra`).
-- `resources/`: `dijkstra_report.txt` and `a_star_geo_report.txt`, kept together so their `proportion`
-  columns are easy to compare side-by-side (e.g. via `scripts/from_txt_to_xlsx.py`), plus
-  `a_star_h_cheat_report.txt` when that heuristic is used.
+  heuristic actually captures. Can do the same with either of the two heuristics defined in
+  `a_star_utils.py` (`h_geo` or `h_cheat`), picked via `HEURISTIC_NAME`.
+- `resources/`: there live the reports.
+
+## analysis/
+
+- `algorithms_comparison.py`: aggregates the `reports/` outputs (Dijkstra, A* with `h_geo`, A* with `h_cheat`) by
+  graph region instead of only the single global `proportion` each report already prints on its
+  own, splitting every platform pair into a Center/Branch case via `barcelona_divison.py`. Writes
+  `algorithms_comparison_report.txt` (convertible via `scripts/from_txt_to_xlsx.py`) and a grouped
+  bar chart, `algorithms_comparison_chart.png`.
+- `resources/`: the two outputs above.
