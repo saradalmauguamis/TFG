@@ -12,6 +12,7 @@ from routing_algorithms.algorithms_utils import (  # shared with dijkstra_utils.
     MinHeap,
     Node,
 )
+from routing_algorithms.dijkstra.dijkstra_utils import cut_dijkstra
 
 Heuristic = Callable[[Node, Node], int]
 
@@ -91,11 +92,11 @@ def compute_v_max(
     )
 
 
-def heuristic(node: Node, target: Node, coords: Dict[Node, Coord], v_max: float) -> int:
-    """Return the admissible heuristic estimate from node to target.
+def h_geo(node: Node, target: Node, coords: Dict[Node, Coord], v_max: float) -> int:
+    """Return the admissible geographic heuristic estimate from node to target.
 
-    h(node, target) = straight_line_distance(node, target) / v_max, floored to
-    an int (flooring can only shrink h, so admissibility is preserved) to
+    h_geo(node, target) = straight_line_distance(node, target) / v_max, floored
+    to an int (flooring can only shrink h, so admissibility is preserved) to
     match Heuristic = Callable[[Node, Node], int] above.
 
     args:
@@ -110,18 +111,59 @@ def heuristic(node: Node, target: Node, coords: Dict[Node, Coord], v_max: float)
     return int(straight_line_distance(coords[node], coords[target]) / v_max)
 
 
-def build_heuristic(coords: Dict[Node, Coord], v_max: float) -> Heuristic:
-    """Bind coords and v_max into heuristic, producing a plain Heuristic(node, target).
+def build_h_geo(coords: Dict[Node, Coord], v_max: float) -> Heuristic:
+    """Bind coords and v_max into h_geo, producing a plain Heuristic(node, target).
 
     args:
         coords: Mapping from node to its (lat, lon) coordinates.
         v_max: Fastest implied speed (m/s) across any edge, from compute_v_max.
 
     returns:
-        heuristic with coords and v_max pre-bound, matching
+        h_geo with coords and v_max pre-bound, matching
         Heuristic = Callable[[Node, Node], int] above.
     """
-    return partial(heuristic, coords=coords, v_max=v_max)
+    return partial(h_geo, coords=coords, v_max=v_max)
+
+
+# ---------------------------------------------------------------------------
+# Cheat heuristic: h_cheat(node, target) = actual optimal cost(node, target)
+#
+# Not admissible-in-spirit: computing it already requires solving the
+# shortest-path problem A* is trying to solve, via cut_dijkstra (shared with
+# dijkstra_utils.py), so it is only useful to see how A* behaves with a
+# perfect heuristic (e.g. as a lower bound on iterations), never as a
+# practical heuristic.
+# ---------------------------------------------------------------------------
+
+
+def h_cheat(node: Node, target: Node, graph: Graph) -> int:
+    """Return the actual optimal cost from node to target, via cut_dijkstra.
+
+    args:
+        node: The node to compute the true remaining cost from.
+        target: The target node.
+        graph: A directed, weighted graph, as returned by build_graph_from_weights.
+
+    returns:
+        The true shortest-path distance from node to target (dist[target] from
+        cut_dijkstra(graph, source=node, target=target), guaranteed optimal by
+        the convergence theorem since target is settled before the search stops).
+    """
+    dist, _, _, _ = cut_dijkstra(graph, source=node, target=target, verbose=False)
+    return dist[target]
+
+
+def build_h_cheat(graph: Graph) -> Heuristic:
+    """Bind graph into h_cheat, producing a plain Heuristic(node, target).
+
+    args:
+        graph: A directed, weighted graph, as returned by build_graph_from_weights.
+
+    returns:
+        h_cheat with graph pre-bound, matching
+        Heuristic = Callable[[Node, Node], int] above.
+    """
+    return partial(h_cheat, graph=graph)
 
 
 def a_star(

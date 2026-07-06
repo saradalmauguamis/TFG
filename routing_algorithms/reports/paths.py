@@ -15,4 +15,5 @@ REPORTS_BASE = str(
 )
 
 DIJKSTRA_REPORT_FILE = os.path.join(REPORTS_BASE, "dijkstra_report.txt")
-A_STAR_REPORT_FILE = os.path.join(REPORTS_BASE, "a_star_report.txt")
+A_STAR_GEO_REPORT_FILE = os.path.join(REPORTS_BASE, "a_star_geo_report.txt")
+A_STAR_CHEAT_REPORT_FILE = os.path.join(REPORTS_BASE, "a_star_h_cheat_report.txt")

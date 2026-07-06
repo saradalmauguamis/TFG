@@ -1,5 +1,5 @@
 """Platform-to-platform report helpers shared by dijkstra_report.txt and
-a_star_report.txt (routing_algorithms/reports/): cut_dijkstra and a_star both
+a_star_geo_report.txt (routing_algorithms/reports/): cut_dijkstra and a_star both
 stop as soon as target is extracted, so both fit the same row shape via the
 ReportRunner they're wrapped into, and both reports are built, sorted, and
 written to CSV the same way via run_platform_pair_report.
@@ -51,7 +51,7 @@ class ReportRow(NamedTuple):
     """One directed platform-to-platform route and its shortest-path outcome.
 
     Shared row shape for dijkstra_report.txt (cut_dijkstra) and
-    a_star_report.txt (a_star): iterations means cut_iterations for the
+    a_star_geo_report.txt (a_star): iterations means cut_iterations for the
     former and a_star_iterations for the latter -- report_fieldnames and
     report_row_to_csv_dict take the actual column name as a parameter so
     each report's output file still shows its own algorithm-specific label.
@@ -178,7 +178,7 @@ def run_platform_pair_report(
 ) -> Tuple[List[ReportRow], float]:
     """Run runner over every pair, sort by proportion, print stats, and write the CSV.
 
-    Shared tail end of dijkstra_report.txt's and a_star_report.txt's main():
+    Shared tail end of dijkstra_report.txt's and a_star_geo_report.txt's main():
     everything past "build the runner" (timing the pairs loop, sorting,
     printing proportion mean/median, and writing the file) is identical
     between the two reports, so it lives here instead of being duplicated in

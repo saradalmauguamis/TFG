@@ -31,7 +31,7 @@ DATA_DIR = Path(REPORTS_BASE)
 
 # Set this to a filename like 'trips.txt' to convert only one file.
 # Set it to None to convert every .txt file in DATA_DIR.
-TXT_FILE_NAME: Optional[str] = "a_star_report.txt"
+TXT_FILE_NAME: Optional[str] = "a_star_h_cheat_report.txt"
 
 # Excel limits one sheet to 1,048,576 rows total, including the header.
 EXCEL_MAX_ROWS = 800_000

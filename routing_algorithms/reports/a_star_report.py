@@ -1,16 +1,18 @@
-"""Report, for every directed platform-to-platform route, how well the geographic
-A* heuristic (routing_algorithms/a_star/a_star_utils.py) actually performs.
+"""Report, for every directed platform-to-platform route, how well an A* heuristic
+(routing_algorithms/a_star/a_star_utils.py) actually performs.
 
-Output_name: a_star_report.txt saved into 'routing_algorithms/reports/resources'
+Output_name: a_star_geo_report.txt (HEURISTIC_NAME="h_geo") or a_star_h_cheat_report.txt
+(HEURISTIC_NAME="h_cheat"), saved into 'routing_algorithms/reports/resources'
 
 This is the evaluation counterpart to a_star_need_report.py
 (routing_algorithms/reports/a_star_need_report.py): that report used
 cut_dijkstra to show, per pair, how far from ideal (proportion = path_vertices
 / cut_iterations) an uninformed search already is, to find where a heuristic
 would help. This report reruns every one of those same pairs, but with A* and
-the real geographic heuristic built in a_star_utils.py, so the exact same
-proportion metric can be compared side-by-side against dijkstra_report.txt to
-see how much of that theoretical opportunity the heuristic actually captures.
+one of the heuristics built in a_star_utils.py (picked via HEURISTIC_NAME), so
+the exact same proportion metric can be compared side-by-side against
+dijkstra_report.txt to see how much of that theoretical opportunity the
+heuristic actually captures.
 
 Columns (in this order):
 source_name, target_name, proportion, source_id, target_id, a_star_iterations,
@@ -26,9 +28,9 @@ ascending by proportion, NA last, exactly as in a_star_need_report.py).
 Methodology:
 1. Build the graph from WEIGHTS_FILE with build_graph_from_weights
    (routing_algorithms/algorithms_utils.py), shared with a_star.py.
-2. Build the geographic heuristic once for the whole run (coords, v_max and h
-   are graph-global, not per-pair) via load_node_coords, compute_v_max and
-   build_heuristic, reused directly from a_star_utils.py.
+2. Build h once for the whole run (graph-global, not per-pair) via build_h_geo
+   or build_h_cheat, picked by HEURISTIC_NAME, both reused directly from
+   a_star_utils.py.
 3. Collect every directed pair of distinct platforms via
    collect_platform_pairs (routing_algorithms/reports/report_utils.py), shared
    with a_star_need_report.py.
@@ -37,15 +39,24 @@ Methodology:
    builds each row via compute_report_row (reconstructing the path via
    rebuild_path from routing_algorithms/algorithms_utils.py).
 5. Sort all rows ascending by proportion, NA last, and write them to
-   a_star_report.txt.
+   OUTPUT_PATH.
 
-Note on parallelism: a single a_star call on this graph takes well under 2ms
-even for a very long route like E.11101 (Residència sanitària -- L1-Hospital
-de Bellvitge) --> to E.14001 (Sicília -- L1-Fondo), which takes only ~1.7ms
-(measured empirically), so ~29k directed platform pairs run in well under a
-minute single-threaded. Parallelising this one-off analysis script wouldn't be
-worth the added complexity, so it is intentionally left sequential, exactly
-as in a_star_need_report.py.
+Note on parallelism: with HEURISTIC_NAME="h_geo", a single a_star call on this
+graph takes well under 2ms even for a very long route like E.11101 (Residència
+sanitària -- L1-Hospital de Bellvitge) --> to E.14001 (Sicília -- L1-Fondo),
+which takes only ~1.7ms (measured empirically), so ~29k directed platform
+pairs run in well under a minute single-threaded. Parallelising this one-off
+analysis script wouldn't be worth the added complexity, so it is intentionally
+left sequential, exactly as in a_star_need_report.py.
+
+With HEURISTIC_NAME="h_cheat", that same route takes ~183ms instead (every
+heuristic call triggers a fresh cut_dijkstra), since it is one of the worst
+cases geographically; most pairs are far shorter, so the full run over all
+29,070 platform pairs took 485.4s (~16.7ms average per pair), measured
+empirically. That is still ~100x slower than h_geo's well-under-a-minute run,
+but since a given h_cheat run is still only ever generated once (not on a
+recurring/interactive basis), an 8-minute one-off cost is not worth adding
+parallelism for either.
 """
 
 from __future__ import annotations
@@ -87,14 +98,21 @@ from routing_algorithms.a_star.a_star_utils import (  # noqa: E402
     Heuristic,
     Node,
     a_star,
-    build_heuristic,
+    build_h_cheat,
+    build_h_geo,
     compute_v_max,
     load_node_coords,
 )
-from routing_algorithms.reports.paths import A_STAR_REPORT_FILE  # noqa: E402
+from routing_algorithms.reports.paths import (  # noqa: E402
+    A_STAR_CHEAT_REPORT_FILE,
+    A_STAR_GEO_REPORT_FILE,
+)
 
+HEURISTIC_NAME = "h_cheat"  # "h_geo" or "h_cheat" to pick the heuristic built in main()
 ITERATIONS_LABEL = "a_star_iterations"
-OUTPUT_PATH = Path(A_STAR_REPORT_FILE)
+OUTPUT_PATH = Path(
+    A_STAR_GEO_REPORT_FILE if HEURISTIC_NAME == "h_geo" else A_STAR_CHEAT_REPORT_FILE
+)
 OUTPUT_NAME = OUTPUT_PATH.name
 FIELDNAMES = report_fieldnames(ITERATIONS_LABEL)
 
@@ -108,7 +126,8 @@ def run_a_star(
         graph: A directed, weighted graph.
         source: Platform stop_id to start from.
         target: Platform stop_id to reach.
-        h: Admissible heuristic, shared across every pair, from build_heuristic.
+        h: Admissible heuristic, shared across every pair (build_h_geo or
+            build_h_cheat, per HEURISTIC_NAME).
 
     returns:
         (g, parent, a_star_iterations) for this pair.
@@ -120,7 +139,8 @@ def build_run_a_star(h: Heuristic) -> ReportRunner:
     """Bind h into run_a_star, matching the ReportRunner shape run_platform_pair_report expects.
 
     args:
-        h: Admissible heuristic, shared across every pair, from build_heuristic.
+        h: Admissible heuristic, shared across every pair (build_h_geo or
+            build_h_cheat, per HEURISTIC_NAME).
 
     returns:
         run_a_star with h pre-bound, i.e. Callable(graph, source, target) ->
@@ -161,7 +181,12 @@ def main() -> Tuple[List[ReportRow], float]:
         f" -- found at edge {v_max_from} ({node_fmt(v_max_from)})"
         f" -> {v_max_to} ({node_fmt(v_max_to)})"
     )
-    h = build_heuristic(coords, v_max)
+    if HEURISTIC_NAME == "h_geo":
+        h = build_h_geo(coords, v_max)
+    elif HEURISTIC_NAME == "h_cheat":
+        h = build_h_cheat(graph)
+    else:
+        raise ValueError(f"Unknown HEURISTIC_NAME: {HEURISTIC_NAME!r}")
     runner = build_run_a_star(h)
 
     pairs = collect_platform_pairs(graph)

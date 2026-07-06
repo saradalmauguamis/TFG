@@ -1,13 +1,14 @@
 """A* algorithm run on the real GTFS weighted graph (weights.txt), using a
 geographic straight-line-distance heuristic.
 
-Output_name: a_star_{SOURCE}_to_{TARGET}.txt saved into 'routing_algorithms/a_star/resources'
+Output_name: a_star_{HEURISTIC_NAME}_{SOURCE}_to_{TARGET}.txt saved into
+'routing_algorithms/a_star/resources'
 
 Aim:
 routing_algorithms/a_star/a_star_utils.py implements A* generically, taking any
 admissible heuristic h(node, target) as a parameter, and also builds the
 concrete geographic heuristic used here (straight_line_distance, v_max,
-build_heuristic -- see that module's docstrings for their definitions and the
+build_h_geo -- see that module's docstrings for their definitions and the
 admissibility proof). This script only wires that machinery to the real
 subway graph: the graph itself (via build_graph_from_weights, shared with
 dijkstra.py), the real stop coordinates, and SOURCE/TARGET.
@@ -17,7 +18,7 @@ Methodology:
    (routing_algorithms/algorithms_utils.py), shared with dijkstra.py.
 2. Load every stop's (lat, lon) and compute v_max via load_node_coords and
    compute_v_max (routing_algorithms/a_star/a_star_utils.py).
-3. Build h via build_heuristic (routing_algorithms/a_star/a_star_utils.py).
+3. Build h via build_h_geo (routing_algorithms/a_star/a_star_utils.py).
 4. Run a_star(graph, SOURCE, TARGET, h) and print the reconstructed path and
    its weight, the same way dijkstra.py reports cut_dijkstra's result.
 
@@ -71,13 +72,15 @@ from a_star_utils import (  # noqa: E402
     Heuristic,
     Node,
     a_star,
-    build_heuristic,
+    build_h_cheat,
+    build_h_geo,
     compute_v_max,
     load_node_coords,
 )
 
-SOURCE = "E.32501"
-TARGET = "E.32601"
+SOURCE = "E.11101"
+TARGET = "E.14001"
+HEURISTIC_NAME = "h_cheat"  # "h_geo" or "h_cheat" to pick the heuristic built in main()
 
 
 def main() -> None:
@@ -128,7 +131,12 @@ def main() -> None:
         f" -- found at edge {v_max_from} ({node_fmt(v_max_from)})"
         f" -> {v_max_to} ({node_fmt(v_max_to)})"
     )
-    h = build_heuristic(coords, v_max)
+    if HEURISTIC_NAME == "h_geo":
+        h = build_h_geo(coords, v_max)
+    elif HEURISTIC_NAME == "h_cheat":
+        h = build_h_cheat(graph)
+    else:
+        raise ValueError(f"Unknown HEURISTIC_NAME: {HEURISTIC_NAME!r}")
 
     start = perf_counter()
     g, parent, iterations = a_star(graph, SOURCE, TARGET, h, verbose=True)
@@ -145,7 +153,7 @@ def main() -> None:
 if __name__ == "__main__":
     resources_dir = Path(__file__).resolve().parent / "resources"
     resources_dir.mkdir(exist_ok=True)
-    output_path = resources_dir / f"a_star_{SOURCE}_to_{TARGET}.txt"
+    output_path = resources_dir / f"a_star_{HEURISTIC_NAME}_{SOURCE}_to_{TARGET}.txt"
     with output_path.open("w", encoding="utf-8") as file_handle:
         with redirect_stdout(file_handle):
             main()
