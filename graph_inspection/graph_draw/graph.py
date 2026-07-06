@@ -42,19 +42,37 @@ from data_validation.gtfs_utils import (  # noqa: E402
 
 EDGE_STYLE_BY_TYPE = {
     "SW": "solid",
-    "PW": "dotted",
-    "TF": "dashed",
+    "PW": "solid",
+    "TF": "solid",
 }
 EDGE_TYPE_LABELS = {
     "PW": "Pathway (PW)",
     "TF": "Transfer (TF)",
 }
 NON_LINE_EDGE_COLOR = "#444444"
+PW_EDGE_COLOR = "#dddddd"
+EDGE_COLOR_BY_TYPE = {
+    "PW": PW_EDGE_COLOR,
+    "TF": NON_LINE_EDGE_COLOR,
+}
+PW_EDGE_WIDTH_SCALE = 0.4
+EDGE_WIDTH_SCALE_BY_TYPE = {
+    "PW": PW_EDGE_WIDTH_SCALE,
+    "TF": 1.0,
+}
 FALLBACK_LINE_COLOR = "#999999"
 PLATFORM_NODE_COLOR = "#4477AA"
 SYNTHETIC_PLATFORM_NODE_COLOR = "#FFD700"
+ENTRY_NODE_COLOR = PW_EDGE_COLOR
 
 JITTER_DEGREES = 0.0015
+
+# Real entry-to-platform distances (from WEIGHTS_FILE's PW edges) range ~0.00008-0.0025
+# degrees, mean ~0.00066: real, but reads as "on top of the platform" at whole-graph scale.
+# This multiplies that real (platform -> entry) vector so the separation is visible; only
+# applied when rendering the whole graph (CENTER_STOP_ID is None) since a zoomed-in view
+# already shows the real distance clearly enough.
+ENTRY_OFFSET_MULTIPLIER_WHOLE_GRAPH = 4
 
 # Manual jitter angle (radians) for the synthetic platforms in the shared-platform groups
 # produced by the L9/L10 split in EQUIVALENCES_FILE, keyed by stop_id. Each pair
@@ -86,7 +104,7 @@ SYNTHETIC_PLATFORM_JITTER_ANGLE: dict[str, float] = {
 # What gets drawn is controlled by these module-level constants instead of CLI flags.
 
 # Set to True to also draw entry/exit nodes and PW/TF edges, not just platforms and SW.
-SHOW_ALL_NODES_AND_EDGES = False
+SHOW_ALL_NODES_AND_EDGES = True
 
 # Only applies when SHOW_ALL_NODES_AND_EDGES is False: also draw TF edges, as solid grey lines.
 SHOW_TF_EDGES = True
@@ -192,7 +210,49 @@ def load_graph() -> nx.DiGraph:
                 lat + JITTER_DEGREES * i * math.sin(angle),
             )
 
+    if CENTER_STOP_ID is None:
+        amplify_entry_offsets(graph, ENTRY_OFFSET_MULTIPLIER_WHOLE_GRAPH)
+
     return graph
+
+
+def amplify_entry_offsets(graph: nx.DiGraph, multiplier: float) -> None:
+    """Scale up each entry's real-world offset from its connected platform(s).
+
+    Real GTFS entry coordinates sit only a few meters from their platform (mean ~0.00066
+    degrees, see graph_draw's ENTRY_OFFSET_MULTIPLIER_WHOLE_GRAPH comment), which reads as
+    directly on top of it at whole-graph scale. This multiplies the existing
+    (platform -> entry) vector by `multiplier`, keeping its real direction but making the
+    separation visible; entries that are naturally farther from their platform stay
+    proportionally farther after scaling.
+
+    args:
+        graph: Graph with "pos" already set on every node from real coordinates, and PW
+            edges connecting each entry to its platform(s).
+        multiplier: Factor to scale each platform->entry vector by.
+    """
+    rng = random.Random(1)
+    for node, data in graph.nodes(data=True):
+        if not str(node).startswith("E.") or "pos" not in data:
+            continue
+        platform_positions = [
+            graph.nodes[neighbor]["pos"]
+            for neighbor in set(graph.predecessors(node)) | set(graph.successors(node))
+            if str(neighbor).startswith("1.") and "pos" in graph.nodes[neighbor]
+        ]
+        if not platform_positions:
+            continue
+        platform_lon = sum(p[0] for p in platform_positions) / len(platform_positions)
+        platform_lat = sum(p[1] for p in platform_positions) / len(platform_positions)
+        entry_lon, entry_lat = data["pos"]
+        dx, dy = entry_lon - platform_lon, entry_lat - platform_lat
+        if math.hypot(dx, dy) < 1e-12:
+            angle = rng.uniform(0, 2 * math.pi)
+            dx, dy = JITTER_DEGREES * math.cos(angle), JITTER_DEGREES * math.sin(angle)
+        graph.nodes[node]["pos"] = (
+            platform_lon + dx * multiplier,
+            platform_lat + dy * multiplier,
+        )
 
 
 def draw_graph(
@@ -211,6 +271,14 @@ def draw_graph(
         radius_degrees: Half-width of the zoom window in degrees.
         output_path: Path to save the rendered PNG to.
     """
+    legend_handles: list[plt.Line2D] = []
+    _ = None
+    ax: plt.Axes | None = None
+    compass_x = 0.0
+    compass_y = 0.0
+    arm = 0.0
+    footnote = ""
+
     pos = {n: d["pos"] for n, d in graph.nodes(data=True) if "pos" in d}
     graph = graph.subgraph(pos.keys())
     zoomed = center_stop_id is not None
@@ -237,11 +305,46 @@ def draw_graph(
         EDGE_STYLE_BY_TYPE
         if SHOW_ALL_NODES_AND_EDGES
         else (
-            {"SW": EDGE_STYLE_BY_TYPE["SW"], "TF": "solid"}
+            {"SW": EDGE_STYLE_BY_TYPE["SW"], "TF": EDGE_STYLE_BY_TYPE["TF"]}
             if SHOW_TF_EDGES
             else {"SW": EDGE_STYLE_BY_TYPE["SW"]}
         )
     )
+    node_type_handles = [
+        plt.Line2D(
+            [0],
+            [0],
+            marker="o",
+            color="none",
+            markerfacecolor=PLATFORM_NODE_COLOR,
+            markersize=10,
+            label="Platform",
+        ),
+    ]
+    if SHOW_ALL_NODES_AND_EDGES:
+        node_type_handles.append(
+            plt.Line2D(
+                [0],
+                [0],
+                marker="s",
+                color="none",
+                markerfacecolor=ENTRY_NODE_COLOR,
+                markersize=8,
+                label="Entry/Exit",
+            )
+        )
+    node_type_handles.append(
+        plt.Line2D(
+            [0],
+            [0],
+            marker="o",
+            color="none",
+            markerfacecolor=SYNTHETIC_PLATFORM_NODE_COLOR,
+            markersize=14,
+            label="Synthetic platform",
+        )
+    )
+
     legend_handles = (
         [
             plt.Line2D([0], [0], color=color, lw=4, label=line)
@@ -251,7 +354,7 @@ def draw_graph(
             plt.Line2D(
                 [0],
                 [0],
-                color=NON_LINE_EDGE_COLOR,
+                color=EDGE_COLOR_BY_TYPE[edge_type],
                 lw=2,
                 linestyle=style,
                 label=EDGE_TYPE_LABELS[edge_type],
@@ -259,17 +362,7 @@ def draw_graph(
             for edge_type, style in edge_styles.items()
             if edge_type != "SW"
         ]
-        + [
-            plt.Line2D(
-                [0],
-                [0],
-                marker="o",
-                color="none",
-                markerfacecolor=SYNTHETIC_PLATFORM_NODE_COLOR,
-                markersize=14,
-                label="Synthetic platform",
-            )
-        ]
+        + node_type_handles
     )
     _, ax = plt.subplots(figsize=fig_size)
     # Compass: confirms the plot uses standard orientation (lon/lat plotted directly as
@@ -299,8 +392,8 @@ def draw_graph(
         pos,
         nodelist=entry_nodes,
         node_shape="s",
-        node_size=10 * node_scale,
-        node_color="#4477AA",
+        node_size=6 * node_scale,
+        node_color=ENTRY_NODE_COLOR,
         ax=ax,
     )
 
@@ -333,8 +426,9 @@ def draw_graph(
                     ax=ax,
                 )
         else:
+            width_scale = EDGE_WIDTH_SCALE_BY_TYPE[edge_type]
             widths = [
-                math.log10(graph[u][v]["weight_seconds"] + 1) * node_scale
+                math.log10(graph[u][v]["weight_seconds"] + 1) * node_scale * width_scale
                 for u, v in type_edges
             ]
             nx.draw_networkx_edges(
@@ -343,7 +437,7 @@ def draw_graph(
                 edgelist=type_edges,
                 style=style,
                 width=widths,
-                edge_color=NON_LINE_EDGE_COLOR,
+                edge_color=EDGE_COLOR_BY_TYPE[edge_type],
                 arrows=False,
                 ax=ax,
             )
@@ -402,6 +496,27 @@ def draw_graph(
         "Barcelona's subway graph"
     )  # "Barcelona's subway graph (node shape = platform/entry, line style = edge type)"
     ax.set_axis_off()
+
+    footnote = (
+        "* Synthetic platform positions are artificially offset so they sit side-by-side"
+        " instead of overlapping."
+    )
+    if not zoomed and entry_nodes:
+        footnote += (
+            " Entry/exit positions are artificially exaggerated (not to real scale)"
+            " for visual clarity."
+        )
+    ax.text(
+        0.01,
+        0.01,
+        footnote,
+        transform=ax.transAxes,
+        ha="left",
+        va="bottom",
+        fontsize=8,
+        color="#666666",
+    )
+
     plt.tight_layout()
     plt.savefig(output_path, dpi=200)
     plt.close()
