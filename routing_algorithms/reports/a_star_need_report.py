@@ -118,7 +118,7 @@ from routing_algorithms.reports.report_utils import (  # noqa: E402
     run_platform_pair_report,
 )
 from routing_algorithms.dijkstra.dijkstra_utils import Graph, cut_dijkstra  # noqa: E402
-from routing_algorithms.reports.paths import DIJKSTRA_REPORT_FILE  # noqa: E402
+from routing_algorithms.paths import DIJKSTRA_REPORT_FILE  # noqa: E402
 
 ITERATIONS_LABEL = "cut_iterations"
 OUTPUT_PATH = Path(DIJKSTRA_REPORT_FILE)

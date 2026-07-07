@@ -1,14 +1,15 @@
 """A* algorithm run on the real GTFS weighted graph (weights.txt), using a
 geographic straight-line-distance heuristic.
 
-Output_name: a_star_{SOURCE}_to_{TARGET}.txt saved into 'routing_algorithms/a_star/resources'
+Output_name: a_star_{HEURISTIC_NAME}_{SOURCE}_to_{TARGET}.txt saved into
+'routing_algorithms/a_star/resources'
 
 Aim:
 routing_algorithms/a_star/a_star_utils.py implements A* generically, taking any
-admissible heuristic h(node, target) as a parameter, and also builds the
-concrete geographic heuristic used here (straight_line_distance, v_max,
-build_heuristic -- see that module's docstrings for their definitions and the
-admissibility proof). This script only wires that machinery to the real
+admissible heuristic h(node, target) as a parameter; the concrete heuristics
+(h_geo, h_cheat, h_bcn) are built in routing_algorithms/a_star/heuristics/,
+one module each -- see their docstrings for their definitions and the
+admissibility proof. This script only wires that machinery to the real
 subway graph: the graph itself (via build_graph_from_weights, shared with
 dijkstra.py), the real stop coordinates, and SOURCE/TARGET.
 
@@ -16,8 +17,9 @@ Methodology:
 1. Build the real graph from WEIGHTS_FILE via build_graph_from_weights
    (routing_algorithms/algorithms_utils.py), shared with dijkstra.py.
 2. Load every stop's (lat, lon) and compute v_max via load_node_coords and
-   compute_v_max (routing_algorithms/a_star/a_star_utils.py).
-3. Build h via build_heuristic (routing_algorithms/a_star/a_star_utils.py).
+   compute_v_max (routing_algorithms/a_star/heuristics/h_geo.py).
+3. Build h via build_h_geo, build_h_cheat, or build_h_bcn, picked by
+   HEURISTIC_NAME (routing_algorithms/a_star/heuristics/).
 4. Run a_star(graph, SOURCE, TARGET, h) and print the reconstructed path and
    its weight, the same way dijkstra.py reports cut_dijkstra's result.
 
@@ -57,6 +59,7 @@ from data_validation.gtfs_utils import (  # noqa: E402
 )
 from routing_algorithms.algorithms_utils import (  # noqa: E402
     NodeFmt,
+    apply_liceu_entrance_fix,
     build_graph_from_weights,
     print_graph_size,
     print_header,
@@ -64,19 +67,21 @@ from routing_algorithms.algorithms_utils import (  # noqa: E402
     rebuild_path,
     stop_label,
 )
-from a_star_utils import (  # noqa: E402
+from a_star_utils import Graph, Heuristic, Node, a_star  # noqa: E402
+from heuristics.h_geo import (  # noqa: E402
     Coord,
-    Graph,
-    Heuristic,
-    Node,
-    a_star,
-    build_heuristic,
+    build_h_geo,
     compute_v_max,
     load_node_coords,
 )
+from heuristics.h_cheat import build_h_cheat  # noqa: E402
+from heuristics.h_bcn import DepthTable, build_depth_tables, build_h_bcn  # noqa: E402
 
 SOURCE = "E.11101"
 TARGET = "E.14001"
+HEURISTIC_NAME = (
+    "h_bcn"  # "h_geo", "h_cheat", or "h_bcn" to pick the heuristic built in main()
+)
 
 
 def main() -> None:
@@ -95,8 +100,11 @@ def main() -> None:
     elapsed_ms: float
     stop_names: Dict[str, str]
     stop_to_lines: Dict[str, List[str]]
+    pathway_ids: Set[str]
     platform_to_entries: Dict[str, Set[str]]
     entrance_to_platform: Dict[str, Set[str]]
+    depth_from: DepthTable
+    depth_to: DepthTable
     node_fmt: NodeFmt
     _: object
 
@@ -105,7 +113,8 @@ def main() -> None:
 
     stop_names = load_stop_names(STOPS_FILE)
     stop_to_lines = build_stop_to_lines(subway_route_names_stop_ids_artificial)
-    platform_to_entries, _ = build_graph_and_coverage(load_pathway_ids(PATHWAYS_FILE))
+    pathway_ids = load_pathway_ids(PATHWAYS_FILE)
+    platform_to_entries, _ = build_graph_and_coverage(pathway_ids)
     entrance_to_platform = invert_entries(platform_to_entries)
 
     node_fmt = partial(
@@ -127,12 +136,20 @@ def main() -> None:
         f" -- found at edge {v_max_from} ({node_fmt(v_max_from)})"
         f" -> {v_max_to} ({node_fmt(v_max_to)})"
     )
-    h = build_heuristic(coords, v_max)
+    if HEURISTIC_NAME == "h_geo":
+        h = build_h_geo(coords, v_max)
+    elif HEURISTIC_NAME == "h_cheat":
+        h = build_h_cheat(graph)
+    elif HEURISTIC_NAME == "h_bcn":
+        depth_from, depth_to = build_depth_tables(graph)
+        h = build_h_bcn(pathway_ids, coords, v_max, depth_from, depth_to)
+    else:
+        raise ValueError(f"Unknown HEURISTIC_NAME: {HEURISTIC_NAME!r}")
 
     start = perf_counter()
     g, parent, iterations = a_star(graph, SOURCE, TARGET, h, verbose=True)
     elapsed_ms = (perf_counter() - start) * 1000
-    path = rebuild_path(parent, SOURCE, TARGET)
+    path = apply_liceu_entrance_fix(rebuild_path(parent, SOURCE, TARGET), node_fmt)
 
     print_path_summary(
         SOURCE, TARGET, path, g, dist_fmt=seconds_to_hms, node_fmt=node_fmt
@@ -144,7 +161,7 @@ def main() -> None:
 if __name__ == "__main__":
     resources_dir = Path(__file__).resolve().parent / "resources"
     resources_dir.mkdir(exist_ok=True)
-    output_path = resources_dir / f"a_star_{SOURCE}_to_{TARGET}.txt"
+    output_path = resources_dir / f"a_star_{HEURISTIC_NAME}_{SOURCE}_to_{TARGET}.txt"
     with output_path.open("w", encoding="utf-8") as file_handle:
         with redirect_stdout(file_handle):
             main()

@@ -31,6 +31,12 @@ How each number is computed:
   per `type`.
 - Duplicated arrows/edges: the same arrow/edge counts, restricted to rows
   touching a duplicated vertex, overall and per type.
+- Arrow capacity: how full the graph is versus the maximum it could hold. In
+  an undirected simple graph on `|V|` vertices, the max number of edges is
+  `(|V|-1)*|V|/2` (every vertex pairs with every other vertex once). A
+  directed simple graph (no self-loops, no parallel arrows) allows an arrow in
+  *both* directions per pair, so its max is `(|V|-1)*|V|`. We report the
+  actual arrow count as a percentage of that maximum.
 """
 
 from __future__ import annotations
@@ -53,6 +59,19 @@ from data_validation.gtfs_utils import (  # noqa: E402
 
 WeightRow = Dict[str, str]
 EDGE_TYPES = ("SW", "TF", "PW")
+
+
+def pct(part: int, total: int) -> str:
+    """Format part as a percentage of total, e.g. "74.6%".
+
+    args:
+        part: The sub-count.
+        total: The whole count part is a fraction of.
+
+    returns:
+        Formatted percentage string, or "0.0%" if total is 0.
+    """
+    return f"{part / total:.1%}" if total else "0.0%"
 
 
 def collect_vertices(rows: List[WeightRow]) -> Set[str]:
@@ -123,16 +142,23 @@ def print_vertex_report(vertices: Set[str], duplicated_vertices: Set[str]) -> No
         v for v in duplicated_vertices if v.startswith("1.")
     }
 
-    print(f"Nre of vertices: {len(vertices)}")
-    print(f"    - Nre of entries: {len(entries)}")
-    print(f"    - Nre of platforms: {len(platforms)}")
-    print(f"    - Total nre of duplicated vertices: {len(duplicated_vertices)}")
+    total = len(vertices)
+    print(f"Nre of vertices: {total}")
+    print(f"    - Nre of entries: {len(entries)} ({pct(len(entries), total)})")
+    print(f"    - Nre of platforms: {len(platforms)} ({pct(len(platforms), total)})")
+    print(
+        f"    - Total nre of duplicated vertices: {len(duplicated_vertices)} "
+        f"({pct(len(duplicated_vertices), total)})"
+    )
     print(f"        - Nre of duplicated entries: {len(duplicated_entries)}")
     print(f"        - Nre of duplicated platforms: {len(duplicated_platforms)}")
 
 
 def print_type_breakdown(
-    rows: List[WeightRow], indent: str, label_prefix: str = ""
+    rows: List[WeightRow],
+    indent: str,
+    label_prefix: str = "",
+    total: int | None = None,
 ) -> None:
     """Print the arrows/edges count for SW, TF and PW within rows.
 
@@ -143,12 +169,20 @@ def print_type_breakdown(
             nested edges line gets 4 more spaces.
         label_prefix: Text inserted before "{type} arrows/edges", e.g.
             "duplicated " when breaking down the duplicated-arrow subset.
+        total: When given, the "Nre of {type} arrows" line also shows this
+            count's percentage of total. Omitted for the duplicated-arrow
+            breakdown, where a percentage isn't meaningful yet.
     """
     buckets: Dict[str, List[WeightRow]] = rows_by_type(rows)
     type_rows: List[WeightRow] = []
     for edge_type in EDGE_TYPES:
         type_rows = buckets[edge_type]
-        print(f"{indent}- Nre of {label_prefix}{edge_type} arrows: {len(type_rows)}")
+        count_str = (
+            f"{len(type_rows)} ({pct(len(type_rows), total)})"
+            if total is not None
+            else f"{len(type_rows)}"
+        )
+        print(f"{indent}- Nre of {label_prefix}{edge_type} arrows: {count_str}")
         print(
             f"{indent}    - Nre of {label_prefix}{edge_type} edges: "
             f"{len(unordered_pairs(type_rows))}"
@@ -172,13 +206,35 @@ def print_arrow_report(rows: List[WeightRow], duplicated_vertices: Set[str]) -> 
 
     print(f"Nre of arrows: {len(rows)}")
     print(f"    - Nre of edges (unordered pairs): {len(unordered_pairs(rows))}")
-    print_type_breakdown(rows, indent="        ")
-    print(f"        - Nre of duplicated arrows: {len(duplicated_rows)}")
+    print_type_breakdown(rows, indent="        ", total=len(rows))
+    print(
+        f"        - Nre of duplicated arrows: {len(duplicated_rows)} "
+        f"({pct(len(duplicated_rows), len(rows))})"
+    )
     print(
         f"            - Nre of duplicated edges: {len(unordered_pairs(duplicated_rows))}"
     )
     print_type_breakdown(
         duplicated_rows, indent="                ", label_prefix="duplicated "
+    )
+
+
+def print_capacity_report(rows: List[WeightRow], vertices: Set[str]) -> None:
+    """Print how many arrows the graph has versus the maximum it could hold.
+
+    A directed simple graph on `|V|` vertices (no self-loops, no parallel
+    arrows) allows at most one arrow per ordered pair of distinct vertices,
+    i.e. `(|V|-1)*|V|` arrows in total (the directed counterpart of the
+    undirected max-edges formula `(|V|-1)*|V|/2`).
+
+    args:
+        rows: Every WEIGHTS_FILE row.
+        vertices: Every stop_id in WEIGHTS_FILE.
+    """
+    max_arrows = (len(vertices) - 1) * len(vertices)
+    print(
+        f"Arrow capacity: {len(rows)} / {max_arrows} possible directed arrows "
+        f"(|V|*(|V|-1) with |V|={len(vertices)}) -> {pct(len(rows), max_arrows)}"
     )
 
 
@@ -216,6 +272,7 @@ def main() -> None:
 
     print_vertex_report(vertices, duplicated_vertices)
     print_arrow_report(rows, duplicated_vertices)
+    print_capacity_report(rows, vertices)
     print_disclaimer()
 
 

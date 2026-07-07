@@ -29,6 +29,7 @@ from data_validation.gtfs_utils import (  # noqa: E402
 )
 from routing_algorithms.algorithms_utils import (  # noqa: E402
     NodeFmt,
+    apply_liceu_entrance_fix,
     build_graph_from_weights,
     print_distances,
     print_graph_size,
@@ -98,7 +99,7 @@ def main() -> None:
     start = perf_counter()
     dist, parent, iterations, _ = dijkstra(graph, SOURCE, verbose=False)
     elapsed_ms = (perf_counter() - start) * 1000
-    path = rebuild_path(parent, SOURCE, TARGET)
+    path = apply_liceu_entrance_fix(rebuild_path(parent, SOURCE, TARGET), node_fmt)
 
     cut_start = perf_counter()
     cut_dist, _, cut_iterations, cut_expanded = cut_dijkstra(

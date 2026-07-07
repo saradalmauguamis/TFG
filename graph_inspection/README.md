@@ -29,6 +29,13 @@ constants instead of CLI flags:
 - `CENTER_STOP_ID` / `RADIUS_DEGREES`: zoom the plot around a given stop_id. The PNG is saved to
   `graph.png`, or `graph_zoom_<stop>.png` when zoomed.
 
+The legend adapts to what's actually drawn (e.g. no "Entry/Exit" or "Pathway (PW)" entry when
+`SHOW_ALL_NODES_AND_EDGES` is `False`). Synthetic-platform positions are always artificially
+offset so they sit side-by-side instead of overlapping; in the whole-graph (non-zoomed) render,
+entry/exit positions are also artificially exaggerated away from their platform for visual
+clarity, since their real GTFS coordinates are only a few meters apart. Both PNGs carry a `*`
+footnote spelling this out.
+
 `resources/` holds the PNG(s) it generates.
 
 ### `graph_report.py`
@@ -38,7 +45,10 @@ and by whether they involve a "duplicated" stop_id: one of the artificial per-li
 `5_shared_platforms_duplication.py` creates for a platform shared by several lines (see
 `EQUIVALENCES_FILE`, `data/5_shared_platforms/equivalences.txt`). A vertex is any stop_id in
 `weights.txt`; an arrow is one directed row; an edge is an undirected arrow pair (a->b and b->a
-count as one edge). Ends with a reminder of what each vertex/edge kind means.
+count as one edge). Counts are also shown as a percentage of their total where relevant (e.g.
+entries/platforms of all vertices, SW/TF/PW of all arrows). Also reports "arrow capacity": actual
+arrows versus the maximum possible directed arrows for `|V|` vertices (`|V|*(|V|-1)`). Ends with a
+reminder of what each vertex/edge kind means.
 
 ### `subway_maps/`
 
