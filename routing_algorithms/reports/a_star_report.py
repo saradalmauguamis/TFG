@@ -1,8 +1,9 @@
 """Report, for every directed platform-to-platform route, how well an A* heuristic
 (routing_algorithms/a_star/a_star_utils.py) actually performs.
 
-Output_name: a_star_geo_report.txt (HEURISTIC_NAME="h_geo") or a_star_h_cheat_report.txt
-(HEURISTIC_NAME="h_cheat"), saved into 'routing_algorithms/reports/resources'
+Output_name: a_star_geo_report.txt (HEURISTIC_NAME="h_geo"), a_star_h_cheat_report.txt
+(HEURISTIC_NAME="h_cheat"), or a_star_h_bcn_report.txt (HEURISTIC_NAME="h_bcn"),
+saved into 'routing_algorithms/reports/resources'
 
 This is the evaluation counterpart to a_star_need_report.py
 (routing_algorithms/reports/a_star_need_report.py): that report used
@@ -29,9 +30,9 @@ ascending by proportion, NA last, exactly as in a_star_need_report.py).
 Methodology:
 1. Build the graph from WEIGHTS_FILE with build_graph_from_weights
    (routing_algorithms/algorithms_utils.py), shared with a_star.py.
-2. Build h once for the whole run (graph-global, not per-pair) via build_h_geo
-   or build_h_cheat, picked by HEURISTIC_NAME, both reused directly from
-   routing_algorithms/a_star/heuristics/.
+2. Build h once for the whole run (graph-global, not per-pair) via build_h_geo,
+   build_h_cheat, or build_h_bcn, picked by HEURISTIC_NAME, all reused directly
+   from routing_algorithms/a_star/heuristics/.
 3. Collect every directed pair of distinct platforms via
    collect_platform_pairs (routing_algorithms/reports/report_utils.py), shared
    with a_star_need_report.py.
@@ -42,22 +43,17 @@ Methodology:
 5. Sort all rows ascending by proportion, NA last, and write them to
    OUTPUT_PATH.
 
-Note on parallelism: with HEURISTIC_NAME="h_geo", a single a_star call on this
-graph takes well under 2ms even for a very long route like E.11101 (Residència
-sanitària -- L1-Hospital de Bellvitge) --> to E.14001 (Sicília -- L1-Fondo),
-which takes only ~1.7ms (measured empirically), so ~29k directed platform
-pairs run in well under a minute single-threaded. Parallelising this one-off
-analysis script wouldn't be worth the added complexity, so it is intentionally
-left sequential, exactly as in a_star_need_report.py.
-
-With HEURISTIC_NAME="h_cheat", that same route takes ~183ms instead (every
-heuristic call triggers a fresh cut_dijkstra), since it is one of the worst
-cases geographically; most pairs are far shorter, so the full run over all
-29,070 platform pairs took 485.4s (~16.7ms average per pair), measured
-empirically. That is still ~100x slower than h_geo's well-under-a-minute run,
-but since a given h_cheat run is still only ever generated once (not on a
-recurring/interactive basis), an 8-minute one-off cost is not worth adding
-parallelism for either.
+Note on parallelism: none of the three heuristics need it. Measured
+empirically on a very long route (E.11101, Residència sanitària -- L1-Hospital
+de Bellvitge, to E.14001, Sicília -- L1-Fondo, one of the worst cases
+geographically): a single a_star call takes ~1.7ms with HEURISTIC_NAME="h_geo",
+~3ms with "h_bcn" (still pure arithmetic and dict lookups, no shortest-path
+solve), and ~183ms with "h_cheat" (every call triggers a fresh cut_dijkstra).
+Across all 29,070 directed platform pairs, that's well under a minute for
+h_geo, 11.8s for h_bcn, and 485.4s (~16.7ms average per pair) for h_cheat --
+even that worst case is only an 8-minute one-off cost, not worth adding
+parallelism for, so this script is intentionally left sequential, exactly as
+in a_star_need_report.py.
 """
 
 from __future__ import annotations
@@ -65,7 +61,7 @@ from __future__ import annotations
 import sys
 from functools import partial
 from pathlib import Path
-from typing import Dict, List, Optional, Tuple
+from typing import Dict, List, Optional, Set, Tuple
 
 _PROJECT_ROOT = str(Path(__file__).resolve().parents[2])
 if _PROJECT_ROOT not in sys.path:
@@ -74,10 +70,12 @@ if _PROJECT_ROOT not in sys.path:
 from scripts.basics import subway_route_names_stop_ids_artificial  # noqa: E402
 
 from data_validation.gtfs_utils import (  # noqa: E402
+    PATHWAYS_FILE,
     STOPS_FILE,
     WEIGHTS_FILE,
     build_stop_to_lines,
     check_missing_files,
+    load_pathway_ids,
     load_stop_names,
     print_file_disclaimer,
 )
@@ -106,16 +104,27 @@ from routing_algorithms.a_star.heuristics.h_geo import (  # noqa: E402
     load_node_coords,
 )
 from routing_algorithms.a_star.heuristics.h_cheat import build_h_cheat  # noqa: E402
+from routing_algorithms.a_star.heuristics.h_bcn import (  # noqa: E402
+    DepthTable,
+    build_depth_tables,
+    build_h_bcn,
+)
 from routing_algorithms.paths import (  # noqa: E402
+    A_STAR_BCN_REPORT_FILE,
     A_STAR_CHEAT_REPORT_FILE,
     A_STAR_GEO_REPORT_FILE,
 )
 
-HEURISTIC_NAME = "h_cheat"  # "h_geo" or "h_cheat" to pick the heuristic built in main()
-ITERATIONS_LABEL = "a_star_iterations"
-OUTPUT_PATH = Path(
-    A_STAR_GEO_REPORT_FILE if HEURISTIC_NAME == "h_geo" else A_STAR_CHEAT_REPORT_FILE
+HEURISTIC_NAME = (
+    "h_bcn"  # "h_geo", "h_cheat", or "h_bcn" to pick the heuristic built in main()
 )
+ITERATIONS_LABEL = "a_star_iterations"
+_REPORT_FILE_BY_HEURISTIC = {
+    "h_geo": A_STAR_GEO_REPORT_FILE,
+    "h_cheat": A_STAR_CHEAT_REPORT_FILE,
+    "h_bcn": A_STAR_BCN_REPORT_FILE,
+}
+OUTPUT_PATH = Path(_REPORT_FILE_BY_HEURISTIC[HEURISTIC_NAME])
 OUTPUT_NAME = OUTPUT_PATH.name
 FIELDNAMES = report_fieldnames(ITERATIONS_LABEL)
 
@@ -129,8 +138,8 @@ def run_a_star(
         graph: A directed, weighted graph.
         source: Platform stop_id to start from.
         target: Platform stop_id to reach.
-        h: Admissible heuristic, shared across every pair (build_h_geo or
-            build_h_cheat, per HEURISTIC_NAME).
+        h: Admissible heuristic, shared across every pair (build_h_geo,
+            build_h_cheat, or build_h_bcn, per HEURISTIC_NAME).
 
     returns:
         (g, parent, a_star_iterations) for this pair.
@@ -142,8 +151,8 @@ def build_run_a_star(h: Heuristic) -> ReportRunner:
     """Bind h into run_a_star, matching the ReportRunner shape run_platform_pair_report expects.
 
     args:
-        h: Admissible heuristic, shared across every pair (build_h_geo or
-            build_h_cheat, per HEURISTIC_NAME).
+        h: Admissible heuristic, shared across every pair (build_h_geo,
+            build_h_cheat, or build_h_bcn, per HEURISTIC_NAME).
 
     returns:
         run_a_star with h pre-bound, i.e. Callable(graph, source, target) ->
@@ -167,6 +176,9 @@ def main() -> Tuple[List[ReportRow], float]:
     v_max: float
     v_max_from: Node
     v_max_to: Node
+    pathway_ids: Set[str]
+    depth_from: DepthTable
+    depth_to: DepthTable
     h: Heuristic
     runner: ReportRunner
     pairs: List[Tuple[Node, Node]]
@@ -184,10 +196,14 @@ def main() -> Tuple[List[ReportRow], float]:
         f" -- found at edge {v_max_from} ({node_fmt(v_max_from)})"
         f" -> {v_max_to} ({node_fmt(v_max_to)})"
     )
+    pathway_ids = load_pathway_ids(PATHWAYS_FILE)
     if HEURISTIC_NAME == "h_geo":
         h = build_h_geo(coords, v_max)
     elif HEURISTIC_NAME == "h_cheat":
         h = build_h_cheat(graph)
+    elif HEURISTIC_NAME == "h_bcn":
+        depth_from, depth_to = build_depth_tables(graph)
+        h = build_h_bcn(pathway_ids, coords, v_max, depth_from, depth_to)
     else:
         raise ValueError(f"Unknown HEURISTIC_NAME: {HEURISTIC_NAME!r}")
     runner = build_run_a_star(h)
@@ -200,8 +216,8 @@ def main() -> Tuple[List[ReportRow], float]:
 
 
 if __name__ == "__main__":
-    check_missing_files([WEIGHTS_FILE, STOPS_FILE])
-    print_file_disclaimer([WEIGHTS_FILE, STOPS_FILE])
+    check_missing_files([WEIGHTS_FILE, STOPS_FILE, PATHWAYS_FILE])
+    print_file_disclaimer([WEIGHTS_FILE, STOPS_FILE, PATHWAYS_FILE])
 
     print(f"Starting {OUTPUT_NAME} generation...")
     report_rows, elapsed_seconds = main()

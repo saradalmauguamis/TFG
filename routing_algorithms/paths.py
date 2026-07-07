@@ -19,6 +19,7 @@ _ANALYSIS_RESOURCES_DIR = Path(__file__).resolve().parent / "analysis" / "resour
 DIJKSTRA_REPORT_FILE = os.path.join(REPORTS_BASE, "dijkstra_report.txt")
 A_STAR_GEO_REPORT_FILE = os.path.join(REPORTS_BASE, "a_star_geo_report.txt")
 A_STAR_CHEAT_REPORT_FILE = os.path.join(REPORTS_BASE, "a_star_h_cheat_report.txt")
+A_STAR_BCN_REPORT_FILE = os.path.join(REPORTS_BASE, "a_star_h_bcn_report.txt")
 ALGORITHMS_COMPARISON_REPORT_FILE = os.path.join(
     str(_ANALYSIS_RESOURCES_DIR), "algorithms_comparison_report.txt"
 )

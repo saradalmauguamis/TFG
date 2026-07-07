@@ -53,12 +53,14 @@ from routing_algorithms.algorithms_utils import Node  # noqa: E402
 from routing_algorithms.paths import (  # noqa: E402
     A_STAR_CHEAT_REPORT_FILE,
     A_STAR_GEO_REPORT_FILE,
+    A_STAR_BCN_REPORT_FILE,
     DIJKSTRA_REPORT_FILE,
 )
 
 REPORT_FILES: List[str] = [
     DIJKSTRA_REPORT_FILE,
     A_STAR_GEO_REPORT_FILE,
+    A_STAR_BCN_REPORT_FILE,
     A_STAR_CHEAT_REPORT_FILE,
 ]
 

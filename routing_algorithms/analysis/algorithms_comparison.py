@@ -1,7 +1,7 @@
 """Case-by-case comparison of the routing_algorithms/reports/*.txt outputs.
 
-Aggregates the already-computed Dijkstra / h_geo / h_cheat (/ h_bcn once it
-exists) per-pair reports by graph region, instead of only the single global
+Aggregates the already-computed Dijkstra / h_geo / h_cheat / h_bcn per-pair
+reports by graph region, instead of only the single global
 number each report already prints on its own. Every pair is put in one of the
 5 cases below, based on how source and target relate to the Barcelona
 subway's Center/Branch topology (routing_algorithms/barcelona_divison.py):
@@ -48,6 +48,7 @@ if _PROJECT_ROOT not in sys.path:
 
 from routing_algorithms.barcelona_divison import classify  # noqa: E402
 from routing_algorithms.paths import (  # noqa: E402
+    A_STAR_BCN_REPORT_FILE,
     A_STAR_CHEAT_REPORT_FILE,
     A_STAR_GEO_REPORT_FILE,
     ALGORITHMS_COMPARISON_REPORT_FILE,
@@ -57,24 +58,26 @@ from routing_algorithms.paths import (  # noqa: E402
 HEURISTIC_REPORTS = {
     "Dijkstra": DIJKSTRA_REPORT_FILE,
     "a_star_h_geo": A_STAR_GEO_REPORT_FILE,
+    "a_star_h_bcn": A_STAR_BCN_REPORT_FILE,
     "a_star_h_cheat": A_STAR_CHEAT_REPORT_FILE,
-    # "a_star_h_bcn": A_STAR_BCN_REPORT_FILE,  # uncomment once h_bcn exists (heuristics/h_bcn.py)
 }
 # Dijkstra has no heuristic, so only a_star_h_* labels get an "A*" prefix in the chart legend.
 LEGEND_LABEL_BY_HEURISTIC = {
     "Dijkstra": "Dijkstra",
     "a_star_h_geo": "A* (h_geo)",
-    "a_star_h_cheat": "A* (h_cheat)",
     "a_star_h_bcn": "A* (h_bcn)",
+    "a_star_h_cheat": "A* (h_cheat)",
 }
-# Fixed categorical colors (dataviz skill's validated default palette, slots
-# 1-4 in order), one per heuristic, so the same heuristic always gets the
-# same color across runs/charts.
+# Pastel categorical colors, one per heuristic, chosen to stay clearly distinct
+# (validated via the dataviz skill's validate_palette.js: worst adjacent CVD
+# ΔE 43.6, comfortably above the >=12 target -- the original set had h_geo and
+# h_bcn both reading as near-identical greens). Fixed order so the same
+# heuristic always gets the same color across runs/charts.
 COLOR_BY_HEURISTIC = {
-    "Dijkstra": "#2a78d6",
-    "a_star_h_geo": "#1baf7a",
-    "a_star_h_cheat": "#eda100",
-    "a_star_h_bcn": "#008300",
+    "Dijkstra": "#6f9edd",
+    "a_star_h_geo": "#4fbf98",
+    "a_star_h_bcn": "#9c85d1",
+    "a_star_h_cheat": "#d99f3d",
 }
 CASE_DEFINITIONS = {
     "CC": "source and target both in the Center",
