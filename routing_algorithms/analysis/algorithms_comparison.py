@@ -37,7 +37,7 @@ from __future__ import annotations
 
 import sys
 from pathlib import Path
-from typing import Dict, List, Optional, Set
+from typing import List, Optional
 
 import matplotlib.pyplot as plt
 import pandas as pd
@@ -46,7 +46,7 @@ _PROJECT_ROOT = str(Path(__file__).resolve().parents[2])
 if _PROJECT_ROOT not in sys.path:
     sys.path.insert(0, _PROJECT_ROOT)
 
-from routing_algorithms.barcelona_divison import Branches, Regions  # noqa: E402
+from routing_algorithms.barcelona_divison import classify  # noqa: E402
 from routing_algorithms.paths import (  # noqa: E402
     A_STAR_CHEAT_REPORT_FILE,
     A_STAR_GEO_REPORT_FILE,
@@ -58,7 +58,7 @@ HEURISTIC_REPORTS = {
     "Dijkstra": DIJKSTRA_REPORT_FILE,
     "a_star_h_geo": A_STAR_GEO_REPORT_FILE,
     "a_star_h_cheat": A_STAR_CHEAT_REPORT_FILE,
-    # "a_star_h_bcn": A_STAR_BCN_REPORT_FILE,  # uncomment once h_bcn exists (a_star_utils.py)
+    # "a_star_h_bcn": A_STAR_BCN_REPORT_FILE,  # uncomment once h_bcn exists (heuristics/h_bcn.py)
 }
 # Dijkstra has no heuristic, so only a_star_h_* labels get an "A*" prefix in the chart legend.
 LEGEND_LABEL_BY_HEURISTIC = {
@@ -96,41 +96,6 @@ CASE_LEGEND_LINES = [
 ]
 OUTPUT_PATH = Path(ALGORITHMS_COMPARISON_REPORT_FILE)
 CHART_OUTPUT_PATH = OUTPUT_PATH.parent / "algorithms_comparison_chart.png"
-
-# stop_id -> branch name, for every stop in a branch (absent means Center)
-NODE_TO_BRANCH: Dict[str, str] = {
-    stop_id: branch_name for branch_name, stops in Branches.items() for stop_id in stops
-}
-CENTER_NODES: Set[str] = Regions["Center"]
-
-
-def classify(source_id: str, target_id: str) -> str:
-    """Return which of the 5 Center/Branch cases (source_id, target_id) falls into.
-
-    args:
-        source_id: Platform stop_id the route starts from.
-        target_id: Platform stop_id the route ends at.
-
-    returns:
-        One of "CC", "CB", "BC", "SB", "DB" (see module docstring).
-    """
-    source_branch = NODE_TO_BRANCH.get(source_id)
-    target_branch = NODE_TO_BRANCH.get(target_id)
-    source_center = source_id in CENTER_NODES
-    target_center = target_id in CENTER_NODES
-
-    if source_center and target_center:
-        return "CC"
-    if source_center and target_branch is not None:
-        return "CB"
-    if source_branch is not None and target_center:
-        return "BC"
-    if source_branch is not None and target_branch is not None:
-        return "SB" if source_branch == target_branch else "DB"
-    raise ValueError(
-        f"Could not classify pair ({source_id}, {target_id}): neither id is in"
-        " Branches or Regions['Center']."
-    )
 
 
 def analyze(path: str, dtype_ids: type = str) -> pd.DataFrame:
@@ -231,7 +196,10 @@ def plot_comparison(combined: pd.DataFrame, output_path: Path) -> None:
 
     ax.set_xticks(list(positions))
     ax.set_xticklabels(
-        [f"{case}\n({combined.loc[case, 'pct']:.1f}%)" for case in cases],
+        [
+            f"{case}\nn={combined.loc[case, 'n']:.0f} ({combined.loc[case, 'pct']:.1f}%)"
+            for case in cases
+        ],
         color="#52514e",
     )
     ax.set_ylabel("Mean proportion (path_vertices / iterations)", color="#52514e")

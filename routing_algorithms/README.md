@@ -41,8 +41,7 @@ here is specific to either algorithm or to the comparison reports below (see `re
 ## barcelona_divison.py
 
 Region/bridge partition (`Branches`, `Bridges`, `Regions`) of the Barcelona subway graph, used by
-`analysis/algorithms_comparison.py` to classify platform pairs by Center/Branch case. Lives at
-the top level, not under `a_star/`, since it isn't A*-specific.
+`analysis/algorithms_comparison.py` to classify platform pairs by Center/Branch case.
 
 ## paths.py
 

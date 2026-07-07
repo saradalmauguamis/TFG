@@ -9,7 +9,8 @@ This is the evaluation counterpart to a_star_need_report.py
 cut_dijkstra to show, per pair, how far from ideal (proportion = path_vertices
 / cut_iterations) an uninformed search already is, to find where a heuristic
 would help. This report reruns every one of those same pairs, but with A* and
-one of the heuristics built in a_star_utils.py (picked via HEURISTIC_NAME), so
+one of the heuristics built in routing_algorithms/a_star/heuristics/ (picked
+via HEURISTIC_NAME), so
 the exact same proportion metric can be compared side-by-side against
 dijkstra_report.txt to see how much of that theoretical opportunity the
 heuristic actually captures.
@@ -30,7 +31,7 @@ Methodology:
    (routing_algorithms/algorithms_utils.py), shared with a_star.py.
 2. Build h once for the whole run (graph-global, not per-pair) via build_h_geo
    or build_h_cheat, picked by HEURISTIC_NAME, both reused directly from
-   a_star_utils.py.
+   routing_algorithms/a_star/heuristics/.
 3. Collect every directed pair of distinct platforms via
    collect_platform_pairs (routing_algorithms/reports/report_utils.py), shared
    with a_star_need_report.py.
@@ -93,16 +94,18 @@ from routing_algorithms.reports.report_utils import (  # noqa: E402
     run_platform_pair_report,
 )
 from routing_algorithms.a_star.a_star_utils import (  # noqa: E402
-    Coord,
     Graph,
     Heuristic,
     Node,
     a_star,
-    build_h_cheat,
+)
+from routing_algorithms.a_star.heuristics.h_geo import (  # noqa: E402
+    Coord,
     build_h_geo,
     compute_v_max,
     load_node_coords,
 )
+from routing_algorithms.a_star.heuristics.h_cheat import build_h_cheat  # noqa: E402
 from routing_algorithms.paths import (  # noqa: E402
     A_STAR_CHEAT_REPORT_FILE,
     A_STAR_GEO_REPORT_FILE,

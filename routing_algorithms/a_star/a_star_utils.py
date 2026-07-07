@@ -1,169 +1,22 @@
-"""A* algorithm implementation based on Lluís Alsedà pseudocode (slide 45)."""
+"""A* algorithm implementation based on Lluís Alsedà pseudocode (slide 45).
+
+The admissible heuristics pluggable into a_star() below (h_geo, h_cheat,
+h_bcn) live in routing_algorithms/a_star/heuristics/, one module each; this
+file only holds the algorithm-agnostic core shared by all of them: the
+Heuristic type and a_star() itself.
+"""
 
 from __future__ import annotations
-from functools import partial
-from math import cos, radians, sqrt
 from typing import Callable, Dict, Optional, Tuple
 
-from data_validation.gtfs_utils import load_stops_info
 from routing_algorithms.algorithms_utils import (  # shared with dijkstra_utils.py
     INF,
     Graph,
     MinHeap,
     Node,
 )
-from routing_algorithms.dijkstra.dijkstra_utils import cut_dijkstra
 
 Heuristic = Callable[[Node, Node], int]
-
-EARTH_RADIUS_M = 6_371_000.0  # mean Earth radius, used for the flat local projection
-Coord = Tuple[float, float]  # (stop_lat, stop_lon) in degrees
-
-
-# ---------------------------------------------------------------------------
-# Geographic heuristic: h(node, target) = straight_line_distance(node, target) / v_max
-# ---------------------------------------------------------------------------
-
-
-def straight_line_distance(coord_a: Coord, coord_b: Coord) -> float:
-    """Return the flat-earth straight-line distance between two points, in meters.
-
-    Treats the (small) area covered by the graph as locally flat: longitude is
-    scaled by cos(mean latitude) before applying Pythagoras, so that degrees
-    of longitude and latitude are weighted by their actual physical length at
-    this latitude, then the result is converted from degrees to meters.
-
-    args:
-        coord_a: (stop_lat, stop_lon) in degrees for the first point.
-        coord_b: (stop_lat, stop_lon) in degrees for the second point.
-
-    returns:
-        The estimated straight-line distance between the two points, in meters.
-    """
-    lat_a, lon_a = coord_a
-    lat_b, lon_b = coord_b
-    mean_lat_rad = radians((lat_a + lat_b) / 2)
-
-    dx = radians(lon_b - lon_a) * cos(mean_lat_rad) * EARTH_RADIUS_M
-    dy = radians(lat_b - lat_a) * EARTH_RADIUS_M
-    return sqrt(dx * dx + dy * dy)
-
-
-def load_node_coords(file_path: str) -> Dict[Node, Coord]:
-    """Return stop_id -> (stop_lat, stop_lon) in degrees, for every stop in file_path.
-
-    args:
-        file_path: Path to a GTFS-style stops file (STOPS_FILE).
-
-    returns:
-        Mapping from stop_id to its (lat, lon) coordinates, built on top of
-        load_stops_info (data_validation/gtfs_utils.py).
-    """
-    return {
-        stop_id: (float(lat), float(lon))
-        for stop_id, (_, lat, lon) in load_stops_info(file_path).items()
-    }
-
-
-def compute_v_max(
-    graph: Graph, coords: Dict[Node, Coord]
-) -> Tuple[float, Tuple[Node, Node]]:
-    """Return the fastest implied speed (m/s) across any single edge in graph.
-
-    Scans every directed edge already in the graph (built from WEIGHTS_FILE)
-    and takes the maximum of straight_line_distance(u, v) / weight(u, v),
-    the ratio the a_star() admissibility proof (a_star.py module docstring)
-    relies on.
-
-    args:
-        graph: A directed, weighted graph, as returned by build_graph_from_weights.
-        coords: Mapping from every node in graph to its (lat, lon) coordinates.
-
-    returns:
-        The maximum straight-line-distance-per-second observed across all
-        edges, together with the (u, v) edge that achieves it.
-    """
-    # max() over (ratio, (u, v)) tuples compares lexicographically by ratio
-    # first, so it returns the whole winning tuple, not just the ratio.
-    return max(
-        (straight_line_distance(coords[u], coords[v]) / weight, (u, v))
-        for u, adjacency in graph.items()
-        for v, weight in adjacency.items()
-    )
-
-
-def h_geo(node: Node, target: Node, coords: Dict[Node, Coord], v_max: float) -> int:
-    """Return the admissible geographic heuristic estimate from node to target.
-
-    h_geo(node, target) = straight_line_distance(node, target) / v_max, floored
-    to an int (flooring can only shrink h, so admissibility is preserved) to
-    match Heuristic = Callable[[Node, Node], int] above.
-
-    args:
-        node: The node to estimate the remaining cost from.
-        target: The target node.
-        coords: Mapping from node to its (lat, lon) coordinates.
-        v_max: Fastest implied speed (m/s) across any edge, from compute_v_max.
-
-    returns:
-        straight_line_distance(node, target) / v_max, floored to an int.
-    """
-    return int(straight_line_distance(coords[node], coords[target]) / v_max)
-
-
-def build_h_geo(coords: Dict[Node, Coord], v_max: float) -> Heuristic:
-    """Bind coords and v_max into h_geo, producing a plain Heuristic(node, target).
-
-    args:
-        coords: Mapping from node to its (lat, lon) coordinates.
-        v_max: Fastest implied speed (m/s) across any edge, from compute_v_max.
-
-    returns:
-        h_geo with coords and v_max pre-bound, matching
-        Heuristic = Callable[[Node, Node], int] above.
-    """
-    return partial(h_geo, coords=coords, v_max=v_max)
-
-
-# ---------------------------------------------------------------------------
-# Cheat heuristic: h_cheat(node, target) = actual optimal cost(node, target)
-#
-# Not admissible-in-spirit: computing it already requires solving the
-# shortest-path problem A* is trying to solve, via cut_dijkstra (shared with
-# dijkstra_utils.py), so it is only useful to see how A* behaves with a
-# perfect heuristic (e.g. as a lower bound on iterations), never as a
-# practical heuristic.
-# ---------------------------------------------------------------------------
-
-
-def h_cheat(node: Node, target: Node, graph: Graph) -> int:
-    """Return the actual optimal cost from node to target, via cut_dijkstra.
-
-    args:
-        node: The node to compute the true remaining cost from.
-        target: The target node.
-        graph: A directed, weighted graph, as returned by build_graph_from_weights.
-
-    returns:
-        The true shortest-path distance from node to target (dist[target] from
-        cut_dijkstra(graph, source=node, target=target), guaranteed optimal by
-        the convergence theorem since target is settled before the search stops).
-    """
-    dist, _, _, _ = cut_dijkstra(graph, source=node, target=target, verbose=False)
-    return dist[target]
-
-
-def build_h_cheat(graph: Graph) -> Heuristic:
-    """Bind graph into h_cheat, producing a plain Heuristic(node, target).
-
-    args:
-        graph: A directed, weighted graph, as returned by build_graph_from_weights.
-
-    returns:
-        h_cheat with graph pre-bound, matching
-        Heuristic = Callable[[Node, Node], int] above.
-    """
-    return partial(h_cheat, graph=graph)
 
 
 def a_star(

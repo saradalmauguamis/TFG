@@ -66,21 +66,18 @@ from routing_algorithms.algorithms_utils import (  # noqa: E402
     rebuild_path,
     stop_label,
 )
-from a_star_utils import (  # noqa: E402
+from a_star_utils import Graph, Heuristic, Node, a_star  # noqa: E402
+from heuristics.h_geo import (  # noqa: E402
     Coord,
-    Graph,
-    Heuristic,
-    Node,
-    a_star,
-    build_h_cheat,
     build_h_geo,
     compute_v_max,
     load_node_coords,
 )
+from heuristics.h_cheat import build_h_cheat  # noqa: E402
 
-SOURCE = "E.11101"
-TARGET = "E.14001"
-HEURISTIC_NAME = "h_cheat"  # "h_geo" or "h_cheat" to pick the heuristic built in main()
+SOURCE = "1.323"
+TARGET = "1.126"
+HEURISTIC_NAME = "h_geo"  # "h_geo" or "h_cheat" to pick the heuristic built in main()
 
 
 def main() -> None:
