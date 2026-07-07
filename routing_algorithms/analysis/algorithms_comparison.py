@@ -4,7 +4,7 @@ Aggregates the already-computed Dijkstra / h_geo / h_cheat / h_bcn per-pair
 reports by graph region, instead of only the single global
 number each report already prints on its own. Every pair is put in one of the
 5 cases below, based on how source and target relate to the Barcelona
-subway's Center/Branch topology (routing_algorithms/barcelona_divison.py):
+subway's Center/Branch topology (routing_algorithms/barcelona_division.py):
   CC - source and target both in the Center
   CB - source in the Center, target in a Branch
   BC - source in a Branch, target in the Center
@@ -14,7 +14,7 @@ subway's Center/Branch topology (routing_algorithms/barcelona_divison.py):
 Why split by case at all: graph_inspection/graph_draw/resources/graph.png shows
 that, setting aside PW (entry<->platform) edges, the subway network's shape is
 a "ball" with 8 branches sticking out of it, which is exactly the Center/Branch_*
-split barcelona_divison.py encodes. Within that shape, the large majority of PW
+split barcelona_division.py encodes. Within that shape, the large majority of PW
 and TF (cross-line transfer) edges sit in the Center, not in the branches.
 Those two facts mean a heuristic's real payoff can look very different case by
 case (e.g. crossing into or out of a branch vs. staying inside the dense
@@ -46,7 +46,7 @@ _PROJECT_ROOT = str(Path(__file__).resolve().parents[2])
 if _PROJECT_ROOT not in sys.path:
     sys.path.insert(0, _PROJECT_ROOT)
 
-from routing_algorithms.barcelona_divison import classify  # noqa: E402
+from routing_algorithms.barcelona_division import classify  # noqa: E402
 from routing_algorithms.paths import (  # noqa: E402
     A_STAR_BCN_REPORT_FILE,
     A_STAR_CHEAT_REPORT_FILE,

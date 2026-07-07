@@ -2,7 +2,7 @@
 
 Unlike h_geo (straight-line distance / v_max, routing_algorithms/a_star/heuristics/h_geo.py),
 h_bcn(node, target) exploits the network's actual Center/Branch topology
-(routing_algorithms/barcelona_divison.py): once node and target are reduced to
+(routing_algorithms/barcelona_division.py): once node and target are reduced to
 platforms, the true cost between them only ever needs h_geo across the dense
 Center, since crossing into or out of a branch must go through that branch's
 single bridge platform.
@@ -16,7 +16,7 @@ pair -- this preserves admissibility since h_regions_cases(p, q) is itself an
 admissible estimate for every candidate pair, so the minimum over all pairs
 can never exceed the true cost via whichever pair the optimal path actually uses.
 
-Depends on routing_algorithms/barcelona_divison.py (classify, compute_bridge,
+Depends on routing_algorithms/barcelona_division.py (classify, compute_bridge,
 Branches, Bridges) for the region split, data_validation/gtfs_utils.py
 (build_directed_entrance_edges, invert_entries) for the plat_to/plat_from
 lookups, and heuristics/h_geo.py's h_geo for the Center-crossing estimate.
@@ -44,7 +44,7 @@ from data_validation.gtfs_utils import (  # noqa: E402
     invert_entries,
 )
 from routing_algorithms.algorithms_utils import INF, Graph, Node  # noqa: E402
-from routing_algorithms.barcelona_divison import (  # noqa: E402
+from routing_algorithms.barcelona_division import (  # noqa: E402
     Branches,
     Bridges,
     classify,
@@ -118,7 +118,7 @@ def depth_from_bridge(node: str, precalculated_depth_from: DepthTable) -> int:
     """Return the precalculated cost of the bridge --> node path within its branch.
 
     args:
-        node: Platform stop_id belonging to a branch (see barcelona_divison.find_branch).
+        node: Platform stop_id belonging to a branch (see barcelona_division.find_branch).
         precalculated_depth_from: platform stop_id -> bridge --> node cost,
             from build_depth_tables.
 
@@ -132,7 +132,7 @@ def depth_to_bridge(node: str, precalculated_depth_to: DepthTable) -> int:
     """Return the precalculated cost of the node --> bridge path within its branch.
 
     args:
-        node: Platform stop_id belonging to a branch (see barcelona_divison.find_branch).
+        node: Platform stop_id belonging to a branch (see barcelona_division.find_branch).
         precalculated_depth_to: platform stop_id -> node --> bridge cost,
             from build_depth_tables.
 
@@ -146,7 +146,7 @@ def build_depth_tables(graph: Graph) -> Tuple[DepthTable, DepthTable]:
     """Compute depth_from_bridge/depth_to_bridge for every branch platform.
 
     Each Branches[branch] list is already ordered outside --> inside (outer
-    end first, bridge-adjacent stop last, see barcelona_divison.py), so
+    end first, bridge-adjacent stop last, see barcelona_division.py), so
     prepending the bridge and reversing gives the bridge-outward chain
     [bridge, ..., outer end]. Since every branch is a simple chain (verified
     against the real graph: every stop has exactly one in-branch predecessor
@@ -195,7 +195,7 @@ def h_regions_cases(
 
     By construction p and q are platforms: p is a platform reachable from the
     heuristic's node, q a platform leading to its target. Dispatches on
-    classify(p, q) (routing_algorithms/barcelona_divison.py):
+    classify(p, q) (routing_algorithms/barcelona_division.py):
       CC - both in the Center: direct h_geo(p, q).
       SB - same branch: p and q sit along the same single-path stub off their
         bridge, so the direct cost is just the difference in depth, in

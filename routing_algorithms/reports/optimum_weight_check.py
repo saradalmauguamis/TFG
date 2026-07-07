@@ -1,8 +1,8 @@
 """Sanity check: for every platform pair, optimum_weight must agree across reports.
 
-dijkstra_report.txt, a_star_geo_report.txt, and a_star_h_cheat_report.txt
-(routing_algorithms/reports/resources/, paths in routing_algorithms/paths.py)
-all run the same collect_platform_pairs pairs over the same graph
+dijkstra_report.txt, a_star_geo_report.txt, a_star_h_bcn_report.txt, and
+a_star_h_cheat_report.txt (routing_algorithms/reports/resources/, paths in
+routing_algorithms/paths.py) all run the same collect_platform_pairs pairs over the same graph
 (routing_algorithms/reports/report_utils.py), just with different search
 algorithms/heuristics. The actual path found for a pair can legitimately
 differ between reports (ties in shortest-path weight aren't unique), but
@@ -15,7 +15,7 @@ already in the report files, so it only reads and cross-compares them via
 read_dict_rows (data_validation/gtfs_utils.py).
 
 Methodology:
-1. check_missing_files + print_file_disclaimer on the 3 report files, fitting
+1. check_missing_files + print_file_disclaimer on the 4 report files, fitting
    the same pattern as every other report/checker in this package.
 2. Read each report via read_dict_rows into {(source_id, target_id):
    (source_name, target_name, optimum_weight)}, parsing "NA" to None.
