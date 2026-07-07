@@ -3,9 +3,8 @@
 Reads GTFS `.txt` files from `DATA_DIR` (a pipeline stage folder under
 `data/`, configurable via the `GTFS_DATA_DIR` env var read by
 `data_validation.gtfs_utils`) and exports them to `data/excel_exports`:
-one `.xlsx` file per `.txt` table, plus a combined workbook with one sheet per
-table. Large tables are split across multiple files/sheets to stay within
-Excel's row limit.
+one `.xlsx` file per `.txt` table. Large tables are split across multiple
+files to stay within Excel's row limit.
 """
 
 from __future__ import annotations
@@ -13,7 +12,7 @@ from __future__ import annotations
 import math
 import sys
 from pathlib import Path
-from typing import List, Optional, Set
+from typing import List, Optional
 
 import pandas as pd
 
@@ -22,17 +21,20 @@ if str(REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(REPO_ROOT))
 
 from data_validation.gtfs_utils import BASE, check_missing_files  # noqa: E402
-from routing_algorithms.reports.paths import REPORTS_BASE  # noqa: E402
+from routing_algorithms.paths import ALGORITHMS_COMPARISON_REPORT_FILE  # noqa: E402
 
-# DATA_DIR defaults to the platform-to-platform reports; point it at any
-# other `_DEFAULT_*_DATA_DIR` constant from data_validation.gtfs_utils (e.g.
-# `_DEFAULT_RAW_DATA_DIR`, `_DEFAULT_SUBWAY_DATA_DIR`) to convert that stage
-# instead, or at any other folder of comma-separated .txt files.
-DATA_DIR = Path(REPORTS_BASE)
+# DATA_DIR defaults to the analysis comparison report
+# (Path(ALGORITHMS_COMPARISON_REPORT_FILE).parent); point it at
+# Path(REPORTS_BASE) (routing_algorithms.paths) to convert the
+# platform-to-platform reports instead, at any other `_DEFAULT_*_DATA_DIR`
+# constant from data_validation.gtfs_utils (e.g. `_DEFAULT_RAW_DATA_DIR`,
+# `_DEFAULT_SUBWAY_DATA_DIR`) to convert that stage, or at any other folder
+# of comma-separated .txt files.
+DATA_DIR = Path(ALGORITHMS_COMPARISON_REPORT_FILE).parent
 
 # Set this to a filename like 'trips.txt' to convert only one file.
 # Set it to None to convert every .txt file in DATA_DIR.
-TXT_FILE_NAME: Optional[str] = "dijkstra_report.txt"
+TXT_FILE_NAME: Optional[str] = "algorithms_comparison_report.txt"
 
 # Excel limits one sheet to 1,048,576 rows total, including the header.
 EXCEL_MAX_ROWS = 800_000
@@ -42,7 +44,7 @@ EXCEL_MAX_DATA_ROWS = EXCEL_MAX_ROWS - 1
 # e.g. routing_algorithms/reports/resources/excel_exports); False writes them
 # to the shared data/excel_exports folder alongside every other pipeline
 # stage's exports.
-EXPORT_NEXT_TO_SOURCE: bool = False
+EXPORT_NEXT_TO_SOURCE: bool = True
 
 OUTPUT_DIR = (DATA_DIR if EXPORT_NEXT_TO_SOURCE else Path(BASE)) / "excel_exports"
 
@@ -164,109 +166,10 @@ def convert_individual_files(txt_files: List[Path], output_dir: Path) -> pd.Data
     )
 
 
-def excel_sheet_name(base_name: str, used_names: Set[str]) -> str:
-    """Create a valid, unique Excel sheet name (max 31 chars).
-
-    args:
-        base_name: Proposed name for the sheet.
-        used_names: Set of sheet names already in use, modified in place.
-
-    returns:
-        A valid, unique Excel sheet name of at most 31 characters.
-    """
-    cleaned: str
-    candidate: str
-    counter: int
-    suffix: str
-
-    cleaned = base_name.replace("/", "_").replace("\\", "_").replace("*", "_")
-    cleaned = (
-        cleaned.replace("?", "_").replace("[", "_").replace("]", "_").replace(":", "_")
-    )
-    cleaned = cleaned[:31] if cleaned else "Sheet"
-
-    candidate = cleaned
-    counter = 1
-    while candidate in used_names:
-        suffix = f"_{counter}"
-        candidate = f"{cleaned[:31 - len(suffix)]}{suffix}"
-        counter += 1
-
-    used_names.add(candidate)
-    return candidate
-
-
-def add_dataframe_to_writer(
-    writer: pd.ExcelWriter,
-    df: pd.DataFrame,
-    base_name: str,
-    used_sheet_names: Set[str],
-) -> List[str]:
-    """Write a DataFrame to one or more sheets when the Excel row limit is exceeded.
-
-    args:
-        writer: Open ExcelWriter to write sheets into.
-        df: DataFrame to write.
-        base_name: Base name for the sheet(s).
-        used_sheet_names: Set of already-used sheet names, modified in place.
-
-    returns:
-        List of sheet names created.
-    """
-    total_parts: int
-    sheet_names: List[str] = []
-    sheet_name: str
-    part_index: int
-    start_row: int
-    end_row: int
-    part_df: pd.DataFrame
-    part_base_name: str
-
-    if len(df) <= EXCEL_MAX_DATA_ROWS:
-        sheet_name = excel_sheet_name(base_name, used_sheet_names)
-        df.to_excel(writer, sheet_name=sheet_name, index=False)
-        return [sheet_name]
-
-    total_parts = math.ceil(len(df) / EXCEL_MAX_DATA_ROWS)
-    for part_index in range(total_parts):
-        start_row = part_index * EXCEL_MAX_DATA_ROWS
-        end_row = start_row + EXCEL_MAX_DATA_ROWS
-        part_df = df.iloc[start_row:end_row]
-        part_base_name = f"{base_name}_part{part_index + 1}"
-        sheet_name = excel_sheet_name(part_base_name, used_sheet_names)
-        part_df.to_excel(writer, sheet_name=sheet_name, index=False)
-        sheet_names.append(sheet_name)
-
-    return sheet_names
-
-
-def build_combined_workbook(txt_files: List[Path], combined_file: Path) -> None:
-    """Write every .txt file as one sheet each into a single combined workbook.
-
-    args:
-        txt_files: .txt files to include.
-        combined_file: Target output .xlsx file path.
-    """
-    used_sheet_names: Set[str] = set()
-    df: pd.DataFrame
-    sheet_names: List[str]
-
-    with pd.ExcelWriter(combined_file, engine="openpyxl") as writer:
-        for txt_file in txt_files:
-            df = read_txt_table(txt_file)
-            sheet_names = add_dataframe_to_writer(
-                writer, df, txt_file.stem, used_sheet_names
-            )
-            print(f"Added {txt_file.name} as: {', '.join(sheet_names)}")
-
-    print(f"Combined workbook created: {combined_file}")
-
-
 def main() -> None:
-    """Convert configured GTFS .txt file(s) to individual and combined .xlsx workbooks."""
+    """Convert configured GTFS .txt file(s) to individual .xlsx files."""
     txt_files: List[Path]
     summary_df: pd.DataFrame
-    combined_file: Path
 
     OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
     txt_files = get_txt_files(DATA_DIR, TXT_FILE_NAME)
@@ -281,9 +184,6 @@ def main() -> None:
 
     summary_df = convert_individual_files(txt_files, OUTPUT_DIR)
     print(summary_df.to_string(index=False))
-
-    combined_file = OUTPUT_DIR / "gtfs_all_tables.xlsx"
-    build_combined_workbook(txt_files, combined_file)
 
 
 if __name__ == "__main__":
