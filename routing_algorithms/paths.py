@@ -23,3 +23,6 @@ A_STAR_BCN_REPORT_FILE = os.path.join(REPORTS_BASE, "a_star_h_bcn_report.txt")
 ALGORITHMS_COMPARISON_REPORT_FILE = os.path.join(
     str(_ANALYSIS_RESOURCES_DIR), "algorithms_comparison_report.txt"
 )
+REGIONS_GRAPH_FILE = os.path.join(
+    str(_ANALYSIS_RESOURCES_DIR), "barcelona_regions_graph.png"
+)

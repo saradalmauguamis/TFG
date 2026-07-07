@@ -1,0 +1,251 @@
+"""Draw the Barcelona subway network colored by Center/Branch region, highlighting
+the single bridge platform that reconnects each branch to the rest of the network.
+
+Reuses graph_inspection/graph_draw/graph.py's graph loading (GTFS-derived edges,
+weights, and the jittered synthetic-platform/entry positions) and recolors it
+against routing_algorithms/barcelona_division.py's Center/Branches partition
+instead of by subway line: every platform, and every SW/TF/PW edge touching it, is
+painted in its region's pastel color -- except the edge connecting a branch's
+outermost platform to its bridge, which takes the branch's color (it's still part
+of the branch, structurally), and the bridge platform itself, which is highlighted
+in yellow, a color reserved from the region palette so it never doubles as a
+region's color.
+
+The 9 region colors + the yellow bridge accent were derived and CVD-validated with
+the dataviz skill's method (OKLCH lightness/chroma bands, Machado-2009 protan/
+deutan simulation, all-pairs since any two regions can end up adjacent on the map).
+One pair (Branch_L5 <-> Branch_FM) and four individual colors' contrast against
+white land in the skill's documented WARN/floor bands; that's legal there only with
+secondary encoding, which here is the region legend (every color is also a text
+label) plus the fact that same-named regions never sit next to each other except
+through their one bridge.
+"""
+
+import sys
+from pathlib import Path
+
+import matplotlib.pyplot as plt
+import networkx as nx
+
+_PROJECT_ROOT = str(Path(__file__).resolve().parents[2])
+if _PROJECT_ROOT not in sys.path:
+    sys.path.insert(0, _PROJECT_ROOT)
+
+from graph_inspection.graph_draw.graph import (  # noqa: E402
+    ENTRY_NODE_COLOR,
+    load_graph,
+)
+from routing_algorithms.barcelona_division import Bridges, NODE_TO_BRANCH  # noqa: E402
+from routing_algorithms.paths import REGIONS_GRAPH_FILE  # noqa: E402
+
+# Fixed hue order (never cycled), matching Branches' own definition order in
+# barcelona_division.py, plus Center.
+REGION_COLORS: dict[str, str] = {
+    "Branch_L1": "#2a78d6",
+    "Branch_L2": "#1baf7a",
+    "Branch_L5": "#008300",
+    "Branch_L9S": "#4a3aa7",
+    "Branch_L9N": "#e34948",
+    "Branch_L10S": "#e87ba4",
+    "Branch_L11": "#eb6834",
+    "Branch_FM": "#0088ad",
+    "Center": "#a9b45f",
+}
+# Reserved separately from REGION_COLORS -- not one of the 9 region hues -- so a
+# bridge marker never impersonates a region, mirroring the dataviz skill's "status
+# colors are reserved" convention.
+BRIDGE_COLOR = "#eda100"
+
+BRIDGE_STOPS: set[str] = {stop for stops in Bridges.values() for stop in stops}
+
+
+def node_region(stop_id: str) -> str:
+    """Return stop_id's region name: its branch, or "Center" if not in a branch.
+
+    args:
+        stop_id: Platform stop_id (SW/TF/PW-platform-side edges only ever touch
+            platforms, which are always covered by NODE_TO_BRANCH or Center).
+
+    returns:
+        A key of REGION_COLORS.
+    """
+    return NODE_TO_BRANCH.get(stop_id, "Center")
+
+
+def region_edge_color(u: str, v: str) -> str:
+    """Color an SW/TF edge: same-region color, or the branch's color if the edge
+    crosses into Center -- which can only be the branch's single bridge connection.
+
+    args:
+        u: Source platform stop_id.
+        v: Target platform stop_id.
+
+    returns:
+        A value from REGION_COLORS.
+    """
+    region_u, region_v = node_region(u), node_region(v)
+    if region_u == region_v:
+        return REGION_COLORS[region_u]
+    return REGION_COLORS[region_v if region_u == "Center" else region_u]
+
+
+def pw_edge_color(u: str, v: str) -> str:
+    """Color a PW edge by the region of whichever endpoint is the platform.
+
+    args:
+        u: One endpoint stop_id (platform or entry).
+        v: The other endpoint stop_id.
+
+    returns:
+        A value from REGION_COLORS.
+    """
+    platform = v if str(u).startswith("E.") else u
+    return REGION_COLORS[node_region(platform)]
+
+
+def node_color(stop_id: str) -> str:
+    """Color a platform node: yellow if it's a bridge, else its region's color.
+
+    args:
+        stop_id: Platform stop_id.
+
+    returns:
+        BRIDGE_COLOR or a value from REGION_COLORS.
+    """
+    if stop_id in BRIDGE_STOPS:
+        return BRIDGE_COLOR
+    return REGION_COLORS[node_region(stop_id)]
+
+
+def draw_regions_graph(
+    graph: nx.DiGraph, output_path: str | Path = REGIONS_GRAPH_FILE
+) -> None:
+    """Draw the whole graph colored by Center/Branch region and save it as a PNG.
+
+    args:
+        graph: Graph built by graph_inspection.graph_draw.graph.load_graph().
+        output_path: Path to save the rendered PNG to.
+    """
+    pos = {n: d["pos"] for n, d in graph.nodes(data=True) if "pos" in d}
+    graph = graph.subgraph(pos.keys())
+
+    platform_nodes = [n for n in graph.nodes if not str(n).startswith("E.")]
+    entry_nodes = [n for n in graph.nodes if str(n).startswith("E.")]
+    bridge_nodes = [n for n in platform_nodes if n in BRIDGE_STOPS]
+    non_bridge_platform_nodes = [n for n in platform_nodes if n not in BRIDGE_STOPS]
+
+    _, ax = plt.subplots(figsize=(14, 14))
+    legend_handles = [
+        plt.Line2D(
+            [0],
+            [0],
+            marker="o",
+            color="none",
+            markerfacecolor=color,
+            markersize=10,
+            label=region,
+        )
+        for region, color in REGION_COLORS.items()
+    ] + [
+        plt.Line2D(
+            [0],
+            [0],
+            marker="o",
+            color="none",
+            markerfacecolor=BRIDGE_COLOR,
+            markeredgecolor="#333333",
+            markersize=10,
+            label="Bridge",
+        ),
+        plt.Line2D(
+            [0],
+            [0],
+            marker="s",
+            color="none",
+            markerfacecolor=ENTRY_NODE_COLOR,
+            markersize=8,
+            label="Entry/Exit",
+        ),
+    ]
+
+    edge_color_fn_by_type = {
+        "SW": region_edge_color,
+        "TF": region_edge_color,
+        "PW": pw_edge_color,
+    }
+    edge_width_by_type = {"SW": 1.2, "TF": 1.2, "PW": 0.5}
+    for edge_type, color_fn in edge_color_fn_by_type.items():
+        type_edges = [
+            (u, v) for u, v, d in graph.edges(data=True) if d["type"] == edge_type
+        ]
+        if not type_edges:
+            continue
+        edges_by_color: dict[str, list[tuple]] = {}
+        for u, v in type_edges:
+            edges_by_color.setdefault(color_fn(u, v), []).append((u, v))
+        for color, edges in edges_by_color.items():
+            nx.draw_networkx_edges(
+                graph,
+                pos,
+                edgelist=edges,
+                width=edge_width_by_type[edge_type],
+                edge_color=color,
+                arrows=False,
+                ax=ax,
+            )
+
+    nx.draw_networkx_nodes(
+        graph,
+        pos,
+        nodelist=entry_nodes,
+        node_shape="s",
+        node_size=6,
+        node_color=ENTRY_NODE_COLOR,
+        ax=ax,
+    )
+    nx.draw_networkx_nodes(
+        graph,
+        pos,
+        nodelist=non_bridge_platform_nodes,
+        node_shape="o",
+        node_size=15,
+        node_color=[node_color(n) for n in non_bridge_platform_nodes],
+        ax=ax,
+    )
+    nx.draw_networkx_nodes(
+        graph,
+        pos,
+        nodelist=bridge_nodes,
+        node_shape="o",
+        node_size=45,
+        node_color=BRIDGE_COLOR,
+        edgecolors="#333333",
+        linewidths=1.2,
+        ax=ax,
+    )
+
+    ax.legend(handles=legend_handles, loc="lower right", fontsize=11)
+
+    ax.set_title("Barcelona Subway Network with Branches and Bridges")
+    ax.set_axis_off()
+
+    ax.text(
+        0.01,
+        0.01,
+        "* Synthetic platform and entry/exit positions are artificially offset,"
+        " not to real scale, for visual clarity.",
+        transform=ax.transAxes,
+        ha="left",
+        va="bottom",
+        fontsize=8,
+        color="#666666",
+    )
+
+    plt.tight_layout()
+    plt.savefig(output_path, dpi=200)
+    plt.close()
+
+
+if __name__ == "__main__":
+    Path(REGIONS_GRAPH_FILE).parent.mkdir(parents=True, exist_ok=True)
+    draw_regions_graph(load_graph())
