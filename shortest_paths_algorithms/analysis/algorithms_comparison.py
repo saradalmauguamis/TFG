@@ -19,7 +19,7 @@ and TF (cross-line transfer) edges sit in the Center, not in the branches.
 Those two facts mean a heuristic's real payoff can look very different case by
 case (e.g. crossing into or out of a branch vs. staying inside the dense
 Center), which the single aggregate proportion already reported by
-a_star_report.py/a_star_need_report.py cannot show on its own.
+a_star_report.py/dijkstra_report.py cannot show on its own.
 
 Requires: one report file per heuristic (DIJKSTRA_REPORT_FILE, A_STAR_GEO_REPORT_FILE,
 A_STAR_CHEAT_REPORT_FILE, from shortest_paths_algorithms/paths.py), each with at
@@ -62,7 +62,7 @@ HEURISTIC_REPORTS = {
     "a_star_h_cheat": A_STAR_CHEAT_REPORT_FILE,
 }
 # Dijkstra has no heuristic, so only a_star_h_* labels get an "A*" prefix in the chart legend.
-# DIJKSTRA_REPORT_FILE is generated via cut_dijkstra (see a_star_need_report.py), not plain
+# DIJKSTRA_REPORT_FILE is generated via cut_dijkstra (see dijkstra_report.py), not plain
 # Dijkstra, so the legend says so.
 LEGEND_LABEL_BY_HEURISTIC = {
     "Dijkstra": "Cut-Dijkstra",
