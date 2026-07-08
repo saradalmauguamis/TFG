@@ -17,9 +17,12 @@ _run_dijkstra() for where it's tracked purely for this kind of traceability -- b
 
 Output_name: {REGION_CASE}_{SOURCE}_to_{TARGET}.png saved into
 'routing_algorithms/analysis/resources/extracted_nodes' (EXTRACTED_NODES_DIR,
-routing_algorithms/paths.py). REGION_CASE is a free-form label (e.g. one of
-barcelona_division.classify's CC/CB/BC/SB/DB cases) used only for the filename, not
-recomputed from SOURCE/TARGET -- set it by hand to whatever case that pair demonstrates.
+routing_algorithms/paths.py). REGION_CASE is a free-form label (one of
+barcelona_division.classify's CC/CB/BC/SB/DB cases) set by hand to whatever case
+SOURCE/TARGET demonstrates -- not recomputed from them, so it also drives
+resolve_bridge_highlights: whichever endpoint(s) REGION_CASE names as a branch (TARGET
+for CB/SB/DB, SOURCE for BC/SB/DB) get their branch's bridge platform (find_branch/
+compute_bridge, same lookup regions_graph.py uses) marked with a diamond in BRIDGE_COLOR.
 
 Since the deliverable is the PNG alone (no companion .txt report), everything that would
 otherwise be printed -- the shortest path (stop id + name, same format as
@@ -51,6 +54,7 @@ from data_validation.gtfs_utils import (  # noqa: E402
     PATHWAYS_FILE,
     STOPS_FILE,
     WEIGHTS_FILE,
+    build_directed_entrance_edges,
     build_graph_and_coverage,
     build_stop_to_lines,
     check_missing_files,
@@ -76,7 +80,12 @@ from routing_algorithms.analysis.algorithms_comparison import (  # noqa: E402
     LEGEND_LABEL_BY_HEURISTIC,
 )
 from routing_algorithms.analysis.regions_graph import (  # noqa: E402
+    BRIDGE_COLOR,
     EDGE_WIDTH_SCALE_BY_TYPE,
+)
+from routing_algorithms.barcelona_division import (  # noqa: E402
+    compute_bridge,
+    find_branch,
 )
 from routing_algorithms.a_star.a_star_utils import Heuristic, a_star  # noqa: E402
 from routing_algorithms.a_star.heuristics.h_geo import (  # noqa: E402
@@ -90,14 +99,16 @@ from routing_algorithms.a_star.heuristics.h_bcn import (  # noqa: E402
     DepthTable,
     build_depth_tables,
     build_h_bcn,
+    plat_from,
+    plat_to,
 )
 from routing_algorithms.dijkstra.dijkstra_utils import cut_dijkstra  # noqa: E402
 from routing_algorithms.paths import EXTRACTED_NODES_DIR  # noqa: E402
 
-SOURCE = "1.417"
-TARGET = "1.314"
+SOURCE = "E.11712"
+TARGET = "E.90101"
 REGION_CASE = (
-    "CC"  # free-form label for this pair's case (e.g. classify's CC/CB/BC/SB/DB)
+    "CB"  # free-form label for this pair's case (e.g. classify's CC/CB/BC/SB/DB)
 )
 
 # One run per (label, parent, expanded, iterations): parent/expanded come straight out
@@ -118,6 +129,12 @@ EXTRACTED_ENTRY_NODE_SIZE = 10
 SOURCE_COLOR = "#1a1a1a"
 TARGET_COLOR = "#e6007e"
 ENDPOINT_NODE_SIZE = 160
+
+# Whichever of SOURCE/TARGET REGION_CASE names as a branch endpoint (see
+# resolve_bridge_highlights) gets its branch's bridge platform marked with a diamond in
+# BRIDGE_COLOR -- the same color regions_graph.py reserves for "bridge", so it reads as
+# the same concept across every chart in this package.
+BRIDGE_NODE_SIZE = 90
 
 
 def draw_base_layer(
@@ -297,6 +314,44 @@ def draw_endpoints(
     )
 
 
+def resolve_bridge_highlights(
+    entrance_plat_to: Dict[str, Set[str]], entrance_plat_from: Dict[str, Set[str]]
+) -> List[Node]:
+    """Return the bridge platform(s) REGION_CASE calls out for SOURCE and/or TARGET.
+
+    Mirrors barcelona_division.classify's naming: REGION_CASE names TARGET's branch
+    whenever its second letter is B (CB/SB/DB) and SOURCE's whenever its first letter is B
+    (BC/SB/DB) -- see routing_algorithms/barcelona_division.py's classify docstring for the
+    5-case table. Whichever endpoint(s) REGION_CASE names, resolved to platform(s) through
+    h_bcn's own plat_to/plat_from (so an entry/exit maps to exactly the platforms h_bcn
+    itself would route it through, instead of a separate ad-hoc lookup), find_branch/
+    compute_bridge (also barcelona_division.py, the same lookup regions_graph.py uses to
+    highlight bridges) give the single Center platform each branch platform's branch
+    reconnects through.
+
+    args:
+        entrance_plat_to: entry stop_id -> platforms with a directed pathway arrow into it,
+            see h_bcn.plat_to; only consulted when TARGET is an entry/exit.
+        entrance_plat_from: entry stop_id -> platforms it has a directed pathway arrow
+            into, see h_bcn.plat_from; only consulted when SOURCE is an entry/exit.
+
+    returns:
+        Distinct bridge stop_ids to highlight: 0 (CC, or an entry with no resolvable
+        platform), 1 (CB/BC, or SB since source and target share one branch's one bridge),
+        or up to 2 (DB, different branches).
+    """
+    bridges: Set[Node] = set()
+    if REGION_CASE in ("CB", "SB", "DB"):
+        for platform in plat_to(TARGET, entrance_plat_to):
+            if find_branch(platform) is not None:
+                bridges.add(compute_bridge(platform))
+    if REGION_CASE in ("BC", "SB", "DB"):
+        for platform in plat_from(SOURCE, entrance_plat_from):
+            if find_branch(platform) is not None:
+                bridges.add(compute_bridge(platform))
+    return list(bridges)
+
+
 def format_path_lines(path: List[Node], node_fmt: NodeFmt) -> List[str]:
     """Return one "stop_id (label)" line per node in path, for the sidebar text.
 
@@ -344,6 +399,10 @@ def main() -> None:
     stop_to_lines: Dict[str, List[str]]
     platform_to_entries: Dict[str, Set[str]]
     entrance_to_platform: Dict[str, Set[str]]
+    directed_platform_to_entrance: Dict[str, Set[str]]
+    directed_entrance_to_platform: Dict[str, Set[str]]
+    entrance_plat_to: Dict[str, Set[str]]
+    entrance_plat_from: Dict[str, Set[str]]
     node_fmt: NodeFmt
     dijkstra_parent: Dict[Node, Optional[Node]]
     dijkstra_expanded: Dict[Node, bool]
@@ -355,6 +414,7 @@ def main() -> None:
     fig: plt.Figure
     ax: plt.Axes
     legend_handles: List[plt.Line2D]
+    bridge_nodes: List[Node]
     output_dir: Path
     output_path: Path
     _: object
@@ -367,6 +427,11 @@ def main() -> None:
     pathway_ids = load_pathway_ids(PATHWAYS_FILE)
     platform_to_entries, _ = build_graph_and_coverage(pathway_ids)
     entrance_to_platform = invert_entries(platform_to_entries)
+    directed_platform_to_entrance, directed_entrance_to_platform = (
+        build_directed_entrance_edges(pathway_ids)
+    )
+    entrance_plat_to = invert_entries(directed_platform_to_entrance)
+    entrance_plat_from = invert_entries(directed_entrance_to_platform)
     node_fmt = partial(
         stop_label,
         stop_names=stop_names,
@@ -485,6 +550,33 @@ def main() -> None:
             label=f"Target ({TARGET})",
         )
     )
+
+    bridge_nodes = resolve_bridge_highlights(entrance_plat_to, entrance_plat_from)
+    if bridge_nodes:
+        nx.draw_networkx_nodes(
+            nx_graph,
+            pos,
+            nodelist=bridge_nodes,
+            node_shape="D",
+            node_size=BRIDGE_NODE_SIZE,
+            node_color=BRIDGE_COLOR,
+            edgecolors="white",
+            linewidths=1.2,
+            ax=ax,
+        )
+        legend_handles.append(
+            plt.Line2D(
+                [0],
+                [0],
+                marker="D",
+                color="none",
+                markerfacecolor=BRIDGE_COLOR,
+                markeredgecolor="white",
+                markersize=10,
+                label="Branch bridge",
+            )
+        )
+
     ax.legend(
         handles=legend_handles,
         loc="lower right",
