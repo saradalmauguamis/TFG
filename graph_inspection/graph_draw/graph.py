@@ -55,10 +55,10 @@ EDGE_COLOR_BY_TYPE = {
     "PW": PW_EDGE_COLOR,
     "TF": NON_LINE_EDGE_COLOR,
 }
-PW_EDGE_WIDTH_SCALE = 0.4
 EDGE_WIDTH_SCALE_BY_TYPE = {
-    "PW": PW_EDGE_WIDTH_SCALE,
-    "TF": 1.0,
+    "SW": 2,
+    "PW": 1.0,
+    "TF": 1.2,
 }
 FALLBACK_LINE_COLOR = "#999999"
 PLATFORM_NODE_COLOR = "#4477AA"
@@ -410,33 +410,25 @@ def draw_graph(
                 line = graph[u][v]["line"]
                 edges_by_line.setdefault(line, []).append((u, v))
             for line, edges in edges_by_line.items():
-                widths = [
-                    math.log10(graph[u][v]["weight_seconds"] + 1) * node_scale
-                    for u, v in edges
-                ]
                 color = line_colors.get(line, FALLBACK_LINE_COLOR)
                 nx.draw_networkx_edges(
                     graph,
                     pos,
                     edgelist=edges,
                     style=style,
-                    width=widths,
+                    width=node_scale * EDGE_WIDTH_SCALE_BY_TYPE["SW"],
                     edge_color=color,
                     arrows=False,
                     ax=ax,
                 )
         else:
             width_scale = EDGE_WIDTH_SCALE_BY_TYPE[edge_type]
-            widths = [
-                math.log10(graph[u][v]["weight_seconds"] + 1) * node_scale * width_scale
-                for u, v in type_edges
-            ]
             nx.draw_networkx_edges(
                 graph,
                 pos,
                 edgelist=type_edges,
                 style=style,
-                width=widths,
+                width=node_scale * width_scale,
                 edge_color=EDGE_COLOR_BY_TYPE[edge_type],
                 arrows=False,
                 ax=ax,
