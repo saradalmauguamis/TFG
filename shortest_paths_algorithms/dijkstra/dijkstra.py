@@ -27,7 +27,7 @@ from data_validation.gtfs_utils import (  # noqa: E402
     print_file_disclaimer,
     seconds_to_hms,
 )
-from routing_algorithms.algorithms_utils import (  # noqa: E402
+from shortest_paths_algorithms.algorithms_utils import (  # noqa: E402
     NodeFmt,
     apply_liceu_entrance_fix,
     build_graph_from_weights,

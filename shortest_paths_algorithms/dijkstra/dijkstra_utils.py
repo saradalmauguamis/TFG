@@ -3,7 +3,7 @@
 from __future__ import annotations
 from typing import Dict, List, Optional, Set, Tuple
 
-from routing_algorithms.algorithms_utils import (  # shared with a_star_utils.py
+from shortest_paths_algorithms.algorithms_utils import (  # shared with a_star_utils.py
     INF,
     Graph,
     MinHeap,
@@ -204,7 +204,7 @@ def cut_dijkstra(
 
 # ---------------------------------------------------------------------------
 # Display (Dijkstra/cut_dijkstra-specific; generic helpers live in
-# routing_algorithms/algorithms_utils.py)
+# shortest_paths_algorithms/algorithms_utils.py)
 # ---------------------------------------------------------------------------
 
 

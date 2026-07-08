@@ -1,10 +1,10 @@
-"""Case-by-case comparison of the routing_algorithms/reports/*.txt outputs.
+"""Case-by-case comparison of the shortest_paths_algorithms/reports/*.txt outputs.
 
 Aggregates the already-computed Dijkstra / h_geo / h_cheat / h_bcn per-pair
 reports by graph region, instead of only the single global
 number each report already prints on its own. Every pair is put in one of the
 5 cases below, based on how source and target relate to the Barcelona
-subway's Center/Branch topology (routing_algorithms/barcelona_division.py):
+subway's Center/Branch topology (shortest_paths_algorithms/barcelona_division.py):
   CC - source and target both in the Center
   CB - source in the Center, target in a Branch
   BC - source in a Branch, target in the Center
@@ -22,15 +22,15 @@ Center), which the single aggregate proportion already reported by
 a_star_report.py/a_star_need_report.py cannot show on its own.
 
 Requires: one report file per heuristic (DIJKSTRA_REPORT_FILE, A_STAR_GEO_REPORT_FILE,
-A_STAR_CHEAT_REPORT_FILE, from routing_algorithms/paths.py), each with at
+A_STAR_CHEAT_REPORT_FILE, from shortest_paths_algorithms/paths.py), each with at
 least the source_id, target_id, and proportion columns (report_fieldnames,
-routing_algorithms/reports/report_utils.py). proportion there means
+shortest_paths_algorithms/reports/report_utils.py). proportion there means
 path_vertices / iterations, i.e. how close a search came to only ever
 extracting nodes on the optimal path.
 
 Output_name: algorithms_comparison_report.txt (a plain comma-separated table,
 convertible via scripts/from_txt_to_xlsx.py) and algorithms_comparison_chart.png,
-both saved into 'routing_algorithms/analysis/resources'
+both saved into 'shortest_paths_algorithms/analysis/resources'
 """
 
 from __future__ import annotations
@@ -46,8 +46,8 @@ _PROJECT_ROOT = str(Path(__file__).resolve().parents[2])
 if _PROJECT_ROOT not in sys.path:
     sys.path.insert(0, _PROJECT_ROOT)
 
-from routing_algorithms.barcelona_division import classify  # noqa: E402
-from routing_algorithms.paths import (  # noqa: E402
+from shortest_paths_algorithms.barcelona_division import classify  # noqa: E402
+from shortest_paths_algorithms.paths import (  # noqa: E402
     A_STAR_BCN_REPORT_FILE,
     A_STAR_CHEAT_REPORT_FILE,
     A_STAR_GEO_REPORT_FILE,

@@ -21,11 +21,13 @@ if str(REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(REPO_ROOT))
 
 from data_validation.gtfs_utils import BASE, check_missing_files  # noqa: E402
-from routing_algorithms.paths import ALGORITHMS_COMPARISON_REPORT_FILE  # noqa: E402
+from shortest_paths_algorithms.paths import (  # noqa: E402
+    ALGORITHMS_COMPARISON_REPORT_FILE,
+)
 
 # DATA_DIR defaults to the analysis comparison report
 # (Path(ALGORITHMS_COMPARISON_REPORT_FILE).parent); point it at
-# Path(REPORTS_BASE) (routing_algorithms.paths) to convert the
+# Path(REPORTS_BASE) (shortest_paths_algorithms.paths) to convert the
 # platform-to-platform reports instead, at any other `_DEFAULT_*_DATA_DIR`
 # constant from data_validation.gtfs_utils (e.g. `_DEFAULT_RAW_DATA_DIR`,
 # `_DEFAULT_SUBWAY_DATA_DIR`) to convert that stage, or at any other folder
@@ -41,7 +43,7 @@ EXCEL_MAX_ROWS = 800_000
 EXCEL_MAX_DATA_ROWS = EXCEL_MAX_ROWS - 1
 
 # True writes .xlsx exports next to the source .txt (DATA_DIR/excel_exports,
-# e.g. routing_algorithms/reports/resources/excel_exports); False writes them
+# e.g. shortest_paths_algorithms/reports/resources/excel_exports); False writes them
 # to the shared data/excel_exports folder alongside every other pipeline
 # stage's exports.
 EXPORT_NEXT_TO_SOURCE: bool = True

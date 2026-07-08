@@ -10,9 +10,9 @@ practical heuristic.
 from __future__ import annotations
 from functools import partial
 
-from routing_algorithms.algorithms_utils import Graph, Node
-from routing_algorithms.a_star.a_star_utils import Heuristic
-from routing_algorithms.dijkstra.dijkstra_utils import cut_dijkstra
+from shortest_paths_algorithms.algorithms_utils import Graph, Node
+from shortest_paths_algorithms.a_star.a_star_utils import Heuristic
+from shortest_paths_algorithms.dijkstra.dijkstra_utils import cut_dijkstra
 
 
 def h_cheat(node: Node, target: Node, graph: Graph) -> int:

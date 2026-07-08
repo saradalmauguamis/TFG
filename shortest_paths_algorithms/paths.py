@@ -1,4 +1,4 @@
-"""Paths shared across routing_algorithms/, mirroring the constants section of
+"""Paths shared across shortest_paths_algorithms/, mirroring the constants section of
 data_validation/gtfs_utils.py: a single source of truth so reports/a_star_need_report.py,
 reports/a_star_report.py, analysis/algorithms_comparison.py, and
 scripts/from_txt_to_xlsx.py all point at the same files instead of each

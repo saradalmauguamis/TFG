@@ -3,7 +3,7 @@ the single bridge platform that reconnects each branch to the rest of the networ
 
 Reuses graph_inspection/graph_draw/graph.py's graph loading (GTFS-derived edges,
 weights, and the jittered synthetic-platform/entry positions) and recolors it
-against routing_algorithms/barcelona_division.py's Center/Branches partition
+against shortest_paths_algorithms/barcelona_division.py's Center/Branches partition
 instead of by subway line: every platform, and every SW/TF/PW edge touching it, is
 painted in its region's pastel color -- except the edge connecting a branch's
 outermost platform to its bridge, which takes the branch's color (it's still part
@@ -36,8 +36,11 @@ from graph_inspection.graph_draw.graph import (  # noqa: E402
     ENTRY_NODE_COLOR,
     load_graph,
 )
-from routing_algorithms.barcelona_division import Bridges, NODE_TO_BRANCH  # noqa: E402
-from routing_algorithms.paths import REGIONS_GRAPH_FILE  # noqa: E402
+from shortest_paths_algorithms.barcelona_division import (  # noqa: E402
+    Bridges,
+    NODE_TO_BRANCH,
+)
+from shortest_paths_algorithms.paths import REGIONS_GRAPH_FILE  # noqa: E402
 
 # Fixed hue order (never cycled), matching Branches' own definition order in
 # barcelona_division.py, plus Center.

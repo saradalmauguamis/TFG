@@ -11,8 +11,8 @@ from math import cos, radians, sqrt
 from typing import Dict, Tuple
 
 from data_validation.gtfs_utils import load_stops_info
-from routing_algorithms.algorithms_utils import Graph, Node
-from routing_algorithms.a_star.a_star_utils import Heuristic
+from shortest_paths_algorithms.algorithms_utils import Graph, Node
+from shortest_paths_algorithms.a_star.a_star_utils import Heuristic
 
 EARTH_RADIUS_M = 6_371_000.0  # mean Earth radius, used for the flat local projection
 Coord = Tuple[float, float]  # (stop_lat, stop_lon) in degrees

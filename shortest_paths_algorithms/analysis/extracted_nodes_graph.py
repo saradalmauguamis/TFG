@@ -2,10 +2,10 @@
 heuristic (h_geo, h_bcn, h_cheat) actually extracted while searching SOURCE -> TARGET.
 
 The whole graph (graph_inspection/graph_draw/graph.py's load_graph, same source as
-routing_algorithms/analysis/regions_graph.py) is painted light grey first, then each
+shortest_paths_algorithms/analysis/regions_graph.py) is painted light grey first, then each
 algorithm's extracted nodes and shortest-path-tree edges (parent links) are layered on
 top of it, in a fixed order: Cut-Dijkstra, then A* (h_geo), A* (h_bcn), A* (h_cheat) --
-COLOR_BY_HEURISTIC's own order (routing_algorithms/analysis/algorithms_comparison.py),
+COLOR_BY_HEURISTIC's own order (shortest_paths_algorithms/analysis/algorithms_comparison.py),
 reused here directly so a heuristic's color always means the same thing across every
 chart in this package. Later layers paint over earlier ones wherever two algorithms
 extract the same node/edge.
@@ -16,8 +16,8 @@ _run_dijkstra() for where it's tracked purely for this kind of traceability -- b
 `parent` already is, for both algorithms.
 
 Output_name: {REGION_CASE}_{SOURCE}_to_{TARGET}.png saved into
-'routing_algorithms/analysis/resources/extracted_nodes' (EXTRACTED_NODES_DIR,
-routing_algorithms/paths.py). REGION_CASE is a free-form label (one of
+'shortest_paths_algorithms/analysis/resources/extracted_nodes' (EXTRACTED_NODES_DIR,
+shortest_paths_algorithms/paths.py). REGION_CASE is a free-form label (one of
 barcelona_division.classify's CC/CB/BC/SB/DB cases) set by hand to whatever case
 SOURCE/TARGET demonstrates -- not recomputed from them, so it also drives
 resolve_bridge_highlights: whichever endpoint(s) REGION_CASE names as a branch (TARGET
@@ -26,9 +26,9 @@ compute_bridge, same lookup regions_graph.py uses) marked with a diamond in BRID
 
 Since the deliverable is the PNG alone (no companion .txt report), everything that would
 otherwise be printed -- the shortest path (stop id + name, same format as
-print_path_summary in routing_algorithms/algorithms_utils.py, but one node per line
+print_path_summary in shortest_paths_algorithms/algorithms_utils.py, but one node per line
 instead of joined by "->") and each algorithm's iterations/proportion
-(path_vertices / iterations, same metric as routing_algorithms/reports/) -- is drawn
+(path_vertices / iterations, same metric as shortest_paths_algorithms/reports/) -- is drawn
 directly on the figure: the path as a sidebar in the plot's top-left corner,
 iterations/proportion folded into each algorithm's own legend entry.
 """
@@ -64,7 +64,7 @@ from data_validation.gtfs_utils import (  # noqa: E402
     print_file_disclaimer,
 )
 from graph_inspection.graph_draw.graph import load_graph  # noqa: E402
-from routing_algorithms.algorithms_utils import (  # noqa: E402
+from shortest_paths_algorithms.algorithms_utils import (  # noqa: E402
     Graph,
     Node,
     NodeFmt,
@@ -75,35 +75,40 @@ from routing_algorithms.algorithms_utils import (  # noqa: E402
     rebuild_path,
     stop_label,
 )
-from routing_algorithms.analysis.algorithms_comparison import (  # noqa: E402
+from shortest_paths_algorithms.analysis.algorithms_comparison import (  # noqa: E402
     COLOR_BY_HEURISTIC,
     LEGEND_LABEL_BY_HEURISTIC,
 )
-from routing_algorithms.analysis.regions_graph import (  # noqa: E402
+from shortest_paths_algorithms.analysis.regions_graph import (  # noqa: E402
     BRIDGE_COLOR,
     EDGE_WIDTH_SCALE_BY_TYPE,
 )
-from routing_algorithms.barcelona_division import (  # noqa: E402
+from shortest_paths_algorithms.barcelona_division import (  # noqa: E402
     compute_bridge,
     find_branch,
 )
-from routing_algorithms.a_star.a_star_utils import Heuristic, a_star  # noqa: E402
-from routing_algorithms.a_star.heuristics.h_geo import (  # noqa: E402
+from shortest_paths_algorithms.a_star.a_star_utils import (  # noqa: E402
+    Heuristic,
+    a_star,
+)
+from shortest_paths_algorithms.a_star.heuristics.h_geo import (  # noqa: E402
     Coord,
     build_h_geo,
     compute_v_max,
     load_node_coords,
 )
-from routing_algorithms.a_star.heuristics.h_cheat import build_h_cheat  # noqa: E402
-from routing_algorithms.a_star.heuristics.h_bcn import (  # noqa: E402
+from shortest_paths_algorithms.a_star.heuristics.h_cheat import (  # noqa: E402
+    build_h_cheat,
+)
+from shortest_paths_algorithms.a_star.heuristics.h_bcn import (  # noqa: E402
     DepthTable,
     build_depth_tables,
     build_h_bcn,
     plat_from,
     plat_to,
 )
-from routing_algorithms.dijkstra.dijkstra_utils import cut_dijkstra  # noqa: E402
-from routing_algorithms.paths import EXTRACTED_NODES_DIR  # noqa: E402
+from shortest_paths_algorithms.dijkstra.dijkstra_utils import cut_dijkstra  # noqa: E402
+from shortest_paths_algorithms.paths import EXTRACTED_NODES_DIR  # noqa: E402
 
 SOURCE = "E.11712"
 TARGET = "E.90101"
@@ -321,7 +326,7 @@ def resolve_bridge_highlights(
 
     Mirrors barcelona_division.classify's naming: REGION_CASE names TARGET's branch
     whenever its second letter is B (CB/SB/DB) and SOURCE's whenever its first letter is B
-    (BC/SB/DB) -- see routing_algorithms/barcelona_division.py's classify docstring for the
+    (BC/SB/DB) -- see shortest_paths_algorithms/barcelona_division.py's classify docstring for the
     5-case table. Whichever endpoint(s) REGION_CASE names, resolved to platform(s) through
     h_bcn's own plat_to/plat_from (so an entry/exit maps to exactly the platforms h_bcn
     itself would route it through, instead of a separate ad-hoc lookup), find_branch/
@@ -356,7 +361,7 @@ def format_path_lines(path: List[Node], node_fmt: NodeFmt) -> List[str]:
     """Return one "stop_id (label)" line per node in path, for the sidebar text.
 
     Same stop id + name format as print_path_summary's node_fmt mode
-    (routing_algorithms/algorithms_utils.py), but one plain line per node instead of
+    (shortest_paths_algorithms/algorithms_utils.py), but one plain line per node instead of
     "->"-joined, since the sidebar's top-to-bottom order already implies the sequence.
 
     args:

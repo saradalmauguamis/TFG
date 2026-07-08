@@ -1,6 +1,6 @@
 """Report, for every directed platform-to-platform route, how much a heuristic could help.
 
-Output_name: dijkstra_report.txt saved into 'routing_algorithms/reports/resources'
+Output_name: dijkstra_report.txt saved into 'shortest_paths_algorithms/reports/resources'
 
 Written as a standard comma-separated GTFS-style .txt file so it can be converted to
 .xlsx by scripts/from_txt_to_xlsx.py.
@@ -12,11 +12,11 @@ path_vertices, optimum_weight, path
 - source_name / target_name: labels for source/target given by the same
   node_fmt (stop_names + line) used in dijkstra.py.
 - source_id / target_id: their stop_ids.
-- path: output of rebuild_path (routing_algorithms/algorithms_utils.py), raw
+- path: output of rebuild_path (shortest_paths_algorithms/algorithms_utils.py), raw
   stop_ids joined by " -> ". "NA" if no path is found.
 - path_vertices: len(path). "NA" if no path is found.
 - cut_iterations: number of iterations returned by cut_dijkstra
-  (routing_algorithms/dijkstra/dijkstra_utils.py). Always a value (>= 1), even
+  (shortest_paths_algorithms/dijkstra/dijkstra_utils.py). Always a value (>= 1), even
   when no path is found, since the source itself is always extracted first.
 - proportion: path_vertices / cut_iterations. "NA" if no path is found. Always
   <= 1 (see "Aim" below). Rows are ordered ascending by this value, with NA rows last.
@@ -65,13 +65,13 @@ pairs, an ~8.65x smaller file, far easier to scan and draw conclusions from.
 
 Methodology:
 1. Build the graph from WEIGHTS_FILE with build_graph_from_weights
-   (routing_algorithms/algorithms_utils.py), shared with dijkstra.py.
+   (shortest_paths_algorithms/algorithms_utils.py), shared with dijkstra.py.
 2. Restrict the graph's vertex set to platforms (stop_ids starting with "1.")
-   via collect_platform_pairs (routing_algorithms/reports/report_utils.py).
+   via collect_platform_pairs (shortest_paths_algorithms/reports/report_utils.py).
 3. Run cut_dijkstra(graph, u, v, verbose=False) for each pair through
-   run_platform_pair_report (routing_algorithms/reports/report_utils.py), which
+   run_platform_pair_report (shortest_paths_algorithms/reports/report_utils.py), which
    builds each row via compute_report_row (reconstructing the path via
-   rebuild_path from routing_algorithms/algorithms_utils.py).
+   rebuild_path from shortest_paths_algorithms/algorithms_utils.py).
 4. Sort all rows ascending by proportion, NA last, and write them to
    dijkstra_report.txt.
 
@@ -104,21 +104,24 @@ from data_validation.gtfs_utils import (  # noqa: E402
     load_stop_names,
     print_file_disclaimer,
 )
-from routing_algorithms.algorithms_utils import (  # noqa: E402
+from shortest_paths_algorithms.algorithms_utils import (  # noqa: E402
     Node,
     NodeFmt,
     build_graph_from_weights,
     stop_label,
 )
-from routing_algorithms.reports.report_utils import (  # noqa: E402
+from shortest_paths_algorithms.reports.report_utils import (  # noqa: E402
     ReportRow,
     ReportRunner,
     collect_platform_pairs,
     report_fieldnames,
     run_platform_pair_report,
 )
-from routing_algorithms.dijkstra.dijkstra_utils import Graph, cut_dijkstra  # noqa: E402
-from routing_algorithms.paths import DIJKSTRA_REPORT_FILE  # noqa: E402
+from shortest_paths_algorithms.dijkstra.dijkstra_utils import (  # noqa: E402
+    Graph,
+    cut_dijkstra,
+)
+from shortest_paths_algorithms.paths import DIJKSTRA_REPORT_FILE  # noqa: E402
 
 ITERATIONS_LABEL = "cut_iterations"
 OUTPUT_PATH = Path(DIJKSTRA_REPORT_FILE)
@@ -132,7 +135,7 @@ def run_cut_dijkstra(
     """Run cut_dijkstra for one pair, dropping its 4th (`expanded`) return value.
 
     Matches the ReportRunner shape run_platform_pair_report expects
-    (routing_algorithms/reports/report_utils.py).
+    (shortest_paths_algorithms/reports/report_utils.py).
 
     args:
         graph: A directed, weighted graph.

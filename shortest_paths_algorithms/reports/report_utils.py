@@ -1,5 +1,5 @@
 """Platform-to-platform report helpers shared by dijkstra_report.txt and
-a_star_geo_report.txt (routing_algorithms/reports/): cut_dijkstra and a_star both
+a_star_geo_report.txt (shortest_paths_algorithms/reports/): cut_dijkstra and a_star both
 stop as soon as target is extracted, so both fit the same row shape via the
 ReportRunner they're wrapped into, and both reports are built, sorted, and
 written to CSV the same way via run_platform_pair_report.
@@ -12,7 +12,12 @@ from time import perf_counter
 from typing import Callable, Dict, List, NamedTuple, Optional, Tuple
 
 from data_validation.gtfs_utils import write_rows
-from routing_algorithms.algorithms_utils import Graph, Node, NodeFmt, rebuild_path
+from shortest_paths_algorithms.algorithms_utils import (
+    Graph,
+    Node,
+    NodeFmt,
+    rebuild_path,
+)
 
 
 def na_or(value: object, fmt: str = "{}") -> str:
@@ -182,8 +187,8 @@ def run_platform_pair_report(
     everything past "build the runner" (timing the pairs loop, sorting,
     printing proportion mean/median, and writing the file) is identical
     between the two reports, so it lives here instead of being duplicated in
-    routing_algorithms/reports/a_star_need_report.py and
-    routing_algorithms/reports/a_star_report.py.
+    shortest_paths_algorithms/reports/a_star_need_report.py and
+    shortest_paths_algorithms/reports/a_star_report.py.
 
     args:
         graph: A directed, weighted graph.

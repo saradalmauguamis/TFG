@@ -1,7 +1,7 @@
 """A* algorithm implementation based on Lluís Alsedà pseudocode (slide 45).
 
 The admissible heuristics pluggable into a_star() below (h_geo, h_cheat,
-h_bcn) live in routing_algorithms/a_star/heuristics/, one module each; this
+h_bcn) live in shortest_paths_algorithms/a_star/heuristics/, one module each; this
 file only holds the algorithm-agnostic core shared by all of them: the
 Heuristic type and a_star() itself.
 """
@@ -9,7 +9,7 @@ Heuristic type and a_star() itself.
 from __future__ import annotations
 from typing import Callable, Dict, Optional, Tuple
 
-from routing_algorithms.algorithms_utils import (  # shared with dijkstra_utils.py
+from shortest_paths_algorithms.algorithms_utils import (  # shared with dijkstra_utils.py
     INF,
     Graph,
     MinHeap,

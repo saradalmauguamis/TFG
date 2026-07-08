@@ -1,10 +1,10 @@
 """Sanity check: for every platform pair, optimum_weight must agree across reports.
 
 dijkstra_report.txt, a_star_geo_report.txt, a_star_h_bcn_report.txt, and
-a_star_h_cheat_report.txt (routing_algorithms/reports/resources/, paths in
-routing_algorithms/paths.py) all run the same collect_platform_pairs pairs over the same graph
-(routing_algorithms/reports/report_utils.py), just with different search
-algorithms/heuristics. The actual path found for a pair can legitimately
+a_star_h_cheat_report.txt (shortest_paths_algorithms/reports/resources/, paths in
+shortest_paths_algorithms/paths.py) all run the same collect_platform_pairs pairs over
+the same graph (shortest_paths_algorithms/reports/report_utils.py), just with different
+search algorithms/heuristics. The actual path found for a pair can legitimately
 differ between reports (ties in shortest-path weight aren't unique), but
 optimum_weight (the shortest-path cost itself) must not: if it does, one
 of the algorithms/heuristics has a bug.
@@ -49,8 +49,8 @@ from data_validation.gtfs_utils import (  # noqa: E402
     print_file_disclaimer,
     read_dict_rows,
 )
-from routing_algorithms.algorithms_utils import Node  # noqa: E402
-from routing_algorithms.paths import (  # noqa: E402
+from shortest_paths_algorithms.algorithms_utils import Node  # noqa: E402
+from shortest_paths_algorithms.paths import (  # noqa: E402
     A_STAR_CHEAT_REPORT_FILE,
     A_STAR_GEO_REPORT_FILE,
     A_STAR_BCN_REPORT_FILE,

@@ -4,7 +4,7 @@ Every stop_id below is in the post-shared-platform-duplication ("artificial")
 scheme, matching WEIGHTS_FILE (data_validation/gtfs_utils.py) and
 scripts.basics.subway_route_names_stop_ids_artificial, since that is the id
 scheme the real graph (built via build_graph_from_weights, in
-routing_algorithms/algorithms_utils.py) actually runs on.
+shortest_paths_algorithms/algorithms_utils.py) actually runs on.
 
 - Branches: short stub segments of a line that only reconnect to the rest of
   the network through a single platform (their bridge). Lines without a stub
@@ -19,7 +19,7 @@ which have one neighbor each -- the bridge itself is one such end, and is not
 part of the branch's tuple below), so each Branches[branch] tuple is ordered
 outside --> inside: index 0 is the branch's outer end (farthest from the bridge),
 the last index is the stop directly adjacent to the bridge. This ordering is
-what routing_algorithms/a_star/heuristics/h_bcn.py's build_depth_tables
+what shortest_paths_algorithms/a_star/heuristics/h_bcn.py's build_depth_tables
 walks to compute depth_from_bridge/depth_to_bridge.
 """
 

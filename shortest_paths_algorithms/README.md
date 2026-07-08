@@ -1,7 +1,7 @@
-# Routing Algorithms
+# Shortest Paths Algorithms
 
 ```
-routing_algorithms/
+shortest_paths_algorithms/
 ├── algorithms_utils.py
 ├── barcelona_division.py
 ├── paths.py
@@ -54,7 +54,7 @@ built on top of it. Used by `a_star/heuristics/h_bcn.py` (the `h_bcn` heuristic 
 
 ## paths.py
 
-Important paths shared across `routing_algorithms/`'s modules.
+Important paths shared across `shortest_paths_algorithms/`'s modules.
 
 ## dijkstra/
 

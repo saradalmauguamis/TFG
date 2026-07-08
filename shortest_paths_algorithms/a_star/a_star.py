@@ -2,12 +2,12 @@
 geographic straight-line-distance heuristic.
 
 Output_name: a_star_{HEURISTIC_NAME}_{SOURCE}_to_{TARGET}.txt saved into
-'routing_algorithms/a_star/resources'
+'shortest_paths_algorithms/a_star/resources'
 
 Aim:
-routing_algorithms/a_star/a_star_utils.py implements A* generically, taking any
+shortest_paths_algorithms/a_star/a_star_utils.py implements A* generically, taking any
 admissible heuristic h(node, target) as a parameter; the concrete heuristics
-(h_geo, h_cheat, h_bcn) are built in routing_algorithms/a_star/heuristics/,
+(h_geo, h_cheat, h_bcn) are built in shortest_paths_algorithms/a_star/heuristics/,
 one module each -- see their docstrings for their definitions and the
 admissibility proof. This script only wires that machinery to the real
 subway graph: the graph itself (via build_graph_from_weights, shared with
@@ -15,11 +15,11 @@ dijkstra.py), the real stop coordinates, and SOURCE/TARGET.
 
 Methodology:
 1. Build the real graph from WEIGHTS_FILE via build_graph_from_weights
-   (routing_algorithms/algorithms_utils.py), shared with dijkstra.py.
+   (shortest_paths_algorithms/algorithms_utils.py), shared with dijkstra.py.
 2. Load every stop's (lat, lon) and compute v_max via load_node_coords and
-   compute_v_max (routing_algorithms/a_star/heuristics/h_geo.py).
+   compute_v_max (shortest_paths_algorithms/a_star/heuristics/h_geo.py).
 3. Build h via build_h_geo, build_h_cheat, or build_h_bcn, picked by
-   HEURISTIC_NAME (routing_algorithms/a_star/heuristics/).
+   HEURISTIC_NAME (shortest_paths_algorithms/a_star/heuristics/).
 4. Run a_star(graph, SOURCE, TARGET, h) and print the reconstructed path and
    its weight, the same way dijkstra.py reports cut_dijkstra's result.
 
@@ -57,7 +57,7 @@ from data_validation.gtfs_utils import (  # noqa: E402
     print_file_disclaimer,
     seconds_to_hms,
 )
-from routing_algorithms.algorithms_utils import (  # noqa: E402
+from shortest_paths_algorithms.algorithms_utils import (  # noqa: E402
     NodeFmt,
     apply_liceu_entrance_fix,
     build_graph_from_weights,

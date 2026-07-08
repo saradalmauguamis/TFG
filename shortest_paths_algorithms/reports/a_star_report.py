@@ -1,16 +1,16 @@
 """Report, for every directed platform-to-platform route, how well an A* heuristic
-(routing_algorithms/a_star/a_star_utils.py) actually performs.
+(shortest_paths_algorithms/a_star/a_star_utils.py) actually performs.
 
 Output_name: a_star_geo_report.txt (HEURISTIC_NAME="h_geo"), a_star_h_cheat_report.txt
 (HEURISTIC_NAME="h_cheat"), or a_star_h_bcn_report.txt (HEURISTIC_NAME="h_bcn"),
-saved into 'routing_algorithms/reports/resources'
+saved into 'shortest_paths_algorithms/reports/resources'
 
 This is the evaluation counterpart to a_star_need_report.py
-(routing_algorithms/reports/a_star_need_report.py): that report used
+(shortest_paths_algorithms/reports/a_star_need_report.py): that report used
 cut_dijkstra to show, per pair, how far from ideal (proportion = path_vertices
 / cut_iterations) an uninformed search already is, to find where a heuristic
 would help. This report reruns every one of those same pairs, but with A* and
-one of the heuristics built in routing_algorithms/a_star/heuristics/ (picked
+one of the heuristics built in shortest_paths_algorithms/a_star/heuristics/ (picked
 via HEURISTIC_NAME), so
 the exact same proportion metric can be compared side-by-side against
 dijkstra_report.txt to see how much of that theoretical opportunity the
@@ -29,17 +29,17 @@ ascending by proportion, NA last, exactly as in a_star_need_report.py).
 
 Methodology:
 1. Build the graph from WEIGHTS_FILE with build_graph_from_weights
-   (routing_algorithms/algorithms_utils.py), shared with a_star.py.
+   (shortest_paths_algorithms/algorithms_utils.py), shared with a_star.py.
 2. Build h once for the whole run (graph-global, not per-pair) via build_h_geo,
    build_h_cheat, or build_h_bcn, picked by HEURISTIC_NAME, all reused directly
-   from routing_algorithms/a_star/heuristics/.
+   from shortest_paths_algorithms/a_star/heuristics/.
 3. Collect every directed pair of distinct platforms via
-   collect_platform_pairs (routing_algorithms/reports/report_utils.py), shared
+   collect_platform_pairs (shortest_paths_algorithms/reports/report_utils.py), shared
    with a_star_need_report.py.
 4. Run a_star(graph, u, v, h, verbose=False) for each pair through
-   run_platform_pair_report (routing_algorithms/reports/report_utils.py), which
+   run_platform_pair_report (shortest_paths_algorithms/reports/report_utils.py), which
    builds each row via compute_report_row (reconstructing the path via
-   rebuild_path from routing_algorithms/algorithms_utils.py).
+   rebuild_path from shortest_paths_algorithms/algorithms_utils.py).
 5. Sort all rows ascending by proportion, NA last, and write them to
    OUTPUT_PATH.
 
@@ -79,37 +79,39 @@ from data_validation.gtfs_utils import (  # noqa: E402
     load_stop_names,
     print_file_disclaimer,
 )
-from routing_algorithms.algorithms_utils import (  # noqa: E402
+from shortest_paths_algorithms.algorithms_utils import (  # noqa: E402
     NodeFmt,
     build_graph_from_weights,
     stop_label,
 )
-from routing_algorithms.reports.report_utils import (  # noqa: E402
+from shortest_paths_algorithms.reports.report_utils import (  # noqa: E402
     ReportRow,
     ReportRunner,
     collect_platform_pairs,
     report_fieldnames,
     run_platform_pair_report,
 )
-from routing_algorithms.a_star.a_star_utils import (  # noqa: E402
+from shortest_paths_algorithms.a_star.a_star_utils import (  # noqa: E402
     Graph,
     Heuristic,
     Node,
     a_star,
 )
-from routing_algorithms.a_star.heuristics.h_geo import (  # noqa: E402
+from shortest_paths_algorithms.a_star.heuristics.h_geo import (  # noqa: E402
     Coord,
     build_h_geo,
     compute_v_max,
     load_node_coords,
 )
-from routing_algorithms.a_star.heuristics.h_cheat import build_h_cheat  # noqa: E402
-from routing_algorithms.a_star.heuristics.h_bcn import (  # noqa: E402
+from shortest_paths_algorithms.a_star.heuristics.h_cheat import (  # noqa: E402
+    build_h_cheat,
+)
+from shortest_paths_algorithms.a_star.heuristics.h_bcn import (  # noqa: E402
     DepthTable,
     build_depth_tables,
     build_h_bcn,
 )
-from routing_algorithms.paths import (  # noqa: E402
+from shortest_paths_algorithms.paths import (  # noqa: E402
     A_STAR_BCN_REPORT_FILE,
     A_STAR_CHEAT_REPORT_FILE,
     A_STAR_GEO_REPORT_FILE,
@@ -135,7 +137,7 @@ def run_a_star(
     """Run a_star for one pair, dropping verbose output and its 4th (`expanded`) return value.
 
     Matches the ReportRunner shape run_platform_pair_report expects
-    (routing_algorithms/reports/report_utils.py), same as a_star_need_report.py's
+    (shortest_paths_algorithms/reports/report_utils.py), same as a_star_need_report.py's
     run_cut_dijkstra drops cut_dijkstra's own `expanded` value.
 
     args:

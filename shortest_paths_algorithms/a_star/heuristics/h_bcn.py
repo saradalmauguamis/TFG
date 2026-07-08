@@ -1,8 +1,8 @@
 """h_bcn: a Barcelona region/bridge-aware admissible heuristic for a_star.py.
 
-Unlike h_geo (straight-line distance / v_max, routing_algorithms/a_star/heuristics/h_geo.py),
+Unlike h_geo (straight-line distance / v_max, shortest_paths_algorithms/a_star/heuristics/h_geo.py),
 h_bcn(node, target) exploits the network's actual Center/Branch topology
-(routing_algorithms/barcelona_division.py): once node and target are reduced to
+(shortest_paths_algorithms/barcelona_division.py): once node and target are reduced to
 platforms, the true cost between them only ever needs h_geo across the dense
 Center, since crossing into or out of a branch must go through that branch's
 single bridge platform.
@@ -16,7 +16,7 @@ pair -- this preserves admissibility since h_regions_cases(p, q) is itself an
 admissible estimate for every candidate pair, so the minimum over all pairs
 can never exceed the true cost via whichever pair the optimal path actually uses.
 
-Depends on routing_algorithms/barcelona_division.py (classify, compute_bridge,
+Depends on shortest_paths_algorithms/barcelona_division.py (classify, compute_bridge,
 Branches, Bridges) for the region split, data_validation/gtfs_utils.py
 (build_directed_entrance_edges, invert_entries) for the plat_to/plat_from
 lookups, and heuristics/h_geo.py's h_geo for the Center-crossing estimate.
@@ -43,15 +43,15 @@ from data_validation.gtfs_utils import (  # noqa: E402
     build_directed_entrance_edges,
     invert_entries,
 )
-from routing_algorithms.algorithms_utils import INF, Graph, Node  # noqa: E402
-from routing_algorithms.barcelona_division import (  # noqa: E402
+from shortest_paths_algorithms.algorithms_utils import INF, Graph, Node  # noqa: E402
+from shortest_paths_algorithms.barcelona_division import (  # noqa: E402
     Branches,
     Bridges,
     classify,
     compute_bridge,
 )
-from routing_algorithms.a_star.a_star_utils import Heuristic  # noqa: E402
-from routing_algorithms.a_star.heuristics.h_geo import Coord, h_geo  # noqa: E402
+from shortest_paths_algorithms.a_star.a_star_utils import Heuristic  # noqa: E402
+from shortest_paths_algorithms.a_star.heuristics.h_geo import Coord, h_geo  # noqa: E402
 
 # entrance stop_id -> the platform stop_id(s) reachable via a directed pathway
 # edge in that specific direction (see plat_to/plat_from below).
@@ -195,7 +195,7 @@ def h_regions_cases(
 
     By construction p and q are platforms: p is a platform reachable from the
     heuristic's node, q a platform leading to its target. Dispatches on
-    classify(p, q) (routing_algorithms/barcelona_division.py):
+    classify(p, q) (shortest_paths_algorithms/barcelona_division.py):
       CC - both in the Center: direct h_geo(p, q).
       SB - same branch: p and q sit along the same single-path stub off their
         bridge, so the direct cost is just the difference in depth, in
