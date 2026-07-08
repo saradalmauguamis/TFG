@@ -5,8 +5,8 @@ Output_name: a_star_geo_report.txt (HEURISTIC_NAME="h_geo"), a_star_h_cheat_repo
 (HEURISTIC_NAME="h_cheat"), or a_star_h_bcn_report.txt (HEURISTIC_NAME="h_bcn"),
 saved into 'shortest_paths_algorithms/reports/resources'
 
-This is the evaluation counterpart to a_star_need_report.py
-(shortest_paths_algorithms/reports/a_star_need_report.py): that report used
+This is the evaluation counterpart to dijkstra_report.py
+(shortest_paths_algorithms/reports/dijkstra_report.py): that report used
 cut_dijkstra to show, per pair, how far from ideal (proportion = path_vertices
 / cut_iterations) an uninformed search already is, to find where a heuristic
 would help. This report reruns every one of those same pairs, but with A* and
@@ -20,12 +20,12 @@ Columns (in this order):
 source_name, target_name, proportion, source_id, target_id, a_star_iterations,
 path_vertices, optimum_weight, path
 
-Same meaning as in a_star_need_report.py, except a_star_iterations replaces
+Same meaning as in dijkstra_report.py, except a_star_iterations replaces
 cut_iterations: the number of nodes extracted from A*'s Open queue before the
 target was reached (a_star_utils.py's a_star, like cut_dijkstra, always stops
 as soon as the target is extracted, so proportion = path_vertices /
 a_star_iterations is "NA" when no path is found, and rows are sorted
-ascending by proportion, NA last, exactly as in a_star_need_report.py).
+ascending by proportion, NA last, exactly as in dijkstra_report.py).
 
 Methodology:
 1. Build the graph from WEIGHTS_FILE with build_graph_from_weights
@@ -35,7 +35,7 @@ Methodology:
    from shortest_paths_algorithms/a_star/heuristics/.
 3. Collect every directed pair of distinct platforms via
    collect_platform_pairs (shortest_paths_algorithms/reports/report_utils.py), shared
-   with a_star_need_report.py.
+   with dijkstra_report.py.
 4. Run a_star(graph, u, v, h, verbose=False) for each pair through
    run_platform_pair_report (shortest_paths_algorithms/reports/report_utils.py), which
    builds each row via compute_report_row (reconstructing the path via
@@ -53,7 +53,7 @@ Across all 29,070 directed platform pairs, that's well under a minute for
 h_geo, 11.8s for h_bcn, and 485.4s (~16.7ms average per pair) for h_cheat --
 even that worst case is only an 8-minute one-off cost, not worth adding
 parallelism for, so this script is intentionally left sequential, exactly as
-in a_star_need_report.py.
+in dijkstra_report.py.
 """
 
 from __future__ import annotations
@@ -137,7 +137,7 @@ def run_a_star(
     """Run a_star for one pair, dropping verbose output and its 4th (`expanded`) return value.
 
     Matches the ReportRunner shape run_platform_pair_report expects
-    (shortest_paths_algorithms/reports/report_utils.py), same as a_star_need_report.py's
+    (shortest_paths_algorithms/reports/report_utils.py), same as dijkstra_report.py's
     run_cut_dijkstra drops cut_dijkstra's own `expanded` value.
 
     args:

@@ -20,7 +20,7 @@ shortest_paths_algorithms/
 │   │   └── h_bcn.py
 │   └── resources/
 ├── reports/
-│   ├── a_star_need_report.py
+│   ├── dijkstra_report.py
 │   ├── a_star_report.py
 │   ├── optimum_weight_check.py
 │   ├── report_utils.py
@@ -91,8 +91,9 @@ call since each report depends on the other's output for its analysis:
 
 - `report_utils.py`: shared reporting machinery (`ReportRow`, `compute_report_row`,
   `run_platform_pair_report`, etc.), used by both reports below.
-- `a_star_need_report.py`: runs `cut_dijkstra` over every directed platform pair to measure, via
-  `proportion = path_vertices / cut_iterations`, where a heuristic could help. Writes
+- `dijkstra_report.py`: aimed to prove whether a heuristic is needed at all, since the graph is
+  small enough that it might not be. Runs `cut_dijkstra` over every directed platform pair to
+  measure, via `proportion = path_vertices / cut_iterations`, where a heuristic could help. Writes
   `DIJKSTRA_REPORT_FILE`.
 - `a_star_report.py`: reruns the same pairs with A*, so its `proportion` can be compared
   side-by-side against `dijkstra_report.txt` to see how much of that theoretical opportunity a

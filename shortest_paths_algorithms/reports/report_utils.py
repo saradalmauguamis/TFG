@@ -187,7 +187,7 @@ def run_platform_pair_report(
     everything past "build the runner" (timing the pairs loop, sorting,
     printing proportion mean/median, and writing the file) is identical
     between the two reports, so it lives here instead of being duplicated in
-    shortest_paths_algorithms/reports/a_star_need_report.py and
+    shortest_paths_algorithms/reports/dijkstra_report.py and
     shortest_paths_algorithms/reports/a_star_report.py.
 
     args:
