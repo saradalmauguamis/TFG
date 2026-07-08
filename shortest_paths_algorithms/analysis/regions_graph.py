@@ -159,12 +159,12 @@ def draw_regions_graph(
         plt.Line2D(
             [0],
             [0],
-            marker="o",
+            marker="D",
             color="none",
             markerfacecolor=BRIDGE_COLOR,
             markeredgecolor="#333333",
             markersize=10,
-            label="Bridge",
+            label="Bridge vertices",
         ),
         plt.Line2D(
             [0],
@@ -233,7 +233,7 @@ def draw_regions_graph(
         graph,
         pos,
         nodelist=bridge_nodes,
-        node_shape="o",
+        node_shape="D",
         node_size=45,
         node_color=BRIDGE_COLOR,
         edgecolors="#333333",

@@ -110,10 +110,10 @@ from shortest_paths_algorithms.a_star.heuristics.h_bcn import (  # noqa: E402
 from shortest_paths_algorithms.dijkstra.dijkstra_utils import cut_dijkstra  # noqa: E402
 from shortest_paths_algorithms.paths import EXTRACTED_NODES_DIR  # noqa: E402
 
-SOURCE = "E.11712"
-TARGET = "E.90101"
+SOURCE = "E.114011"
+TARGET = "E.22711"
 REGION_CASE = (
-    "CB"  # free-form label for this pair's case (e.g. classify's CC/CB/BC/SB/DB)
+    "DB"  # free-form label for this pair's case (e.g. classify's CC/CB/BC/SB/DB)
 )
 
 # One run per (label, parent, expanded, iterations): parent/expanded come straight out
@@ -133,13 +133,13 @@ EXTRACTED_ENTRY_NODE_SIZE = 10
 # layer no matter which algorithms extracted them.
 SOURCE_COLOR = "#1a1a1a"
 TARGET_COLOR = "#e6007e"
-ENDPOINT_NODE_SIZE = 160
+ENDPOINT_NODE_SIZE = 400
 
 # Whichever of SOURCE/TARGET REGION_CASE names as a branch endpoint (see
 # resolve_bridge_highlights) gets its branch's bridge platform marked with a diamond in
 # BRIDGE_COLOR -- the same color regions_graph.py reserves for "bridge", so it reads as
 # the same concept across every chart in this package.
-BRIDGE_NODE_SIZE = 90
+BRIDGE_NODE_SIZE = 200
 
 
 def draw_base_layer(

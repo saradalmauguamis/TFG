@@ -8,10 +8,10 @@ Aim:
 shortest_paths_algorithms/a_star/a_star_utils.py implements A* generically, taking any
 admissible heuristic h(node, target) as a parameter; the concrete heuristics
 (h_geo, h_cheat, h_bcn) are built in shortest_paths_algorithms/a_star/heuristics/,
-one module each -- see their docstrings for their definitions and the
-admissibility proof. This script only wires that machinery to the real
-subway graph: the graph itself (via build_graph_from_weights, shared with
-dijkstra.py), the real stop coordinates, and SOURCE/TARGET.
+one module each -- see their docstrings for their definitions. This script only
+wires that machinery to the real subway graph: the graph itself (via
+build_graph_from_weights, shared withdijkstra.py), the real stop coordinates,
+and SOURCE/TARGET.
 
 Methodology:
 1. Build the real graph from WEIGHTS_FILE via build_graph_from_weights
@@ -80,7 +80,7 @@ from heuristics.h_bcn import DepthTable, build_depth_tables, build_h_bcn  # noqa
 SOURCE = "1.417"
 TARGET = "1.314"
 HEURISTIC_NAME = (
-    "h_bcn"  # "h_geo", "h_cheat", or "h_bcn" to pick the heuristic built in main()
+    "h_geo"  # "h_geo", "h_cheat", or "h_bcn" to pick the heuristic built in main()
 )
 
 

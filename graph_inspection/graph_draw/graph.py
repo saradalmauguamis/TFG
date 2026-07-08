@@ -155,8 +155,15 @@ def load_synthetic_platform_ids() -> set[str]:
     return set(equivalences["new_stop_id"])
 
 
-def load_graph() -> nx.DiGraph:
+def load_graph(amplify_entries: bool = True) -> nx.DiGraph:
     """Build the directed stop graph with geographic positions and line colors.
+
+    args:
+        amplify_entries: Whether to amplify_entry_offsets (see its docstring) so
+            entry/exit positions read as separate from their platform. Defaults to True
+            for whole-graph callers (regions_graph.py, extracted_nodes_graph.py, this
+            module's own __main__ when unzoomed); a zoomed view already shows the real
+            distance clearly enough, so draw_graph's own __main__ call passes False then.
 
     returns:
         Graph with each edge tagged by weight_seconds, type and (for SW
@@ -210,7 +217,7 @@ def load_graph() -> nx.DiGraph:
                 lat + JITTER_DEGREES * i * math.sin(angle),
             )
 
-    if CENTER_STOP_ID is None:
+    if amplify_entries:
         amplify_entry_offsets(graph, ENTRY_OFFSET_MULTIPLIER_WHOLE_GRAPH)
 
     return graph
@@ -527,7 +534,7 @@ if __name__ == "__main__":
     else:
         output_path = resources_dir / "graph.png"
 
-    g = load_graph()
+    g = load_graph(amplify_entries=CENTER_STOP_ID is None)
     draw_graph(
         g,
         center_stop_id=CENTER_STOP_ID,
