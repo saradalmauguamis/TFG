@@ -1,9 +1,9 @@
 """h_cheat: h(node, target) = actual optimal cost(node, target).
 
-Not admissible-in-spirit: computing it already requires solving the
-shortest-path problem A* is trying to solve, via cut_dijkstra (shared with
-dijkstra_utils.py), so it is only useful to see how A* behaves with a
-perfect heuristic (e.g. as a lower bound on iterations), never as a
+Technically admissible, but only because it already knows the answer: computing it
+already requires solving the shortest-path problem A* is trying to solve, via
+cut_dijkstra (shared with dijkstra_utils.py), so it is only useful to see how A*
+behaves with a perfect heuristic (e.g. as a lower bound on iterations), never as a
 practical heuristic.
 """
 
