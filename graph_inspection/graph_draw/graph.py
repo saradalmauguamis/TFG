@@ -55,10 +55,10 @@ EDGE_COLOR_BY_TYPE = {
     "PW": PW_EDGE_COLOR,
     "TF": NON_LINE_EDGE_COLOR,
 }
-PW_EDGE_WIDTH_SCALE = 0.4
 EDGE_WIDTH_SCALE_BY_TYPE = {
-    "PW": PW_EDGE_WIDTH_SCALE,
-    "TF": 1.0,
+    "SW": 2,
+    "PW": 1.0,
+    "TF": 1.2,
 }
 FALLBACK_LINE_COLOR = "#999999"
 PLATFORM_NODE_COLOR = "#4477AA"
@@ -155,8 +155,15 @@ def load_synthetic_platform_ids() -> set[str]:
     return set(equivalences["new_stop_id"])
 
 
-def load_graph() -> nx.DiGraph:
+def load_graph(amplify_entries: bool = True) -> nx.DiGraph:
     """Build the directed stop graph with geographic positions and line colors.
+
+    args:
+        amplify_entries: Whether to amplify_entry_offsets (see its docstring) so
+            entry/exit positions read as separate from their platform. Defaults to True
+            for whole-graph callers (regions_graph.py, extracted_nodes_graph.py, this
+            module's own __main__ when unzoomed); a zoomed view already shows the real
+            distance clearly enough, so draw_graph's own __main__ call passes False then.
 
     returns:
         Graph with each edge tagged by weight_seconds, type and (for SW
@@ -210,7 +217,7 @@ def load_graph() -> nx.DiGraph:
                 lat + JITTER_DEGREES * i * math.sin(angle),
             )
 
-    if CENTER_STOP_ID is None:
+    if amplify_entries:
         amplify_entry_offsets(graph, ENTRY_OFFSET_MULTIPLIER_WHOLE_GRAPH)
 
     return graph
@@ -367,7 +374,7 @@ def draw_graph(
     _, ax = plt.subplots(figsize=fig_size)
     # Compass: confirms the plot uses standard orientation (lon/lat plotted directly as
     # x/y, unflipped), since there's no other visual cue once the axes are turned off.
-    compass_x, compass_y, arm = 0.06, 0.92, 0.03
+    compass_x, compass_y, arm = 0.20, 0.84, 0.03
 
     nx.draw_networkx_nodes(
         graph,
@@ -410,39 +417,36 @@ def draw_graph(
                 line = graph[u][v]["line"]
                 edges_by_line.setdefault(line, []).append((u, v))
             for line, edges in edges_by_line.items():
-                widths = [
-                    math.log10(graph[u][v]["weight_seconds"] + 1) * node_scale
-                    for u, v in edges
-                ]
                 color = line_colors.get(line, FALLBACK_LINE_COLOR)
                 nx.draw_networkx_edges(
                     graph,
                     pos,
                     edgelist=edges,
                     style=style,
-                    width=widths,
+                    width=node_scale * EDGE_WIDTH_SCALE_BY_TYPE["SW"],
                     edge_color=color,
                     arrows=False,
                     ax=ax,
                 )
         else:
             width_scale = EDGE_WIDTH_SCALE_BY_TYPE[edge_type]
-            widths = [
-                math.log10(graph[u][v]["weight_seconds"] + 1) * node_scale * width_scale
-                for u, v in type_edges
-            ]
             nx.draw_networkx_edges(
                 graph,
                 pos,
                 edgelist=type_edges,
                 style=style,
-                width=widths,
+                width=node_scale * width_scale,
                 edge_color=EDGE_COLOR_BY_TYPE[edge_type],
                 arrows=False,
                 ax=ax,
             )
 
-    ax.legend(handles=legend_handles, loc="lower right", fontsize=14)
+    ax.legend(
+        handles=legend_handles,
+        loc="lower right",
+        bbox_to_anchor=(0.86, 0.08),
+        fontsize=14,
+    )
 
     if zoomed:
         center_lon, center_lat = pos[center_stop_id]
@@ -513,7 +517,7 @@ def draw_graph(
         transform=ax.transAxes,
         ha="left",
         va="bottom",
-        fontsize=8,
+        fontsize=9,
         color="#666666",
     )
 
@@ -530,7 +534,7 @@ if __name__ == "__main__":
     else:
         output_path = resources_dir / "graph.png"
 
-    g = load_graph()
+    g = load_graph(amplify_entries=CENTER_STOP_ID is None)
     draw_graph(
         g,
         center_stop_id=CENTER_STOP_ID,

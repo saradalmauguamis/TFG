@@ -18,7 +18,7 @@ Static reference data for Barcelona's subway lines: a `route_short_name` → `ro
 (`subway_routes_names_ids`), and the ordered sequence of platform `stop_id`s per line
 (`subway_route_names_stop_ids`, plus an `_artificial` variant matching stop_ids after
 `5_shared_platforms_duplication.py` splits shared platforms). Imported across `data_validation/`
-and `routing_algorithms/` whenever a line's stop order is needed.
+and `shortest_paths_algorithms/` whenever a line's stop order is needed.
 
 ### `stops_report.py`
 
@@ -36,7 +36,7 @@ elsewhere in the repo.
 
 Converts GTFS `.txt` files into individual `.xlsx` files for manual inspection. `DATA_DIR` can
 point at any pipeline stage folder under `data/` (e.g. `0_raw`, `1_subway`,
-`5_shared_platforms_duplication`) or at a `routing_algorithms/reports/` folder such as
+`5_shared_platforms_duplication`) or at a `shortest_paths_algorithms/reports/` folder such as
 `REPORTS_BASE`. Can convert a single file or all `.txt` files in the folder; large files are split
 across multiple `.xlsx` files automatically. Exports go to `data/excel_exports` by default, or
 next to the source folder if `EXPORT_NEXT_TO_SOURCE` is set.

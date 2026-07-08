@@ -7,7 +7,7 @@ TFG/
 ├── data/
 ├── data_validation/
 ├── graph_inspection/
-├── routing_algorithms/
+├── shortest_paths_algorithms/
 ├── scripts/
 ├── hooks/
 ├── .gitignore
@@ -21,7 +21,7 @@ TFG/
 - [`data_validation/`](data_validation/README.md) — pipeline for validating, processing, and
   analysing the GTFS subway data.
 - [`graph_inspection/`](graph_inspection/README.md) — subway graph drawing and reporting tools.
-- [`routing_algorithms/`](routing_algorithms/README.md) — Dijkstra and A* implementations.
+- [`shortest_paths_algorithms/`](shortest_paths_algorithms/README.md) — Dijkstra and A* implementations.
 - [`scripts/`](scripts/README.md) — reference data and standalone utilities shared across the
   other folders.
 - [`hooks/`](hooks/README.md) — pre-commit hook scripts; see that README for what gets checked.

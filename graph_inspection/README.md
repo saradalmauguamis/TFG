@@ -3,7 +3,7 @@
 Read-only tools that visualize and summarize the final weighted graph in
 [`data/6_weights/weights.txt`](../data/6_weights/weights.txt), produced by
 [`data_validation/processing/6_weights.py`](../data_validation/processing/README.md). Neither tool
-implements a routing algorithm; see [`routing_algorithms/`](../routing_algorithms/README.md)
+implements a routing algorithm; see [`shortest_paths_algorithms/`](../shortest_paths_algorithms/README.md)
 (Dijkstra, A*) for that.
 
 ```

@@ -14,6 +14,7 @@ __pycache__/
 data_validation/analysis/understanding_stdev.py
 data_validation/analysis/edge_weight_validation_report.txt
 graph_inspection/graph_draw/resources/graph_zoom_*
-routing_algorithms/dijkstra/resources/dijkstra_*_to_*.txt
+shortest_paths_algorithms/dijkstra/resources/dijkstra_*_to_*.txt
 .theory_notes/LL. A. - Shortest paths algorithms in weighted graphs *.pdf
-routing_algorithms/a_star/resources/a_star_*_to_*.txt
+shortest_paths_algorithms/a_star/resources/a_star_*_to_*.txt
+shortest_paths_algorithms/analysis/resources/extracted_nodes/*

@@ -1,0 +1,7 @@
+case,n,pct,Dijkstra_proportion_mean,Dijkstra_proportion_median,a_star_h_geo_proportion_mean,a_star_h_geo_proportion_median,a_star_h_bcn_proportion_mean,a_star_h_bcn_proportion_median,a_star_h_cheat_proportion_mean,a_star_h_cheat_proportion_median,legend
+CC,16512,56.8008,0.0644,0.0424,0.1363,0.0909,0.1772,0.1098,0.9965,1.0,source and target both in the Center
+CB,5418,18.6378,0.0395,0.034,0.0734,0.0535,0.1712,0.0927,0.9945,1.0,"source in the Center, target in a Branch"
+BC,5418,18.6378,0.0737,0.0543,0.115,0.087,0.1685,0.1062,0.9892,1.0,"source in a Branch, target in the Center"
+SB,258,0.8875,0.2514,0.233,0.5213,0.4167,1.0,1.0,1.0,1.0,source and target in the SAME Branch
+DB,1464,5.0361,0.0697,0.0474,0.1174,0.0864,0.3805,0.2727,0.993,1.0,source and target in DIFFERENT Branches
+GLOBAL,29070,100.0,0.0634,0.0428,0.1231,0.0811,0.192,0.1077,0.9946,1.0,All cases combined
