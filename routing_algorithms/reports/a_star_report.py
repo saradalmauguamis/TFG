@@ -132,7 +132,11 @@ FIELDNAMES = report_fieldnames(ITERATIONS_LABEL)
 def run_a_star(
     graph: Graph, source: Node, target: Node, h: Heuristic
 ) -> Tuple[Dict[Node, int], Dict[Node, Optional[Node]], int]:
-    """Run a_star for one pair, dropping verbose output.
+    """Run a_star for one pair, dropping verbose output and its 4th (`expanded`) return value.
+
+    Matches the ReportRunner shape run_platform_pair_report expects
+    (routing_algorithms/reports/report_utils.py), same as a_star_need_report.py's
+    run_cut_dijkstra drops cut_dijkstra's own `expanded` value.
 
     args:
         graph: A directed, weighted graph.
@@ -144,7 +148,8 @@ def run_a_star(
     returns:
         (g, parent, a_star_iterations) for this pair.
     """
-    return a_star(graph, source, target, h, verbose=False)
+    g, parent, iterations, _ = a_star(graph, source, target, h, verbose=False)
+    return g, parent, iterations
 
 
 def build_run_a_star(h: Heuristic) -> ReportRunner:

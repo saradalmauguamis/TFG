@@ -62,8 +62,10 @@ HEURISTIC_REPORTS = {
     "a_star_h_cheat": A_STAR_CHEAT_REPORT_FILE,
 }
 # Dijkstra has no heuristic, so only a_star_h_* labels get an "A*" prefix in the chart legend.
+# DIJKSTRA_REPORT_FILE is generated via cut_dijkstra (see a_star_need_report.py), not plain
+# Dijkstra, so the legend says so.
 LEGEND_LABEL_BY_HEURISTIC = {
-    "Dijkstra": "Dijkstra",
+    "Dijkstra": "Cut-Dijkstra",
     "a_star_h_geo": "A* (h_geo)",
     "a_star_h_bcn": "A* (h_bcn)",
     "a_star_h_cheat": "A* (h_cheat)",
@@ -74,8 +76,8 @@ LEGEND_LABEL_BY_HEURISTIC = {
 # h_bcn both reading as near-identical greens). Fixed order so the same
 # heuristic always gets the same color across runs/charts.
 COLOR_BY_HEURISTIC = {
-    "Dijkstra": "#6f9edd",
-    "a_star_h_geo": "#4fbf98",
+    "Dijkstra": "#e87ba4",
+    "a_star_h_geo": "#1baf7a",
     "a_star_h_bcn": "#9c85d1",
     "a_star_h_cheat": "#d99f3d",
 }

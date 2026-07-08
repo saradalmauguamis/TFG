@@ -27,7 +27,10 @@ routing_algorithms/
 │   └── resources/
 └── analysis/
     ├── algorithms_comparison.py
+    ├── regions_graph.py
+    ├── extracted_nodes_graph.py
     └── resources/
+        └── extracted_nodes/
 ```
 
 The aim is modelling and optimizing routes in Barcelona's subway network. For that, the graph was
@@ -108,4 +111,13 @@ call since each report depends on the other's output for its analysis:
   report already prints on its own, splitting every platform pair into a Center/Branch case via
   `barcelona_division.py`. Writes `algorithms_comparison_report.txt` (convertible via
   `scripts/from_txt_to_xlsx.py`) and a grouped bar chart, `algorithms_comparison_chart.png`.
-- `resources/`: the two outputs above.
+- `regions_graph.py`: draws the whole subway network colored by `barcelona_division.py`'s
+  Center/Branch regions instead of by line, reusing `graph_inspection/graph_draw/graph.py`'s graph
+  loading. Each branch's single bridge platform is highlighted in yellow. Writes
+  `barcelona_regions_graph.png`.
+- `extracted_nodes_graph.py`: for a single hardcoded `SOURCE` -> `TARGET` pair, runs `cut_dijkstra`
+  and all three A* heuristics and draws which nodes/edges each one actually extracted, layered over
+  the whole subway network. The shortest path found and each algorithm's
+  iterations/proportion are drawn directly on the figure.
+- `resources/`: the outputs above, `extracted_nodes/` holding one PNG per
+  `extracted_nodes_graph.py` run.

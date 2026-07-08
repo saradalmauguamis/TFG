@@ -21,6 +21,7 @@ label) plus the fact that same-named regions never sit next to each other except
 through their one bridge.
 """
 
+import math
 import sys
 from pathlib import Path
 
@@ -41,12 +42,12 @@ from routing_algorithms.paths import REGIONS_GRAPH_FILE  # noqa: E402
 # Fixed hue order (never cycled), matching Branches' own definition order in
 # barcelona_division.py, plus Center.
 REGION_COLORS: dict[str, str] = {
-    "Branch_L1": "#2a78d6",
-    "Branch_L2": "#1baf7a",
+    "Branch_L1": "#4a3aa7",
+    "Branch_L2": "#e34948",
     "Branch_L5": "#008300",
-    "Branch_L9S": "#4a3aa7",
-    "Branch_L9N": "#e34948",
-    "Branch_L10S": "#e87ba4",
+    "Branch_L9S": "#e87ba4",
+    "Branch_L9N": "#1baf7a",
+    "Branch_L10S": "#2a78d6",
     "Branch_L11": "#eb6834",
     "Branch_FM": "#0088ad",
     "Center": "#a9b45f",
@@ -57,6 +58,11 @@ REGION_COLORS: dict[str, str] = {
 BRIDGE_COLOR = "#eda100"
 
 BRIDGE_STOPS: set[str] = {stop for stops in Bridges.values() for stop in stops}
+
+# Same weight->width formula as graph_draw/graph.py's EDGE_WIDTH_SCALE_BY_TYPE: SW
+# and TF read at full scale, PW thinner, so SW keeps reading as the "trunk" line
+# thickness it has in the original graph instead of a flat, weight-blind width.
+EDGE_WIDTH_SCALE_BY_TYPE = {"SW": 1.0, "TF": 1.0, "PW": 0.4}
 
 
 def node_region(stop_id: str) -> str:
@@ -173,7 +179,10 @@ def draw_regions_graph(
         "TF": region_edge_color,
         "PW": pw_edge_color,
     }
-    edge_width_by_type = {"SW": 1.2, "TF": 1.2, "PW": 0.5}
+    # Compass: same convention as graph_inspection/graph_draw/graph.py's reference
+    # graph, confirming the plot uses standard orientation (lon/lat as x/y, unflipped).
+    compass_x, compass_y, arm = 0.20, 0.84, 0.03
+
     for edge_type, color_fn in edge_color_fn_by_type.items():
         type_edges = [
             (u, v) for u, v, d in graph.edges(data=True) if d["type"] == edge_type
@@ -183,12 +192,17 @@ def draw_regions_graph(
         edges_by_color: dict[str, list[tuple]] = {}
         for u, v in type_edges:
             edges_by_color.setdefault(color_fn(u, v), []).append((u, v))
+        width_scale = EDGE_WIDTH_SCALE_BY_TYPE[edge_type]
         for color, edges in edges_by_color.items():
+            widths = [
+                math.log10(graph[u][v]["weight_seconds"] + 1) * width_scale
+                for u, v in edges
+            ]
             nx.draw_networkx_edges(
                 graph,
                 pos,
                 edgelist=edges,
-                width=edge_width_by_type[edge_type],
+                width=widths,
                 edge_color=color,
                 arrows=False,
                 ax=ax,
@@ -224,7 +238,42 @@ def draw_regions_graph(
         ax=ax,
     )
 
-    ax.legend(handles=legend_handles, loc="lower right", fontsize=11)
+    ax.plot(
+        [compass_x - arm, compass_x + arm],
+        [compass_y, compass_y],
+        color="black",
+        lw=1,
+        transform=ax.transAxes,
+    )
+    ax.plot(
+        [compass_x, compass_x],
+        [compass_y - arm, compass_y + arm],
+        color="black",
+        lw=1,
+        transform=ax.transAxes,
+    )
+    for label, (dx, dy) in {
+        "N": (0, arm * 1.8),
+        "S": (0, -arm * 1.8),
+        "E": (arm * 1.8, 0),
+        "W": (-arm * 1.8, 0),
+    }.items():
+        ax.annotate(
+            label,
+            xy=(compass_x + dx, compass_y + dy),
+            xycoords="axes fraction",
+            ha="center",
+            va="center",
+            fontsize=10,
+            fontweight="bold",
+        )
+
+    ax.legend(
+        handles=legend_handles,
+        loc="lower right",
+        bbox_to_anchor=(0.86, 0.08),
+        fontsize=14,
+    )
 
     ax.set_title("Barcelona Subway Network with Branches and Bridges")
     ax.set_axis_off()
@@ -237,7 +286,7 @@ def draw_regions_graph(
         transform=ax.transAxes,
         ha="left",
         va="bottom",
-        fontsize=8,
+        fontsize=14,
         color="#666666",
     )
 

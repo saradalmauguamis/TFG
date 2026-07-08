@@ -26,3 +26,7 @@ ALGORITHMS_COMPARISON_REPORT_FILE = os.path.join(
 REGIONS_GRAPH_FILE = os.path.join(
     str(_ANALYSIS_RESOURCES_DIR), "barcelona_regions_graph.png"
 )
+# Directory, not a fixed filename: analysis/extracted_nodes_graph.py names each PNG
+# after its own REGION_CASE/SOURCE/TARGET constants, built locally like a_star.py
+# and dijkstra.py already do for their own parameterized output filenames.
+EXTRACTED_NODES_DIR = os.path.join(str(_ANALYSIS_RESOURCES_DIR), "extracted_nodes")

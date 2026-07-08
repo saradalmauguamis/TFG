@@ -77,8 +77,8 @@ from heuristics.h_geo import (  # noqa: E402
 from heuristics.h_cheat import build_h_cheat  # noqa: E402
 from heuristics.h_bcn import DepthTable, build_depth_tables, build_h_bcn  # noqa: E402
 
-SOURCE = "E.11101"
-TARGET = "E.14001"
+SOURCE = "1.417"
+TARGET = "1.314"
 HEURISTIC_NAME = (
     "h_bcn"  # "h_geo", "h_cheat", or "h_bcn" to pick the heuristic built in main()
 )
@@ -147,7 +147,7 @@ def main() -> None:
         raise ValueError(f"Unknown HEURISTIC_NAME: {HEURISTIC_NAME!r}")
 
     start = perf_counter()
-    g, parent, iterations = a_star(graph, SOURCE, TARGET, h, verbose=True)
+    g, parent, iterations, _ = a_star(graph, SOURCE, TARGET, h, verbose=True)
     elapsed_ms = (perf_counter() - start) * 1000
     path = apply_liceu_entrance_fix(rebuild_path(parent, SOURCE, TARGET), node_fmt)
 

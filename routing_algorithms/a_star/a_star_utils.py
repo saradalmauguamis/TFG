@@ -25,7 +25,7 @@ def a_star(
     goal: Node,
     h: Heuristic,
     verbose: bool = True,
-) -> Tuple[Dict[Node, int], Dict[Node, Optional[Node]], int]:
+) -> Tuple[Dict[Node, int], Dict[Node, Optional[Node]], int, Dict[Node, bool]]:
     """Run A* algorithm from start to goal using heuristic h.
 
     Follows the Alsedà pseudocode (slide 45) exactly. Stops as soon as goal
@@ -47,6 +47,11 @@ def a_star(
         g: A mapping from each visited node to its shortest distance from start.
         parent: A mapping from each visited node to its parent in the shortest path.
         iterations: Number of nodes extracted from the Open queue.
+        expanded: A mapping from each node to whether it was extracted from Open
+            before the search stopped. Not part of the Alsedà pseudocode (A*
+            never needs a closed-set check with an admissible heuristic); tracked
+            purely so callers can later visualize which nodes A* actually settled,
+            same as dijkstra_utils.py's expanded.
     """
     nodes = list(graph.keys())
 
@@ -55,6 +60,9 @@ def a_star(
         node: None for node in nodes
     }  # pseudocode: parent[G.order] <- uninitialized
     g: Dict[Node, int] = {node: INF for node in nodes}  # pseudocode: g[G.order] <- ∞
+    expanded: Dict[Node, bool] = {
+        node: False for node in nodes
+    }  # not in the pseudocode -- see expanded's docstring above
 
     iteration = 0
 
@@ -68,6 +76,9 @@ def a_star(
 
     while not Open.is_empty():  # pseudocode: while not Open.IsEmpty do
         current, _ = Open.extract_min()  # pseudocode: current <- Open.extract_min(g, h)
+        expanded[current] = (
+            True  # not in the pseudocode -- see expanded's docstring above
+        )
 
         iteration += 1
         if verbose:
@@ -80,7 +91,7 @@ def a_star(
         if current == goal:  # pseudocode: if current is goal then return g, parent
             if verbose:
                 print("  -> goal reached!")
-            return g, parent, iteration
+            return g, parent, iteration, expanded
 
         for adj, weight in graph[
             current
@@ -116,4 +127,4 @@ def a_star(
                         f" (w={weight}), h={h(adj, goal)}, f={f_adj} via {current}"
                     )
 
-    return g, parent, iteration  # pseudocode: return failure
+    return g, parent, iteration, expanded  # pseudocode: return failure

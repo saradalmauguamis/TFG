@@ -367,7 +367,7 @@ def draw_graph(
     _, ax = plt.subplots(figsize=fig_size)
     # Compass: confirms the plot uses standard orientation (lon/lat plotted directly as
     # x/y, unflipped), since there's no other visual cue once the axes are turned off.
-    compass_x, compass_y, arm = 0.06, 0.92, 0.03
+    compass_x, compass_y, arm = 0.20, 0.84, 0.03
 
     nx.draw_networkx_nodes(
         graph,
@@ -442,7 +442,12 @@ def draw_graph(
                 ax=ax,
             )
 
-    ax.legend(handles=legend_handles, loc="lower right", fontsize=14)
+    ax.legend(
+        handles=legend_handles,
+        loc="lower right",
+        bbox_to_anchor=(0.86, 0.08),
+        fontsize=14,
+    )
 
     if zoomed:
         center_lon, center_lat = pos[center_stop_id]
@@ -513,7 +518,7 @@ def draw_graph(
         transform=ax.transAxes,
         ha="left",
         va="bottom",
-        fontsize=8,
+        fontsize=9,
         color="#666666",
     )
 

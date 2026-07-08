@@ -59,7 +59,7 @@ def h(node: Node, _goal: Node) -> int:
 def main() -> None:
     """Run A* on the example graph from SOURCE to TARGET and display the result."""
     graph = build_example_graph()
-    g, parent, iterations = a_star(graph, SOURCE, TARGET, h, verbose=True)
+    g, parent, iterations, _ = a_star(graph, SOURCE, TARGET, h, verbose=True)
     path = rebuild_path(parent, SOURCE, TARGET)
 
     print_graph_size(graph)
