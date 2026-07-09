@@ -202,6 +202,64 @@ def cut_dijkstra(
     )
 
 
+def best_over_source_candidates(
+    graph: Graph,
+    source_platforms: Set[Node],
+    target_platforms: Set[Node],
+) -> Tuple[Node, Node, Dict[Node, int], Dict[Node, Optional[Node]], int]:
+    """Run a full dijkstra() once per candidate source, keeping the cheapest pair.
+
+    Only meaningful when source_platforms/target_platforms hold more than one
+    candidate each, i.e. WITHOUT_ENTRANCES_GRAPH reduced an entrance endpoint
+    to more than one directed-PW-edge platform (algorithms_utils.
+    resolve_search_endpoints/resolve_platform_candidates); with the usual
+    single-candidate sets, the loop below just runs once.
+
+    dijkstra(graph, source) already gives the distance to every node reachable
+    from source in one run, so unlike cut_dijkstra/a_star (target-directed,
+    stop early at one specific target -- a fresh run is needed per (source,
+    target) pair), only one run per source_platforms candidate is needed here,
+    regardless of how many target_platforms candidates there are.
+
+    args:
+        graph: A directed, weighted graph.
+        source_platforms: Candidate source platform(s).
+        target_platforms: Candidate target platform(s).
+
+    returns:
+        (best_source, best_target, dist, parent, iterations): the winning
+        candidate pair, and the full dijkstra() output from its winning run
+        (dist/parent cover every node reachable from best_source, not just
+        best_target -- the caller can read best_weight back out as
+        dist[best_target]).
+    """
+    best_weight = INF
+    best_source: Node = next(iter(source_platforms))
+    best_target: Node = next(iter(target_platforms))
+    dist: Dict[Node, int] = {}
+    parent: Dict[Node, Optional[Node]] = {}
+    iterations = 0
+    first_candidate = True
+
+    for candidate_source in source_platforms:
+        candidate_dist, candidate_parent, candidate_iterations, _ = dijkstra(
+            graph, candidate_source, verbose=False
+        )
+        for candidate_target in target_platforms:
+            candidate_weight = candidate_dist[candidate_target]
+            if first_candidate or candidate_weight < best_weight:
+                best_weight = candidate_weight
+                dist, parent, iterations = (
+                    candidate_dist,
+                    candidate_parent,
+                    candidate_iterations,
+                )
+                best_source, best_target = candidate_source, candidate_target
+                first_candidate = False
+
+    return best_source, best_target, dist, parent, iterations
+
+
 # ---------------------------------------------------------------------------
 # Display (Dijkstra/cut_dijkstra-specific; generic helpers live in
 # shortest_paths_algorithms/algorithms_utils.py)

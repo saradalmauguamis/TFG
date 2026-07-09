@@ -15,40 +15,44 @@ if _PROJECT_ROOT not in sys.path:
 from scripts.basics import subway_route_names_stop_ids_artificial  # noqa: E402
 
 from data_validation.gtfs_utils import (  # noqa: E402
-    PATHWAYS_FILE,
     STOPS_FILE,
     WEIGHTS_FILE,
-    build_graph_and_coverage,
     build_stop_to_lines,
     check_missing_files,
-    invert_entries,
-    load_pathway_ids,
     load_stop_names,
     print_file_disclaimer,
     seconds_to_hms,
 )
 from shortest_paths_algorithms.algorithms_utils import (  # noqa: E402
+    GRAPH_MODE_LABEL,
+    WITHOUT_ENTRANCES_GRAPH,
+    EntranceToPlatforms,
+    GraphMode,
     NodeFmt,
-    apply_liceu_entrance_fix,
+    build_entrance_platform_lookups,
     build_graph_from_weights,
+    finalize_path,
     print_distances,
     print_graph_size,
     print_header,
     print_path_summary,
-    rebuild_path,
+    report_missing_platform_candidates,
+    resolve_search_endpoints,
     stop_label,
+    with_adjusted_target_weight,
 )
 from dijkstra_utils import (  # noqa: E402
     Graph,
     Node,
+    best_over_source_candidates,
     cut_dijkstra,
-    dijkstra,
     print_disclaimer,
     print_summary,
 )
 
-SOURCE = "E.12302"
-TARGET = "E.12011"
+SOURCE = "E.12201"
+TARGET = "E.12001"
+GRAPH_MODE: GraphMode = WITHOUT_ENTRANCES_GRAPH  # FULL_GRAPH or WITHOUT_ENTRANCES_GRAPH
 
 
 def main() -> None:
@@ -67,18 +71,26 @@ def main() -> None:
     cut_elapsed_ms: float
     stop_names: Dict[str, str]
     stop_to_lines: Dict[str, List[str]]
-    platform_to_entries: Dict[str, Set[str]]
     entrance_to_platform: Dict[str, Set[str]]
+    entrance_plat_to: EntranceToPlatforms
+    entrance_plat_from: EntranceToPlatforms
     node_fmt: NodeFmt
+    source_platforms: Set[Node]
+    target_platforms: Set[Node]
+    entry_total: int
+    algo_source: Node
+    algo_target: Node
+    best_weight: int
     _: object
 
-    check_missing_files([WEIGHTS_FILE, STOPS_FILE, PATHWAYS_FILE])
-    print_file_disclaimer([WEIGHTS_FILE, STOPS_FILE, PATHWAYS_FILE])
+    check_missing_files([WEIGHTS_FILE, STOPS_FILE])
+    print_file_disclaimer([WEIGHTS_FILE, STOPS_FILE])
 
     stop_names = load_stop_names(STOPS_FILE)
     stop_to_lines = build_stop_to_lines(subway_route_names_stop_ids_artificial)
-    platform_to_entries, _ = build_graph_and_coverage(load_pathway_ids(PATHWAYS_FILE))
-    entrance_to_platform = invert_entries(platform_to_entries)
+    entrance_to_platform, entrance_plat_to, entrance_plat_from = (
+        build_entrance_platform_lookups(WEIGHTS_FILE)
+    )
 
     # partial() bakes stop_names/stop_to_lines/entrance_to_platform into
     # stop_label as fixed keyword args, turning it into the single-argument
@@ -90,20 +102,34 @@ def main() -> None:
         entrance_to_platform=entrance_to_platform,
     )
 
-    print_header(SOURCE, TARGET, node_fmt=node_fmt)
+    print_header(SOURCE, TARGET, graph_mode=GRAPH_MODE, node_fmt=node_fmt)
     print_disclaimer()
 
-    graph = build_graph_from_weights(WEIGHTS_FILE)
+    graph = build_graph_from_weights(WEIGHTS_FILE, GRAPH_MODE)
     print_graph_size(graph)
 
+    source_platforms, target_platforms, entry_total = resolve_search_endpoints(
+        GRAPH_MODE, SOURCE, TARGET, entrance_plat_from, entrance_plat_to
+    )
+    if report_missing_platform_candidates(
+        source_platforms, target_platforms, SOURCE, TARGET
+    ):
+        return
+
     start = perf_counter()
-    dist, parent, iterations, _ = dijkstra(graph, SOURCE, verbose=False)
+    algo_source, algo_target, dist, parent, iterations = best_over_source_candidates(
+        graph, source_platforms, target_platforms
+    )
     elapsed_ms = (perf_counter() - start) * 1000
-    path = apply_liceu_entrance_fix(rebuild_path(parent, SOURCE, TARGET), node_fmt)
+    best_weight = dist[algo_target]
+
+    path = finalize_path(
+        GRAPH_MODE, parent, algo_source, algo_target, SOURCE, TARGET, node_fmt
+    )
 
     cut_start = perf_counter()
     cut_dist, _, cut_iterations, cut_expanded = cut_dijkstra(
-        graph, SOURCE, TARGET, verbose=True, node_fmt=node_fmt
+        graph, algo_source, algo_target, verbose=True, node_fmt=node_fmt
     )
     cut_elapsed_ms = (perf_counter() - cut_start) * 1000
 
@@ -111,14 +137,19 @@ def main() -> None:
         graph,
         cut_dist,
         show_unreachable=False,
-        source=SOURCE,
+        source=algo_source,
         dist_fmt=seconds_to_hms,
         label="cut",
         expanded=cut_expanded,
         node_fmt=node_fmt,
     )
     print_path_summary(
-        SOURCE, TARGET, path, dist, dist_fmt=seconds_to_hms, node_fmt=node_fmt
+        SOURCE,
+        TARGET,
+        path,
+        with_adjusted_target_weight(dist, TARGET, best_weight, entry_total),
+        dist_fmt=seconds_to_hms,
+        node_fmt=node_fmt,
     )
     print_summary(iterations, elapsed_ms, cut_iterations, cut_elapsed_ms)
 
@@ -126,7 +157,10 @@ def main() -> None:
 if __name__ == "__main__":
     resources_dir = Path(__file__).resolve().parent / "resources"
     resources_dir.mkdir(exist_ok=True)
-    output_path = resources_dir / f"dijkstra_{SOURCE}_to_{TARGET}.txt"
+    output_path = (
+        resources_dir
+        / f"dijkstra_{GRAPH_MODE_LABEL[GRAPH_MODE]}_{SOURCE}_to_{TARGET}.txt"
+    )
     with output_path.open("w", encoding="utf-8") as file_handle:
         with redirect_stdout(file_handle):
             main()

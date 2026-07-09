@@ -15,7 +15,7 @@ algorithm's pseudocode -- see a_star_utils.py's a_star() and dijkstra_utils.py's
 _run_dijkstra() for where it's tracked purely for this kind of traceability -- but
 `parent` already is, for both algorithms.
 
-Output_name: {REGION_CASE}_{SOURCE}_to_{TARGET}.png saved into
+Output_name: {REGION_CASE}_{GRAPH_MODE_LABEL}_{SOURCE}_to_{TARGET}.png saved into
 'shortest_paths_algorithms/analysis/resources/extracted_nodes' (EXTRACTED_NODES_DIR,
 shortest_paths_algorithms/paths.py). REGION_CASE is a free-form label (one of
 barcelona_division.classify's CC/CB/BC/SB/DB cases) set by hand to whatever case
@@ -28,8 +28,11 @@ Since the deliverable is the PNG alone (no companion .txt report), everything th
 otherwise be printed -- the shortest path (stop id + name, same format as
 print_path_summary in shortest_paths_algorithms/algorithms_utils.py, but one node per line
 instead of joined by "->") and each algorithm's iterations/proportion
-(path_vertices / iterations, same metric as shortest_paths_algorithms/reports/) -- is drawn
-directly on the figure: the path as a sidebar in the plot's top-left corner,
+(path_vertices / iterations, same metric as shortest_paths_algorithms/reports/, except
+iterations is bumped by entrance_endpoint_shift() -- see its docstring -- whenever
+GRAPH_MODE is WITHOUT_ENTRANCES_GRAPH and SOURCE/TARGET are entrances, so the denominator
+accounts for the same restored endpoints finalize_path already added to path_vertices) --
+is drawn directly on the figure: the path as a sidebar in the plot's top-left corner,
 iterations/proportion folded into each algorithm's own legend entry.
 """
 
@@ -51,28 +54,31 @@ if _PROJECT_ROOT not in sys.path:
 from scripts.basics import subway_route_names_stop_ids_artificial  # noqa: E402
 
 from data_validation.gtfs_utils import (  # noqa: E402
-    PATHWAYS_FILE,
     STOPS_FILE,
     WEIGHTS_FILE,
-    build_directed_entrance_edges,
-    build_graph_and_coverage,
     build_stop_to_lines,
     check_missing_files,
-    invert_entries,
-    load_pathway_ids,
     load_stop_names,
     print_file_disclaimer,
 )
 from graph_inspection.graph_draw.graph import load_graph  # noqa: E402
 from shortest_paths_algorithms.algorithms_utils import (  # noqa: E402
+    FULL_GRAPH,
+    GRAPH_MODE_LABEL,
+    WITHOUT_ENTRANCES_GRAPH,
+    EntranceToPlatforms,
     Graph,
+    GraphMode,
     Node,
     NodeFmt,
-    apply_liceu_entrance_fix,
+    best_over_candidate_pairs,
+    build_entrance_platform_lookups,
     build_graph_from_weights,
+    finalize_path,
     format_node_label,
     print_graph_size,
-    rebuild_path,
+    report_missing_platform_candidates,
+    resolve_search_endpoints,
     stop_label,
 )
 from shortest_paths_algorithms.analysis.algorithms_comparison import (  # noqa: E402
@@ -110,11 +116,19 @@ from shortest_paths_algorithms.a_star.heuristics.h_bcn import (  # noqa: E402
 from shortest_paths_algorithms.dijkstra.dijkstra_utils import cut_dijkstra  # noqa: E402
 from shortest_paths_algorithms.paths import EXTRACTED_NODES_DIR  # noqa: E402
 
-SOURCE = "E.114011"
-TARGET = "E.22711"
+SOURCE = "E.22711"
+TARGET = "E.12001"
 REGION_CASE = (
-    "DB"  # free-form label for this pair's case (e.g. classify's CC/CB/BC/SB/DB)
+    "BC"  # free-form label for this pair's case (e.g. classify's CC/CB/BC/SB/DB)
 )
+GRAPH_MODE: GraphMode = WITHOUT_ENTRANCES_GRAPH  # FULL_GRAPH or WITHOUT_ENTRANCES_GRAPH
+
+# Human-readable GRAPH_MODE label for the figure's title, distinct from
+# GRAPH_MODE_LABEL's terse "full"/"no_pw" used in the output filename.
+GRAPH_MODE_TITLE = {
+    FULL_GRAPH: "with the full graph",
+    WITHOUT_ENTRANCES_GRAPH: "without entrances in the graph",
+}
 
 # One run per (label, parent, expanded, iterations): parent/expanded come straight out
 # of cut_dijkstra/a_star, iterations is that run's own extracted-node count.
@@ -374,12 +388,33 @@ def format_path_lines(path: List[Node], node_fmt: NodeFmt) -> List[str]:
     return [f"{node}{format_node_label(node, node_fmt)}" for node in path]
 
 
+def entrance_endpoint_shift() -> int:
+    """Return how many of SOURCE/TARGET are entrances restored onto the path.
+
+    On WITHOUT_ENTRANCES_GRAPH, finalize_path's restore_entrance_endpoints (see
+    algorithms_utils.py) prepends/appends whichever of SOURCE/TARGET is an entrance,
+    since entrances aren't part of the search graph there and so never get extracted
+    by any algorithm. Counting them in path_vertices without a matching bump to
+    iterations would inflate proportion for entrance endpoints relative to platform
+    ones. On FULL_GRAPH entrances are in the search graph and do get genuinely
+    extracted, so no shift applies there.
+
+    returns:
+        0, 1 or 2: how many of SOURCE/TARGET are entrances, only on
+        WITHOUT_ENTRANCES_GRAPH -- always 0 on FULL_GRAPH.
+    """
+    if GRAPH_MODE != WITHOUT_ENTRANCES_GRAPH:
+        return 0
+    return int(SOURCE.startswith("E.")) + int(TARGET.startswith("E."))
+
+
 def legend_label_with_stats(label: str, iterations: int, proportion: float) -> str:
     """Return an algorithm's legend text, with its iterations/proportion folded in.
 
     args:
         label: A key of LEGEND_LABEL_BY_HEURISTIC (e.g. "a_star_h_bcn").
-        iterations: Number of nodes this algorithm extracted before stopping.
+        iterations: Number of nodes this algorithm extracted before stopping,
+            plus entrance_endpoint_shift (so it matches proportion's denominator).
         proportion: path_vertices / iterations for this run.
 
     returns:
@@ -390,90 +425,53 @@ def legend_label_with_stats(label: str, iterations: int, proportion: float) -> s
     )
 
 
-def main() -> None:
-    """Run cut-Dijkstra and the three A* heuristics for SOURCE -> TARGET and draw the PNG."""
-    graph: Graph
-    coords: Dict[Node, Coord]
-    v_max: float
-    pathway_ids: Set[str]
-    depth_from: DepthTable
-    depth_to: DepthTable
-    heuristics: Dict[str, Heuristic]
-    runs: Dict[str, Run]
-    stop_names: Dict[str, str]
-    stop_to_lines: Dict[str, List[str]]
-    platform_to_entries: Dict[str, Set[str]]
-    entrance_to_platform: Dict[str, Set[str]]
-    directed_platform_to_entrance: Dict[str, Set[str]]
-    directed_entrance_to_platform: Dict[str, Set[str]]
-    entrance_plat_to: Dict[str, Set[str]]
-    entrance_plat_from: Dict[str, Set[str]]
-    node_fmt: NodeFmt
-    dijkstra_parent: Dict[Node, Optional[Node]]
-    dijkstra_expanded: Dict[Node, bool]
-    dijkstra_iterations: int
-    path: List[Node]
-    path_vertices: int
+def draw_and_save_figure(
+    runs: Dict[str, Run],
+    path: List[Node],
+    path_vertices: int,
+    entrance_plat_to: Dict[str, Set[str]],
+    entrance_plat_from: Dict[str, Set[str]],
+    node_fmt: NodeFmt,
+) -> Path:
+    """Draw every algorithm's extracted layer over the whole subway graph and save the PNG.
+
+    Layers the whole subway network (base layer), each algorithm's extracted
+    nodes/edges (in COLOR_BY_HEURISTIC's fixed order), SOURCE/TARGET, and any
+    REGION_CASE bridge highlight, then the legend and the shortest-path
+    sidebar -- see the module docstring for the full picture.
+
+    args:
+        runs: label -> (parent, expanded, iterations), one entry per algorithm
+            (Cut-Dijkstra + the three A* heuristics), see Run.
+        path: The rebuilt SOURCE -> TARGET path (via finalize_path), for the
+            sidebar.
+        path_vertices: len(path), used for each algorithm's proportion.
+        entrance_plat_to: entry stop_id -> platforms with a directed pathway
+            edge into it, for resolve_bridge_highlights.
+        entrance_plat_from: entry stop_id -> platforms it has a directed
+            pathway edge into, for resolve_bridge_highlights.
+        node_fmt: Callable to label a node (stop name and line), for the
+            sidebar.
+
+    returns:
+        The path the PNG was saved to.
+    """
     nx_graph: nx.DiGraph
     pos: Dict[Node, Tuple[float, float]]
     fig: plt.Figure
     ax: plt.Axes
     legend_handles: List[plt.Line2D]
+    parent: Dict[Node, Optional[Node]]
+    expanded: Dict[Node, bool]
+    iterations: int
+    color: str
+    nodes: List[Node]
+    edges: List[Tuple[Node, Node]]
+    proportion: float
     bridge_nodes: List[Node]
     output_dir: Path
     output_path: Path
-    _: object
-
-    check_missing_files([WEIGHTS_FILE, STOPS_FILE, PATHWAYS_FILE])
-    print_file_disclaimer([WEIGHTS_FILE, STOPS_FILE, PATHWAYS_FILE])
-
-    stop_names = load_stop_names(STOPS_FILE)
-    stop_to_lines = build_stop_to_lines(subway_route_names_stop_ids_artificial)
-    pathway_ids = load_pathway_ids(PATHWAYS_FILE)
-    platform_to_entries, _ = build_graph_and_coverage(pathway_ids)
-    entrance_to_platform = invert_entries(platform_to_entries)
-    directed_platform_to_entrance, directed_entrance_to_platform = (
-        build_directed_entrance_edges(pathway_ids)
-    )
-    entrance_plat_to = invert_entries(directed_platform_to_entrance)
-    entrance_plat_from = invert_entries(directed_entrance_to_platform)
-    node_fmt = partial(
-        stop_label,
-        stop_names=stop_names,
-        stop_to_lines=stop_to_lines,
-        entrance_to_platform=entrance_to_platform,
-    )
-
-    graph = build_graph_from_weights(WEIGHTS_FILE)
-    print_graph_size(graph)
-
-    coords = load_node_coords(STOPS_FILE)
-    v_max, _ = compute_v_max(graph, coords)
-    depth_from, depth_to = build_depth_tables(graph)
-    heuristics = {
-        "a_star_h_geo": build_h_geo(coords, v_max),
-        "a_star_h_bcn": build_h_bcn(pathway_ids, coords, v_max, depth_from, depth_to),
-        "a_star_h_cheat": build_h_cheat(graph),
-    }
-
-    print(f"Running Cut-Dijkstra {SOURCE} -> {TARGET}...")
-    _, dijkstra_parent, dijkstra_iterations, dijkstra_expanded = cut_dijkstra(
-        graph, SOURCE, TARGET, verbose=False
-    )
-    runs = {"Dijkstra": (dijkstra_parent, dijkstra_expanded, dijkstra_iterations)}
-    for label, h in heuristics.items():
-        print(f"Running {LEGEND_LABEL_BY_HEURISTIC[label]} {SOURCE} -> {TARGET}...")
-        _, parent, iterations, expanded = a_star(
-            graph, SOURCE, TARGET, h, verbose=False
-        )
-        runs[label] = (parent, expanded, iterations)
-
-    path = apply_liceu_entrance_fix(
-        rebuild_path(dijkstra_parent, SOURCE, TARGET), node_fmt
-    )
-    if not path:
-        raise ValueError(f"No path found from {SOURCE} to {TARGET}; nothing to draw.")
-    path_vertices = len(path)
+    shift: int
 
     nx_graph = load_graph()
     pos = {n: d["pos"] for n, d in nx_graph.nodes(data=True) if "pos" in d}
@@ -495,12 +493,14 @@ def main() -> None:
     ]
     # COLOR_BY_HEURISTIC's own order: Cut-Dijkstra, then h_geo, h_bcn, h_cheat, so later
     # layers (painted last) sit on top wherever two algorithms extract the same node/edge.
+    shift = entrance_endpoint_shift()
     for label in COLOR_BY_HEURISTIC:
         parent, expanded, iterations = runs[label]
         color = COLOR_BY_HEURISTIC[label]
         nodes, edges = extracted_nodes_and_edges(expanded, parent, nx_graph)
         draw_algorithm_layer(ax, nx_graph, pos, nodes, edges, color)
 
+        iterations += shift
         proportion = path_vertices / iterations
         print(
             f"{LEGEND_LABEL_BY_HEURISTIC[label]}: iterations={iterations},"
@@ -604,7 +604,8 @@ def main() -> None:
     )
 
     fig.suptitle(
-        f"{REGION_CASE} case: extracted nodes from {SOURCE} to {TARGET}",
+        f"{REGION_CASE} case ({GRAPH_MODE_TITLE[GRAPH_MODE]}):"
+        f" extracted nodes from {SOURCE} to {TARGET}",
         y=0.995,
         fontsize=14,
         color="#0b0b0b",
@@ -626,9 +627,116 @@ def main() -> None:
 
     output_dir = Path(EXTRACTED_NODES_DIR)
     output_dir.mkdir(parents=True, exist_ok=True)
-    output_path = output_dir / f"{REGION_CASE}_{SOURCE}_to_{TARGET}.png"
+    output_path = (
+        output_dir
+        / f"{REGION_CASE}_{GRAPH_MODE_LABEL[GRAPH_MODE]}_{SOURCE}_to_{TARGET}.png"
+    )
     fig.savefig(output_path, dpi=200)
     plt.close(fig)
+    return output_path
+
+
+def main() -> None:
+    """Run cut-Dijkstra and the three A* heuristics for SOURCE -> TARGET and draw the PNG."""
+    graph: Graph
+    coords: Dict[Node, Coord]
+    v_max: float
+    depth_from: DepthTable
+    depth_to: DepthTable
+    heuristics: Dict[str, Heuristic]
+    runs: Dict[str, Run]
+    stop_names: Dict[str, str]
+    stop_to_lines: Dict[str, List[str]]
+    entrance_to_platform: Dict[str, Set[str]]
+    entrance_plat_to: EntranceToPlatforms
+    entrance_plat_from: EntranceToPlatforms
+    node_fmt: NodeFmt
+    source_platforms: Set[Node]
+    target_platforms: Set[Node]
+    algo_source: Node
+    algo_target: Node
+    dijkstra_parent: Dict[Node, Optional[Node]]
+    dijkstra_expanded: Dict[Node, bool]
+    dijkstra_iterations: int
+    path: List[Node]
+    path_vertices: int
+    output_path: Path
+    _: object
+
+    check_missing_files([WEIGHTS_FILE, STOPS_FILE])
+    print_file_disclaimer([WEIGHTS_FILE, STOPS_FILE])
+
+    stop_names = load_stop_names(STOPS_FILE)
+    stop_to_lines = build_stop_to_lines(subway_route_names_stop_ids_artificial)
+    entrance_to_platform, entrance_plat_to, entrance_plat_from = (
+        build_entrance_platform_lookups(WEIGHTS_FILE)
+    )
+    node_fmt = partial(
+        stop_label,
+        stop_names=stop_names,
+        stop_to_lines=stop_to_lines,
+        entrance_to_platform=entrance_to_platform,
+    )
+
+    graph = build_graph_from_weights(WEIGHTS_FILE, GRAPH_MODE)
+    print_graph_size(graph)
+
+    coords = load_node_coords(STOPS_FILE)
+    v_max, _ = compute_v_max(graph, coords)
+    depth_from, depth_to = build_depth_tables(graph)
+    heuristics = {
+        "a_star_h_geo": build_h_geo(coords, v_max),
+        "a_star_h_bcn": build_h_bcn(WEIGHTS_FILE, coords, v_max, depth_from, depth_to),
+        "a_star_h_cheat": build_h_cheat(graph),
+    }
+
+    source_platforms, target_platforms, _ = resolve_search_endpoints(
+        GRAPH_MODE, SOURCE, TARGET, entrance_plat_from, entrance_plat_to
+    )
+    if report_missing_platform_candidates(
+        source_platforms, target_platforms, SOURCE, TARGET
+    ):
+        raise ValueError(
+            f"No path possible from {SOURCE} to {TARGET}; nothing to draw."
+        )
+
+    # Cut-Dijkstra resolves which candidate (source, target) platform pair to
+    # actually use (see algorithms_utils.resolve_platform_candidates): every
+    # algorithm below then reruns against that same fixed pair, so they stay
+    # directly comparable against the same route.
+    print(f"Running Cut-Dijkstra {SOURCE} -> {TARGET}...")
+    (
+        algo_source,
+        algo_target,
+        _,
+        dijkstra_parent,
+        dijkstra_iterations,
+        dijkstra_expanded,
+    ) = best_over_candidate_pairs(
+        graph,
+        source_platforms,
+        target_platforms,
+        partial(cut_dijkstra, verbose=False),
+    )
+
+    runs = {"Dijkstra": (dijkstra_parent, dijkstra_expanded, dijkstra_iterations)}
+    for label, h in heuristics.items():
+        print(f"Running {LEGEND_LABEL_BY_HEURISTIC[label]} {SOURCE} -> {TARGET}...")
+        _, parent, iterations, expanded = a_star(
+            graph, algo_source, algo_target, h, verbose=False
+        )
+        runs[label] = (parent, expanded, iterations)
+
+    path = finalize_path(
+        GRAPH_MODE, dijkstra_parent, algo_source, algo_target, SOURCE, TARGET, node_fmt
+    )
+    if not path:
+        raise ValueError(f"No path found from {SOURCE} to {TARGET}; nothing to draw.")
+    path_vertices = len(path)
+
+    output_path = draw_and_save_figure(
+        runs, path, path_vertices, entrance_plat_to, entrance_plat_from, node_fmt
+    )
     print(f"{output_path.name} generated into {output_path.relative_to(_PROJECT_ROOT)}")
 
 

@@ -1,9 +1,12 @@
 """Sanity check: for every platform pair, optimum_weight must agree across reports.
 
-dijkstra_report.txt, a_star_geo_report.txt, a_star_h_bcn_report.txt, and
-a_star_h_cheat_report.txt (shortest_paths_algorithms/reports/resources/, paths in
-shortest_paths_algorithms/paths.py) all run the same collect_platform_pairs pairs over
-the same graph (shortest_paths_algorithms/reports/report_utils.py), just with different
+The 4 reports for one graph mode -- dijkstra_{mode}_report.txt,
+a_star_{mode}_geo_report.txt, a_star_{mode}_h_bcn_report.txt, and
+a_star_{mode}_h_cheat_report.txt (shortest_paths_algorithms/reports/resources/, paths
+in shortest_paths_algorithms/paths.py), picked via GRAPH_MODE (FULL_GRAPH or
+WITHOUT_ENTRANCES_GRAPH, see shortest_paths_algorithms/algorithms_utils.py) -- all
+run the same collect_platform_pairs pairs over the same graph
+(shortest_paths_algorithms/reports/report_utils.py), just with different
 search algorithms/heuristics. The actual path found for a pair can legitimately
 differ between reports (ties in shortest-path weight aren't unique), but
 optimum_weight (the shortest-path cost itself) must not: if it does, one
@@ -15,8 +18,9 @@ already in the report files, so it only reads and cross-compares them via
 read_dict_rows (data_validation/gtfs_utils.py).
 
 Methodology:
-1. check_missing_files + print_file_disclaimer on the 4 report files, fitting
-   the same pattern as every other report/checker in this package.
+1. check_missing_files + print_file_disclaimer on the 4 report files for
+   GRAPH_MODE, fitting the same pattern as every other report/checker in this
+   package.
 2. Read each report via read_dict_rows into {(source_id, target_id):
    (source_name, target_name, optimum_weight)}, parsing "NA" to None.
 3. For every pair appearing in at least one report, collect its weight from
@@ -49,20 +53,39 @@ from data_validation.gtfs_utils import (  # noqa: E402
     print_file_disclaimer,
     read_dict_rows,
 )
-from shortest_paths_algorithms.algorithms_utils import Node  # noqa: E402
+from shortest_paths_algorithms.algorithms_utils import (  # noqa: E402
+    FULL_GRAPH,
+    WITHOUT_ENTRANCES_GRAPH,
+    GraphMode,
+    Node,
+)
 from shortest_paths_algorithms.paths import (  # noqa: E402
-    A_STAR_CHEAT_REPORT_FILE,
-    A_STAR_GEO_REPORT_FILE,
-    A_STAR_BCN_REPORT_FILE,
-    DIJKSTRA_REPORT_FILE,
+    A_STAR_CHEAT_REPORT_FULL_FILE,
+    A_STAR_CHEAT_REPORT_NO_PW_FILE,
+    A_STAR_GEO_REPORT_FULL_FILE,
+    A_STAR_GEO_REPORT_NO_PW_FILE,
+    A_STAR_BCN_REPORT_FULL_FILE,
+    A_STAR_BCN_REPORT_NO_PW_FILE,
+    DIJKSTRA_REPORT_FULL_FILE,
+    DIJKSTRA_REPORT_NO_PW_FILE,
 )
 
-REPORT_FILES: List[str] = [
-    DIJKSTRA_REPORT_FILE,
-    A_STAR_GEO_REPORT_FILE,
-    A_STAR_BCN_REPORT_FILE,
-    A_STAR_CHEAT_REPORT_FILE,
-]
+GRAPH_MODE: GraphMode = WITHOUT_ENTRANCES_GRAPH  # FULL_GRAPH or WITHOUT_ENTRANCES_GRAPH
+_REPORT_FILES_BY_MODE: Dict[GraphMode, List[str]] = {
+    FULL_GRAPH: [
+        DIJKSTRA_REPORT_FULL_FILE,
+        A_STAR_GEO_REPORT_FULL_FILE,
+        A_STAR_BCN_REPORT_FULL_FILE,
+        A_STAR_CHEAT_REPORT_FULL_FILE,
+    ],
+    WITHOUT_ENTRANCES_GRAPH: [
+        DIJKSTRA_REPORT_NO_PW_FILE,
+        A_STAR_GEO_REPORT_NO_PW_FILE,
+        A_STAR_BCN_REPORT_NO_PW_FILE,
+        A_STAR_CHEAT_REPORT_NO_PW_FILE,
+    ],
+}
+REPORT_FILES: List[str] = _REPORT_FILES_BY_MODE[GRAPH_MODE]
 
 Pair = Tuple[Node, Node]
 PairEntry = Tuple[str, str, Optional[int]]  # (source_name, target_name, optimum_weight)
@@ -158,7 +181,8 @@ def format_weight_by_report(weight_by_report: Dict[str, Optional[int]]) -> str:
         weight_by_report: Report name to optimum_weight (or None for "NA").
 
     returns:
-        e.g. "dijkstra_report=972, a_star_geo_report=972, a_star_h_cheat_report=NA".
+        e.g. "dijkstra_no_pw_report=972, a_star_no_pw_geo_report=972,
+        a_star_no_pw_h_cheat_report=NA".
     """
     return ", ".join(
         f"{name}={'NA' if weight is None else weight}"
