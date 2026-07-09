@@ -86,10 +86,13 @@ from data_validation.gtfs_utils import (  # noqa: E402
 from shortest_paths_algorithms.algorithms_utils import (  # noqa: E402
     FULL_GRAPH,
     WITHOUT_ENTRANCES_GRAPH,
-    GraphMode,
     NodeFmt,
     build_graph_from_weights,
     stop_label,
+)
+from shortest_paths_algorithms.config import (  # noqa: E402
+    GRAPH_MODE,
+    HEURISTIC_NAME,
 )
 from shortest_paths_algorithms.reports.report_utils import (  # noqa: E402
     ReportRow,
@@ -99,6 +102,9 @@ from shortest_paths_algorithms.reports.report_utils import (  # noqa: E402
     run_platform_pair_report,
 )
 from shortest_paths_algorithms.a_star.a_star_utils import (  # noqa: E402
+    H_BCN,
+    H_CHEAT,
+    H_GEO,
     Graph,
     Heuristic,
     Node,
@@ -127,18 +133,14 @@ from shortest_paths_algorithms.paths import (  # noqa: E402
     A_STAR_GEO_REPORT_NO_PW_FILE,
 )
 
-HEURISTIC_NAME = (
-    "h_cheat"  # "h_geo", "h_cheat", or "h_bcn" to pick the heuristic built in main()
-)
-GRAPH_MODE: GraphMode = FULL_GRAPH  # FULL_GRAPH or WITHOUT_ENTRANCES_GRAPH
 ITERATIONS_LABEL = "a_star_iterations"
 _REPORT_FILE_BY_HEURISTIC_AND_MODE = {
-    ("h_geo", FULL_GRAPH): A_STAR_GEO_REPORT_FULL_FILE,
-    ("h_geo", WITHOUT_ENTRANCES_GRAPH): A_STAR_GEO_REPORT_NO_PW_FILE,
-    ("h_cheat", FULL_GRAPH): A_STAR_CHEAT_REPORT_FULL_FILE,
-    ("h_cheat", WITHOUT_ENTRANCES_GRAPH): A_STAR_CHEAT_REPORT_NO_PW_FILE,
-    ("h_bcn", FULL_GRAPH): A_STAR_BCN_REPORT_FULL_FILE,
-    ("h_bcn", WITHOUT_ENTRANCES_GRAPH): A_STAR_BCN_REPORT_NO_PW_FILE,
+    (H_GEO, FULL_GRAPH): A_STAR_GEO_REPORT_FULL_FILE,
+    (H_GEO, WITHOUT_ENTRANCES_GRAPH): A_STAR_GEO_REPORT_NO_PW_FILE,
+    (H_CHEAT, FULL_GRAPH): A_STAR_CHEAT_REPORT_FULL_FILE,
+    (H_CHEAT, WITHOUT_ENTRANCES_GRAPH): A_STAR_CHEAT_REPORT_NO_PW_FILE,
+    (H_BCN, FULL_GRAPH): A_STAR_BCN_REPORT_FULL_FILE,
+    (H_BCN, WITHOUT_ENTRANCES_GRAPH): A_STAR_BCN_REPORT_NO_PW_FILE,
 }
 OUTPUT_PATH = Path(_REPORT_FILE_BY_HEURISTIC_AND_MODE[(HEURISTIC_NAME, GRAPH_MODE)])
 OUTPUT_NAME = OUTPUT_PATH.name
@@ -209,7 +211,7 @@ def main() -> Tuple[List[ReportRow], float]:
 
     graph = build_graph_from_weights(WEIGHTS_FILE, GRAPH_MODE)
 
-    if HEURISTIC_NAME == "h_cheat":
+    if HEURISTIC_NAME == H_CHEAT:
         # h_cheat only needs graph -- coords/v_max are geography-only inputs
         # h_geo/h_bcn need, so skip computing them entirely for this heuristic.
         h = build_h_cheat(graph)
@@ -221,9 +223,9 @@ def main() -> Tuple[List[ReportRow], float]:
             f" -- found at edge {v_max_from} ({node_fmt(v_max_from)})"
             f" -> {v_max_to} ({node_fmt(v_max_to)})"
         )
-        if HEURISTIC_NAME == "h_geo":
+        if HEURISTIC_NAME == H_GEO:
             h = build_h_geo(coords, v_max)
-        elif HEURISTIC_NAME == "h_bcn":
+        elif HEURISTIC_NAME == H_BCN:
             depth_from, depth_to = build_depth_tables(graph)
             h = build_h_bcn(WEIGHTS_FILE, coords, v_max, depth_from, depth_to)
         else:

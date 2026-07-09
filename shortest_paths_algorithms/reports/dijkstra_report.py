@@ -109,12 +109,12 @@ from data_validation.gtfs_utils import (  # noqa: E402
 from shortest_paths_algorithms.algorithms_utils import (  # noqa: E402
     FULL_GRAPH,
     WITHOUT_ENTRANCES_GRAPH,
-    GraphMode,
     Node,
     NodeFmt,
     build_graph_from_weights,
     stop_label,
 )
+from shortest_paths_algorithms.config import GRAPH_MODE  # noqa: E402
 from shortest_paths_algorithms.reports.report_utils import (  # noqa: E402
     ReportRow,
     ReportRunner,
@@ -131,7 +131,6 @@ from shortest_paths_algorithms.paths import (  # noqa: E402
     DIJKSTRA_REPORT_NO_PW_FILE,
 )
 
-GRAPH_MODE: GraphMode = FULL_GRAPH  # FULL_GRAPH or WITHOUT_ENTRANCES_GRAPH
 ITERATIONS_LABEL = "cut_iterations"
 _REPORT_FILE_BY_MODE = {
     FULL_GRAPH: DIJKSTRA_REPORT_FULL_FILE,

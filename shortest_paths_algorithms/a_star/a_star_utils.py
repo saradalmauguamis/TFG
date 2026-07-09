@@ -18,6 +18,14 @@ from shortest_paths_algorithms.algorithms_utils import (  # shared with dijkstra
 
 Heuristic = Callable[[Node, Node], int]
 
+# ---------------------------------------------------------------------------
+# Heuristic name: which build_h_* heuristic a_star.py/a_star_report.py picks.
+# ---------------------------------------------------------------------------
+HeuristicName = str
+H_GEO: HeuristicName = "h_geo"
+H_CHEAT: HeuristicName = "h_cheat"
+H_BCN: HeuristicName = "h_bcn"
+
 
 def a_star(
     graph: Graph,
