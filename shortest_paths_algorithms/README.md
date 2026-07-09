@@ -4,6 +4,8 @@
 shortest_paths_algorithms/
 ├── algorithms_utils.py
 ├── barcelona_division.py
+├── config.py
+├── config.yaml
 ├── paths.py
 ├── dijkstra/
 │   ├── dijkstra.py
@@ -52,6 +54,13 @@ Center/Branch case classifier (`classify`) and bridge helpers (`find_branch`, `c
 built on top of it. Used by `a_star/heuristics/h_bcn.py` (the `h_bcn` heuristic itself) and
 `analysis/algorithms_comparison.py` (to classify platform pairs by Center/Branch case).
 
+## config.py
+
+Loads `config.yaml` once and exposes `SOURCE`/`TARGET`/`GRAPH_MODE`/`HEURISTIC_NAME` as constants,
+so `dijkstra.py`, `a_star.py`, `extracted_nodes_graph.py`, and the `reports/` scripts all read the
+same experiment parameters instead of each hardcoding its own copy. Edit `config.yaml` to change
+SOURCE/TARGET/GRAPH_MODE/HEURISTIC_NAME instead of editing constants in each script.
+
 ## paths.py
 
 Important paths shared across `shortest_paths_algorithms/`'s modules.
@@ -69,12 +78,12 @@ Important paths shared across `shortest_paths_algorithms/`'s modules.
 ## a_star/
 
 - `a_star.py`: the main file, mirroring `dijkstra.py` but for A*, picking one of the three
-  heuristics in `heuristics/` via `HEURISTIC_NAME`.
+  heuristics in `heuristics/`.
 - `a_star_utils.py`: the algorithm-agnostic core shared by every heuristic, built on top of
-  `algorithms_utils.py`: the `Heuristic` type and the `a_star` function itself.
+  `algorithms_utils.py`.
 - `heuristics/`: one module per interchangeable, admissible heuristic, each exposing a `build_h_*`
   factory that pre-binds its dependencies into a plain `Heuristic(node, target)`:
-  - `h_geo.py`: straight-line distance / v_max, admissible and actually usable.
+  - `h_geo.py`: straight-line distance / v_max.
   - `h_cheat.py`: the real optimal cost via `cut_dijkstra`, only useful to see how A* behaves with
     a perfect heuristic, since computing it already requires solving the shortest path.
   - `h_bcn.py`: a Barcelona region/bridge-aware heuristic built on `barcelona_division.py`. Reduces
@@ -94,12 +103,13 @@ call since each report depends on the other's output for its analysis:
 - `dijkstra_report.py`: aimed to prove whether a heuristic is needed at all, since the graph is
   small enough that it might not be. Runs `cut_dijkstra` over every directed platform pair to
   measure, via `proportion = path_vertices / cut_iterations`, where a heuristic could help. Writes
-  `DIJKSTRA_REPORT_FILE`.
+  `DIJKSTRA_REPORT_FULL_FILE` or `DIJKSTRA_REPORT_NO_PW_FILE`.
 - `a_star_report.py`: reruns the same pairs with A*, so its `proportion` can be compared
-  side-by-side against `dijkstra_report.txt` to see how much of that theoretical opportunity a
+  side-by-side against `dijkstra_no_pw_report.txt` to see how much of that theoretical opportunity a
   heuristic actually captures. Can do the same with any of the three heuristics in
-  `a_star/heuristics/` (`h_geo`, `h_bcn`, or `h_cheat`), picked via `HEURISTIC_NAME`.
-- `optimum_weight_check.py`: sanity check across the four reports above verifying that
+  `a_star/heuristics/` (`h_geo`, `h_bcn`, or `h_cheat`), and either
+  graph mode.
+- `optimum_weight_check.py`: sanity check across the six reports above verifying that
   `optimum_weight` agrees for every platform pair even when the actual path found differs, since it
   never reruns a search and just cross-compares the reports' own columns. Exits non-zero if a
   weight or reachability mismatch is found.
@@ -110,11 +120,13 @@ call since each report depends on the other's output for its analysis:
 - `algorithms_comparison.py`: aggregates the `reports/` outputs (Dijkstra, A* with `h_geo`, A* with
   `h_bcn`, A* with `h_cheat`) by graph region instead of only the single global `proportion` each
   report already prints on its own, splitting every platform pair into a Center/Branch case via
-  `barcelona_division.py`. Writes `algorithms_comparison_report.txt` (convertible via
-  `scripts/from_txt_to_xlsx.py`) and a grouped bar chart, `algorithms_comparison_chart.png`.
+  `barcelona_division.py`. Builds two outputs: `algorithms_comparison_full_report.txt`/`_full_chart.png`
+  (`FULL_GRAPH` only) and `algorithms_comparison_combined_report.txt`/`_combined_chart.png`
+  (`FULL_GRAPH` and `WITHOUT_ENTRANCES_GRAPH` side by side, one bar per heuristic per graph mode,
+  the `no_pw` bar hatched so the two modes stay visually distinct), letting the two graph modes
+  be compared directly. Both `.txt` tables are convertible via `scripts/from_txt_to_xlsx.py`.
 - `regions_graph.py`: draws the whole subway network colored by `barcelona_division.py`'s
-  Center/Branch regions instead of by line, reusing `graph_inspection/graph_draw/graph.py`'s graph
-  loading. Each branch's single bridge platform is highlighted in yellow. Writes
+  Center/Branch regions. Writes
   `barcelona_regions_graph.png`.
 - `extracted_nodes_graph.py`: for a single hardcoded `SOURCE` -> `TARGET` pair, runs `cut_dijkstra`
   and all three A* heuristics and draws which nodes/edges each one actually extracted, layered over
