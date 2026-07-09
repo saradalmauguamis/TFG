@@ -1,8 +1,10 @@
 """Report, for every directed platform-to-platform route, how well an A* heuristic
 (shortest_paths_algorithms/a_star/a_star_utils.py) actually performs.
 
-Output_name: a_star_geo_report.txt (HEURISTIC_NAME="h_geo"), a_star_h_cheat_report.txt
-(HEURISTIC_NAME="h_cheat"), or a_star_h_bcn_report.txt (HEURISTIC_NAME="h_bcn"),
+Output_name: a_star_{full,no_pw}_geo_report.txt (HEURISTIC_NAME="h_geo"),
+a_star_{full,no_pw}_h_cheat_report.txt (HEURISTIC_NAME="h_cheat"), or
+a_star_{full,no_pw}_h_bcn_report.txt (HEURISTIC_NAME="h_bcn") -- the full/no_pw
+half picked by GRAPH_MODE (see shortest_paths_algorithms/algorithms_utils.py) --
 saved into 'shortest_paths_algorithms/reports/resources'
 
 This is the evaluation counterpart to dijkstra_report.py
@@ -53,7 +55,11 @@ Across all 29,070 directed platform pairs, that's well under a minute for
 h_geo, 11.8s for h_bcn, and 485.4s (~16.7ms average per pair) for h_cheat --
 even that worst case is only an 8-minute one-off cost, not worth adding
 parallelism for, so this script is intentionally left sequential, exactly as
-in dijkstra_report.py.
+in dijkstra_report.py. Those h_cheat figures were themselves measured with
+GRAPH_MODE=FULL_GRAPH, the worst case for it (entrances included means a
+larger graph for every internal cut_dijkstra call), so the same conclusion
+holds a fortiori on WITHOUT_ENTRANCES_GRAPH, where h_cheat's cut_dijkstra
+calls run over a smaller graph and so are only faster.
 """
 
 from __future__ import annotations
@@ -61,7 +67,7 @@ from __future__ import annotations
 import sys
 from functools import partial
 from pathlib import Path
-from typing import Dict, List, Optional, Set, Tuple
+from typing import Dict, List, Optional, Tuple
 
 _PROJECT_ROOT = str(Path(__file__).resolve().parents[2])
 if _PROJECT_ROOT not in sys.path:
@@ -70,16 +76,17 @@ if _PROJECT_ROOT not in sys.path:
 from scripts.basics import subway_route_names_stop_ids_artificial  # noqa: E402
 
 from data_validation.gtfs_utils import (  # noqa: E402
-    PATHWAYS_FILE,
     STOPS_FILE,
     WEIGHTS_FILE,
     build_stop_to_lines,
     check_missing_files,
-    load_pathway_ids,
     load_stop_names,
     print_file_disclaimer,
 )
 from shortest_paths_algorithms.algorithms_utils import (  # noqa: E402
+    FULL_GRAPH,
+    WITHOUT_ENTRANCES_GRAPH,
+    GraphMode,
     NodeFmt,
     build_graph_from_weights,
     stop_label,
@@ -112,21 +119,28 @@ from shortest_paths_algorithms.a_star.heuristics.h_bcn import (  # noqa: E402
     build_h_bcn,
 )
 from shortest_paths_algorithms.paths import (  # noqa: E402
-    A_STAR_BCN_REPORT_FILE,
-    A_STAR_CHEAT_REPORT_FILE,
-    A_STAR_GEO_REPORT_FILE,
+    A_STAR_BCN_REPORT_FULL_FILE,
+    A_STAR_BCN_REPORT_NO_PW_FILE,
+    A_STAR_CHEAT_REPORT_FULL_FILE,
+    A_STAR_CHEAT_REPORT_NO_PW_FILE,
+    A_STAR_GEO_REPORT_FULL_FILE,
+    A_STAR_GEO_REPORT_NO_PW_FILE,
 )
 
 HEURISTIC_NAME = (
-    "h_bcn"  # "h_geo", "h_cheat", or "h_bcn" to pick the heuristic built in main()
+    "h_cheat"  # "h_geo", "h_cheat", or "h_bcn" to pick the heuristic built in main()
 )
+GRAPH_MODE: GraphMode = FULL_GRAPH  # FULL_GRAPH or WITHOUT_ENTRANCES_GRAPH
 ITERATIONS_LABEL = "a_star_iterations"
-_REPORT_FILE_BY_HEURISTIC = {
-    "h_geo": A_STAR_GEO_REPORT_FILE,
-    "h_cheat": A_STAR_CHEAT_REPORT_FILE,
-    "h_bcn": A_STAR_BCN_REPORT_FILE,
+_REPORT_FILE_BY_HEURISTIC_AND_MODE = {
+    ("h_geo", FULL_GRAPH): A_STAR_GEO_REPORT_FULL_FILE,
+    ("h_geo", WITHOUT_ENTRANCES_GRAPH): A_STAR_GEO_REPORT_NO_PW_FILE,
+    ("h_cheat", FULL_GRAPH): A_STAR_CHEAT_REPORT_FULL_FILE,
+    ("h_cheat", WITHOUT_ENTRANCES_GRAPH): A_STAR_CHEAT_REPORT_NO_PW_FILE,
+    ("h_bcn", FULL_GRAPH): A_STAR_BCN_REPORT_FULL_FILE,
+    ("h_bcn", WITHOUT_ENTRANCES_GRAPH): A_STAR_BCN_REPORT_NO_PW_FILE,
 }
-OUTPUT_PATH = Path(_REPORT_FILE_BY_HEURISTIC[HEURISTIC_NAME])
+OUTPUT_PATH = Path(_REPORT_FILE_BY_HEURISTIC_AND_MODE[(HEURISTIC_NAME, GRAPH_MODE)])
 OUTPUT_NAME = OUTPUT_PATH.name
 FIELDNAMES = report_fieldnames(ITERATIONS_LABEL)
 
@@ -183,7 +197,6 @@ def main() -> Tuple[List[ReportRow], float]:
     v_max: float
     v_max_from: Node
     v_max_to: Node
-    pathway_ids: Set[str]
     depth_from: DepthTable
     depth_to: DepthTable
     h: Heuristic
@@ -194,25 +207,27 @@ def main() -> Tuple[List[ReportRow], float]:
     stop_to_lines = build_stop_to_lines(subway_route_names_stop_ids_artificial)
     node_fmt = partial(stop_label, stop_names=stop_names, stop_to_lines=stop_to_lines)
 
-    graph = build_graph_from_weights(WEIGHTS_FILE)
+    graph = build_graph_from_weights(WEIGHTS_FILE, GRAPH_MODE)
 
-    coords = load_node_coords(STOPS_FILE)
-    v_max, (v_max_from, v_max_to) = compute_v_max(graph, coords)
-    print(
-        f"v_max (fastest implied edge speed): {v_max:.3f} m/s ({v_max * 3.6:.1f} km/h)"
-        f" -- found at edge {v_max_from} ({node_fmt(v_max_from)})"
-        f" -> {v_max_to} ({node_fmt(v_max_to)})"
-    )
-    pathway_ids = load_pathway_ids(PATHWAYS_FILE)
-    if HEURISTIC_NAME == "h_geo":
-        h = build_h_geo(coords, v_max)
-    elif HEURISTIC_NAME == "h_cheat":
+    if HEURISTIC_NAME == "h_cheat":
+        # h_cheat only needs graph -- coords/v_max are geography-only inputs
+        # h_geo/h_bcn need, so skip computing them entirely for this heuristic.
         h = build_h_cheat(graph)
-    elif HEURISTIC_NAME == "h_bcn":
-        depth_from, depth_to = build_depth_tables(graph)
-        h = build_h_bcn(pathway_ids, coords, v_max, depth_from, depth_to)
     else:
-        raise ValueError(f"Unknown HEURISTIC_NAME: {HEURISTIC_NAME!r}")
+        coords = load_node_coords(STOPS_FILE)
+        v_max, (v_max_from, v_max_to) = compute_v_max(graph, coords)
+        print(
+            f"v_max (fastest implied edge speed): {v_max:.3f} m/s ({v_max * 3.6:.1f} km/h)"
+            f" -- found at edge {v_max_from} ({node_fmt(v_max_from)})"
+            f" -> {v_max_to} ({node_fmt(v_max_to)})"
+        )
+        if HEURISTIC_NAME == "h_geo":
+            h = build_h_geo(coords, v_max)
+        elif HEURISTIC_NAME == "h_bcn":
+            depth_from, depth_to = build_depth_tables(graph)
+            h = build_h_bcn(WEIGHTS_FILE, coords, v_max, depth_from, depth_to)
+        else:
+            raise ValueError(f"Unknown HEURISTIC_NAME: {HEURISTIC_NAME!r}")
     runner = build_run_a_star(h)
 
     pairs = collect_platform_pairs(graph)
@@ -223,8 +238,8 @@ def main() -> Tuple[List[ReportRow], float]:
 
 
 if __name__ == "__main__":
-    check_missing_files([WEIGHTS_FILE, STOPS_FILE, PATHWAYS_FILE])
-    print_file_disclaimer([WEIGHTS_FILE, STOPS_FILE, PATHWAYS_FILE])
+    check_missing_files([WEIGHTS_FILE, STOPS_FILE])
+    print_file_disclaimer([WEIGHTS_FILE, STOPS_FILE])
 
     print(f"Starting {OUTPUT_NAME} generation...")
     report_rows, elapsed_seconds = main()

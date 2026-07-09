@@ -17,9 +17,10 @@ admissible estimate for every candidate pair, so the minimum over all pairs
 can never exceed the true cost via whichever pair the optimal path actually uses.
 
 Depends on shortest_paths_algorithms/barcelona_division.py (classify, compute_bridge,
-Branches, Bridges) for the region split, data_validation/gtfs_utils.py
-(build_directed_entrance_edges, invert_entries) for the plat_to/plat_from
-lookups, and heuristics/h_geo.py's h_geo for the Center-crossing estimate.
+Branches, Bridges) for the region split, algorithms_utils.py
+(build_directed_entrance_edges_from_weights) and data_validation/gtfs_utils.py
+(invert_entries) for the plat_to/plat_from lookups, and heuristics/h_geo.py's
+h_geo for the Center-crossing estimate.
 
 depth_from_bridge/depth_to_bridge look up a stop_id directly in a flat
 precalculated_depth_from/precalculated_depth_to table (built once by
@@ -39,11 +40,17 @@ _PROJECT_ROOT = str(Path(__file__).resolve().parents[3])
 if _PROJECT_ROOT not in sys.path:
     sys.path.insert(0, _PROJECT_ROOT)
 
-from data_validation.gtfs_utils import (  # noqa: E402
-    build_directed_entrance_edges,
-    invert_entries,
+from data_validation.gtfs_utils import invert_entries  # noqa: E402
+from shortest_paths_algorithms.algorithms_utils import (  # noqa: E402
+    INF,
+    EntranceToPlatforms,
+    Graph,
+    Node,
+    build_directed_entrance_edges_from_weights,
+    entry_cost,
+    plat_from,
+    plat_to,
 )
-from shortest_paths_algorithms.algorithms_utils import INF, Graph, Node  # noqa: E402
 from shortest_paths_algorithms.barcelona_division import (  # noqa: E402
     Branches,
     Bridges,
@@ -53,65 +60,9 @@ from shortest_paths_algorithms.barcelona_division import (  # noqa: E402
 from shortest_paths_algorithms.a_star.a_star_utils import Heuristic  # noqa: E402
 from shortest_paths_algorithms.a_star.heuristics.h_geo import Coord, h_geo  # noqa: E402
 
-# entrance stop_id -> the platform stop_id(s) reachable via a directed pathway
-# edge in that specific direction (see plat_to/plat_from below).
-EntranceToPlatforms = Dict[str, Set[str]]
-
 # platform stop_id -> precalculated depth, see depth_from_bridge/depth_to_bridge
 # and build_depth_tables below.
 DepthTable = Dict[str, int]
-
-
-def plat_to(node: Node, entrance_plat_to: EntranceToPlatforms) -> Set[str]:
-    """Return the platforms with a directed pathway arrow into node (1.x --> node).
-
-    args:
-        node: Platform or entrance stop_id.
-        entrance_plat_to: Mapping from entrance stop_id to the platform
-            stop_ids with a directed pathway edge into that entrance, i.e.
-            invert_entries(platform_to_entrance) from
-            build_directed_entrance_edges.
-
-    returns:
-        {node} if node is a platform; otherwise the platforms with an arrow
-        into node (possibly empty, if node is an entrance no platform points to).
-    """
-    if not node.startswith("E."):
-        return {node}
-    return entrance_plat_to.get(node, set())
-
-
-def plat_from(node: Node, entrance_plat_from: EntranceToPlatforms) -> Set[str]:
-    """Return the platforms node has a directed pathway arrow into (node --> 1.x).
-
-    args:
-        node: Platform or entrance stop_id.
-        entrance_plat_from: Mapping from entrance stop_id to the platform
-            stop_ids that entrance has a directed pathway edge into, i.e.
-            invert_entries(entrance_to_platform) from
-            build_directed_entrance_edges.
-
-    returns:
-        {node} if node is a platform; otherwise the platforms node has an
-        arrow into (possibly empty, if node is an entrance leading nowhere).
-    """
-    if not node.startswith("E."):
-        return {node}
-    return entrance_plat_from.get(node, set())
-
-
-def entry_cost(node: Node) -> int:
-    """Return the fixed pathway cost for node, if it is an entrance.
-
-    All pathways have a weight of 60 (data_validation/checks/pathways_checks.py).
-
-    args:
-        node: Platform or entrance stop_id.
-
-    returns:
-        60 if node is an entrance, otherwise 0.
-    """
-    return 60 if node.startswith("E.") else 0
 
 
 def depth_from_bridge(node: str, precalculated_depth_from: DepthTable) -> int:
@@ -310,7 +261,7 @@ def h_bcn(
 
 
 def build_h_bcn(
-    pathway_ids: Set[str],
+    weights_file: str,
     coords: Dict[Node, Coord],
     v_max: float,
     precalculated_depth_from: DepthTable,
@@ -319,8 +270,8 @@ def build_h_bcn(
     """Bind pathway/region lookups into h_bcn, producing a plain Heuristic(node, target).
 
     args:
-        pathway_ids: Pathway IDs to parse into the plat_to/plat_from lookups,
-            e.g. load_pathway_ids(PATHWAYS_FILE).
+        weights_file: Path to WEIGHTS_FILE, whose PW rows are read directly into
+            the plat_to/plat_from lookups (see build_directed_entrance_edges_from_weights).
         coords: Mapping from node to its (lat, lon) coordinates, for h_geo.
         v_max: Fastest implied speed (m/s) across any edge, for h_geo.
         precalculated_depth_from: platform stop_id -> bridge --> node cost.
@@ -330,8 +281,8 @@ def build_h_bcn(
         h_bcn with every lookup pre-bound, matching
         Heuristic = Callable[[Node, Node], int].
     """
-    platform_to_entrance, entrance_to_platform = build_directed_entrance_edges(
-        pathway_ids
+    platform_to_entrance, entrance_to_platform = (
+        build_directed_entrance_edges_from_weights(weights_file)
     )
     entrance_plat_to = invert_entries(platform_to_entrance)
     entrance_plat_from = invert_entries(entrance_to_platform)

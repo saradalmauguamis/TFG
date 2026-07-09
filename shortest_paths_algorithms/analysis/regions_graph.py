@@ -5,20 +5,11 @@ Reuses graph_inspection/graph_draw/graph.py's graph loading (GTFS-derived edges,
 weights, and the jittered synthetic-platform/entry positions) and recolors it
 against shortest_paths_algorithms/barcelona_division.py's Center/Branches partition
 instead of by subway line: every platform, and every SW/TF/PW edge touching it, is
-painted in its region's pastel color -- except the edge connecting a branch's
+painted in its region's color -- except the edge connecting a branch's
 outermost platform to its bridge, which takes the branch's color (it's still part
 of the branch, structurally), and the bridge platform itself, which is highlighted
 in yellow, a color reserved from the region palette so it never doubles as a
 region's color.
-
-The 9 region colors + the yellow bridge accent were derived and CVD-validated with
-the dataviz skill's method (OKLCH lightness/chroma bands, Machado-2009 protan/
-deutan simulation, all-pairs since any two regions can end up adjacent on the map).
-One pair (Branch_L5 <-> Branch_FM) and four individual colors' contrast against
-white land in the skill's documented WARN/floor bands; that's legal there only with
-secondary encoding, which here is the region legend (every color is also a text
-label) plus the fact that same-named regions never sit next to each other except
-through their one bridge.
 """
 
 import math
@@ -55,9 +46,7 @@ REGION_COLORS: dict[str, str] = {
     "Branch_FM": "#0088ad",
     "Center": "#a9b45f",
 }
-# Reserved separately from REGION_COLORS -- not one of the 9 region hues -- so a
-# bridge marker never impersonates a region, mirroring the dataviz skill's "status
-# colors are reserved" convention.
+
 BRIDGE_COLOR = "#eda100"
 
 BRIDGE_STOPS: set[str] = {stop for stops in Bridges.values() for stop in stops}
