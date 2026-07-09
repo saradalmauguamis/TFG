@@ -15,13 +15,13 @@ algorithm's pseudocode -- see a_star_utils.py's a_star() and dijkstra_utils.py's
 _run_dijkstra() for where it's tracked purely for this kind of traceability -- but
 `parent` already is, for both algorithms.
 
-Output_name: {REGION_CASE}_{GRAPH_MODE_LABEL}_{SOURCE}_to_{TARGET}.png saved into
+Output_name: {region_case}_{GRAPH_MODE_LABEL}_{SOURCE}_to_{TARGET}.png saved into
 'shortest_paths_algorithms/analysis/resources/extracted_nodes' (EXTRACTED_NODES_DIR,
-shortest_paths_algorithms/paths.py). REGION_CASE is a free-form label (one of
-barcelona_division.classify's CC/CB/BC/SB/DB cases) set by hand to whatever case
-SOURCE/TARGET demonstrates -- not recomputed from them, so it also drives
-resolve_bridge_highlights: whichever endpoint(s) REGION_CASE names as a branch (TARGET
-for CB/SB/DB, SOURCE for BC/SB/DB) get their branch's bridge platform (find_branch/
+shortest_paths_algorithms/paths.py). region_case (one of barcelona_division.classify's
+CC/CB/BC/SB/DB cases) is computed from the actual (algo_source, algo_target) platform
+pair cut-Dijkstra resolves SOURCE/TARGET to (see best_over_candidate_pairs), and also
+drives resolve_bridge_highlights: whichever endpoint(s) region_case names as a branch
+(TARGET for CB/SB/DB, SOURCE for BC/SB/DB) get their branch's bridge platform (find_branch/
 compute_bridge, same lookup regions_graph.py uses) marked with a diamond in BRIDGE_COLOR.
 
 Since the deliverable is the PNG alone (no companion .txt report), everything that would
@@ -68,7 +68,6 @@ from shortest_paths_algorithms.algorithms_utils import (  # noqa: E402
     WITHOUT_ENTRANCES_GRAPH,
     EntranceToPlatforms,
     Graph,
-    GraphMode,
     Node,
     NodeFmt,
     best_over_candidate_pairs,
@@ -90,9 +89,11 @@ from shortest_paths_algorithms.analysis.regions_graph import (  # noqa: E402
     EDGE_WIDTH_SCALE_BY_TYPE,
 )
 from shortest_paths_algorithms.barcelona_division import (  # noqa: E402
+    classify,
     compute_bridge,
     find_branch,
 )
+from shortest_paths_algorithms.config import GRAPH_MODE, SOURCE, TARGET  # noqa: E402
 from shortest_paths_algorithms.a_star.a_star_utils import (  # noqa: E402
     Heuristic,
     a_star,
@@ -115,13 +116,6 @@ from shortest_paths_algorithms.a_star.heuristics.h_bcn import (  # noqa: E402
 )
 from shortest_paths_algorithms.dijkstra.dijkstra_utils import cut_dijkstra  # noqa: E402
 from shortest_paths_algorithms.paths import EXTRACTED_NODES_DIR  # noqa: E402
-
-SOURCE = "E.22711"
-TARGET = "E.12001"
-REGION_CASE = (
-    "BC"  # free-form label for this pair's case (e.g. classify's CC/CB/BC/SB/DB)
-)
-GRAPH_MODE: GraphMode = WITHOUT_ENTRANCES_GRAPH  # FULL_GRAPH or WITHOUT_ENTRANCES_GRAPH
 
 # Human-readable GRAPH_MODE label for the figure's title, distinct from
 # GRAPH_MODE_LABEL's terse "full"/"no_pw" used in the output filename.
@@ -149,7 +143,7 @@ SOURCE_COLOR = "#1a1a1a"
 TARGET_COLOR = "#e6007e"
 ENDPOINT_NODE_SIZE = 400
 
-# Whichever of SOURCE/TARGET REGION_CASE names as a branch endpoint (see
+# Whichever of SOURCE/TARGET region_case names as a branch endpoint (see
 # resolve_bridge_highlights) gets its branch's bridge platform marked with a diamond in
 # BRIDGE_COLOR -- the same color regions_graph.py reserves for "bridge", so it reads as
 # the same concept across every chart in this package.
@@ -334,14 +328,16 @@ def draw_endpoints(
 
 
 def resolve_bridge_highlights(
-    entrance_plat_to: Dict[str, Set[str]], entrance_plat_from: Dict[str, Set[str]]
+    region_case: str,
+    entrance_plat_to: Dict[str, Set[str]],
+    entrance_plat_from: Dict[str, Set[str]],
 ) -> List[Node]:
-    """Return the bridge platform(s) REGION_CASE calls out for SOURCE and/or TARGET.
+    """Return the bridge platform(s) region_case calls out for SOURCE and/or TARGET.
 
-    Mirrors barcelona_division.classify's naming: REGION_CASE names TARGET's branch
+    Mirrors barcelona_division.classify's naming: region_case names TARGET's branch
     whenever its second letter is B (CB/SB/DB) and SOURCE's whenever its first letter is B
     (BC/SB/DB) -- see shortest_paths_algorithms/barcelona_division.py's classify docstring for the
-    5-case table. Whichever endpoint(s) REGION_CASE names, resolved to platform(s) through
+    5-case table. Whichever endpoint(s) region_case names, resolved to platform(s) through
     h_bcn's own plat_to/plat_from (so an entry/exit maps to exactly the platforms h_bcn
     itself would route it through, instead of a separate ad-hoc lookup), find_branch/
     compute_bridge (also barcelona_division.py, the same lookup regions_graph.py uses to
@@ -349,6 +345,7 @@ def resolve_bridge_highlights(
     reconnects through.
 
     args:
+        region_case: This SOURCE/TARGET pair's classify() case, from main().
         entrance_plat_to: entry stop_id -> platforms with a directed pathway arrow into it,
             see h_bcn.plat_to; only consulted when TARGET is an entry/exit.
         entrance_plat_from: entry stop_id -> platforms it has a directed pathway arrow
@@ -360,11 +357,11 @@ def resolve_bridge_highlights(
         or up to 2 (DB, different branches).
     """
     bridges: Set[Node] = set()
-    if REGION_CASE in ("CB", "SB", "DB"):
+    if region_case in ("CB", "SB", "DB"):
         for platform in plat_to(TARGET, entrance_plat_to):
             if find_branch(platform) is not None:
                 bridges.add(compute_bridge(platform))
-    if REGION_CASE in ("BC", "SB", "DB"):
+    if region_case in ("BC", "SB", "DB"):
         for platform in plat_from(SOURCE, entrance_plat_from):
             if find_branch(platform) is not None:
                 bridges.add(compute_bridge(platform))
@@ -432,12 +429,13 @@ def draw_and_save_figure(
     entrance_plat_to: Dict[str, Set[str]],
     entrance_plat_from: Dict[str, Set[str]],
     node_fmt: NodeFmt,
+    region_case: str,
 ) -> Path:
     """Draw every algorithm's extracted layer over the whole subway graph and save the PNG.
 
     Layers the whole subway network (base layer), each algorithm's extracted
     nodes/edges (in COLOR_BY_HEURISTIC's fixed order), SOURCE/TARGET, and any
-    REGION_CASE bridge highlight, then the legend and the shortest-path
+    region_case bridge highlight, then the legend and the shortest-path
     sidebar -- see the module docstring for the full picture.
 
     args:
@@ -452,6 +450,7 @@ def draw_and_save_figure(
             pathway edge into, for resolve_bridge_highlights.
         node_fmt: Callable to label a node (stop name and line), for the
             sidebar.
+        region_case: This SOURCE/TARGET pair's classify() case, from main().
 
     returns:
         The path the PNG was saved to.
@@ -556,7 +555,9 @@ def draw_and_save_figure(
         )
     )
 
-    bridge_nodes = resolve_bridge_highlights(entrance_plat_to, entrance_plat_from)
+    bridge_nodes = resolve_bridge_highlights(
+        region_case, entrance_plat_to, entrance_plat_from
+    )
     if bridge_nodes:
         nx.draw_networkx_nodes(
             nx_graph,
@@ -604,7 +605,7 @@ def draw_and_save_figure(
     )
 
     fig.suptitle(
-        f"{REGION_CASE} case ({GRAPH_MODE_TITLE[GRAPH_MODE]}):"
+        f"{region_case} case ({GRAPH_MODE_TITLE[GRAPH_MODE]}):"
         f" extracted nodes from {SOURCE} to {TARGET}",
         y=0.995,
         fontsize=14,
@@ -629,7 +630,7 @@ def draw_and_save_figure(
     output_dir.mkdir(parents=True, exist_ok=True)
     output_path = (
         output_dir
-        / f"{REGION_CASE}_{GRAPH_MODE_LABEL[GRAPH_MODE]}_{SOURCE}_to_{TARGET}.png"
+        / f"{region_case}_{GRAPH_MODE_LABEL[GRAPH_MODE]}_{SOURCE}_to_{TARGET}.png"
     )
     fig.savefig(output_path, dpi=200)
     plt.close(fig)
@@ -655,6 +656,7 @@ def main() -> None:
     target_platforms: Set[Node]
     algo_source: Node
     algo_target: Node
+    region_case: str
     dijkstra_parent: Dict[Node, Optional[Node]]
     dijkstra_expanded: Dict[Node, bool]
     dijkstra_iterations: int
@@ -718,6 +720,7 @@ def main() -> None:
         target_platforms,
         partial(cut_dijkstra, verbose=False),
     )
+    region_case = classify(algo_source, algo_target)
 
     runs = {"Dijkstra": (dijkstra_parent, dijkstra_expanded, dijkstra_iterations)}
     for label, h in heuristics.items():
@@ -735,7 +738,13 @@ def main() -> None:
     path_vertices = len(path)
 
     output_path = draw_and_save_figure(
-        runs, path, path_vertices, entrance_plat_to, entrance_plat_from, node_fmt
+        runs,
+        path,
+        path_vertices,
+        entrance_plat_to,
+        entrance_plat_from,
+        node_fmt,
+        region_case,
     )
     print(f"{output_path.name} generated into {output_path.relative_to(_PROJECT_ROOT)}")
 

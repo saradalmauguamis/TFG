@@ -55,9 +55,7 @@ from data_validation.gtfs_utils import (  # noqa: E402
 )
 from shortest_paths_algorithms.algorithms_utils import (  # noqa: E402
     GRAPH_MODE_LABEL,
-    WITHOUT_ENTRANCES_GRAPH,
     EntranceToPlatforms,
-    GraphMode,
     NodeFmt,
     best_over_candidate_pairs,
     build_entrance_platform_lookups,
@@ -71,7 +69,21 @@ from shortest_paths_algorithms.algorithms_utils import (  # noqa: E402
     stop_label,
     with_adjusted_target_weight,
 )
-from a_star_utils import Graph, Heuristic, Node, a_star  # noqa: E402
+from shortest_paths_algorithms.config import (  # noqa: E402
+    GRAPH_MODE,
+    HEURISTIC_NAME,
+    SOURCE,
+    TARGET,
+)
+from a_star_utils import (  # noqa: E402
+    H_BCN,
+    H_CHEAT,
+    H_GEO,
+    Graph,
+    Heuristic,
+    Node,
+    a_star,
+)
 from heuristics.h_geo import (  # noqa: E402
     Coord,
     build_h_geo,
@@ -80,13 +92,6 @@ from heuristics.h_geo import (  # noqa: E402
 )
 from heuristics.h_cheat import build_h_cheat  # noqa: E402
 from heuristics.h_bcn import DepthTable, build_depth_tables, build_h_bcn  # noqa: E402
-
-SOURCE = "E.12201"
-TARGET = "E.12001"
-HEURISTIC_NAME = (
-    "h_geo"  # "h_geo", "h_cheat", or "h_bcn" to pick the heuristic built in main()
-)
-GRAPH_MODE: GraphMode = WITHOUT_ENTRANCES_GRAPH  # FULL_GRAPH or WITHOUT_ENTRANCES_GRAPH
 
 
 def main() -> None:
@@ -140,7 +145,7 @@ def main() -> None:
     graph = build_graph_from_weights(WEIGHTS_FILE, GRAPH_MODE)
     print_graph_size(graph)
 
-    if HEURISTIC_NAME == "h_cheat":
+    if HEURISTIC_NAME == H_CHEAT:
         # h_cheat only needs graph -- coords/v_max are geography-only inputs
         # h_geo/h_bcn need, so skip computing them entirely for this heuristic.
         h = build_h_cheat(graph)
@@ -152,9 +157,9 @@ def main() -> None:
             f" -- found at edge {v_max_from} ({node_fmt(v_max_from)})"
             f" -> {v_max_to} ({node_fmt(v_max_to)})"
         )
-        if HEURISTIC_NAME == "h_geo":
+        if HEURISTIC_NAME == H_GEO:
             h = build_h_geo(coords, v_max)
-        elif HEURISTIC_NAME == "h_bcn":
+        elif HEURISTIC_NAME == H_BCN:
             depth_from, depth_to = build_depth_tables(graph)
             h = build_h_bcn(WEIGHTS_FILE, coords, v_max, depth_from, depth_to)
         else:

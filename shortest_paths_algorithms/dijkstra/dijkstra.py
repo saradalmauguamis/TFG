@@ -25,9 +25,7 @@ from data_validation.gtfs_utils import (  # noqa: E402
 )
 from shortest_paths_algorithms.algorithms_utils import (  # noqa: E402
     GRAPH_MODE_LABEL,
-    WITHOUT_ENTRANCES_GRAPH,
     EntranceToPlatforms,
-    GraphMode,
     NodeFmt,
     build_entrance_platform_lookups,
     build_graph_from_weights,
@@ -41,6 +39,7 @@ from shortest_paths_algorithms.algorithms_utils import (  # noqa: E402
     stop_label,
     with_adjusted_target_weight,
 )
+from shortest_paths_algorithms.config import GRAPH_MODE, SOURCE, TARGET  # noqa: E402
 from dijkstra_utils import (  # noqa: E402
     Graph,
     Node,
@@ -49,10 +48,6 @@ from dijkstra_utils import (  # noqa: E402
     print_disclaimer,
     print_summary,
 )
-
-SOURCE = "E.12201"
-TARGET = "E.12001"
-GRAPH_MODE: GraphMode = WITHOUT_ENTRANCES_GRAPH  # FULL_GRAPH or WITHOUT_ENTRANCES_GRAPH
 
 
 def main() -> None:

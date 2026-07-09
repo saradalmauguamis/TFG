@@ -59,6 +59,7 @@ from shortest_paths_algorithms.algorithms_utils import (  # noqa: E402
     GraphMode,
     Node,
 )
+from shortest_paths_algorithms.config import GRAPH_MODE  # noqa: E402
 from shortest_paths_algorithms.paths import (  # noqa: E402
     A_STAR_CHEAT_REPORT_FULL_FILE,
     A_STAR_CHEAT_REPORT_NO_PW_FILE,
@@ -70,7 +71,6 @@ from shortest_paths_algorithms.paths import (  # noqa: E402
     DIJKSTRA_REPORT_NO_PW_FILE,
 )
 
-GRAPH_MODE: GraphMode = WITHOUT_ENTRANCES_GRAPH  # FULL_GRAPH or WITHOUT_ENTRANCES_GRAPH
 _REPORT_FILES_BY_MODE: Dict[GraphMode, List[str]] = {
     FULL_GRAPH: [
         DIJKSTRA_REPORT_FULL_FILE,
