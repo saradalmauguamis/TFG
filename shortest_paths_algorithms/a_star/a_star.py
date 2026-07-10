@@ -175,7 +175,10 @@ def main() -> None:
 
     start = perf_counter()
     algo_source, algo_target, g, parent, iterations, _ = best_over_candidate_pairs(
-        graph, source_platforms, target_platforms, partial(a_star, h=h, verbose=True)
+        graph,
+        source_platforms,
+        target_platforms,
+        partial(a_star, h=h, verbose=True, node_fmt=node_fmt),
     )
     elapsed_ms = (perf_counter() - start) * 1000
     best_weight = g[algo_target]

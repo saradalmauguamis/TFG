@@ -7,13 +7,15 @@ Heuristic type and a_star() itself.
 """
 
 from __future__ import annotations
-from typing import Callable, Dict, Optional, Tuple
+from typing import Callable, Dict, List, Optional, Set, Tuple
 
 from shortest_paths_algorithms.algorithms_utils import (  # shared with dijkstra_utils.py
     INF,
     Graph,
     MinHeap,
     Node,
+    NodeFmt,
+    format_node_label,
 )
 
 Heuristic = Callable[[Node, Node], int]
@@ -33,6 +35,7 @@ def a_star(
     goal: Node,
     h: Heuristic,
     verbose: bool = True,
+    node_fmt: Optional[NodeFmt] = None,
 ) -> Tuple[Dict[Node, int], Dict[Node, Optional[Node]], int, Dict[Node, bool]]:
     """Run A* algorithm from start to goal using heuristic h.
 
@@ -50,6 +53,9 @@ def a_star(
         goal: The target node to find the shortest path to.
         h: Admissible heuristic function h(vertex, goal) -> estimated cost.
         verbose: Whether to print iterations and updates while running.
+        node_fmt: Optional callable to label a node (e.g. stop name and line,
+            via `stop_label`) in the verbose trace, same as
+            dijkstra_utils.py's _run_dijkstra. Ignored when verbose is False.
 
     returns:
         g: A mapping from each visited node to its shortest distance from start.
@@ -62,6 +68,12 @@ def a_star(
             same as dijkstra_utils.py's expanded.
     """
     nodes = list(graph.keys())
+
+    # Verbose lines are buffered and only printed once the run is over, so the
+    # node_id/label columns can be sized from the nodes actually visited this
+    # run, same as dijkstra_utils.py's _run_dijkstra.
+    log_lines: List[Tuple] = []
+    visited: Set[Node] = set()
 
     Open = MinHeap()
     parent: Dict[Node, Optional[Node]] = {
@@ -90,15 +102,15 @@ def a_star(
 
         iteration += 1
         if verbose:
-            print(
-                f"\nIteration {iteration}: extract {current}"
-                f" with g={g[current]} and h={h(current, goal)},"
-                f" f={g[current] + h(current, goal)}"
+            log_lines.append(
+                ("extract", iteration, current, g[current], h(current, goal))
             )
+            visited.add(current)
 
         if current == goal:  # pseudocode: if current is goal then return g, parent
             if verbose:
-                print("  -> goal reached!")
+                log_lines.append(("goal",))
+                _print_a_star_log(log_lines, visited, node_fmt)
             return g, parent, iteration, expanded
 
         for adj, weight in graph[
@@ -130,9 +142,56 @@ def a_star(
 
                 if verbose:
                     old_shown = old_g if old_g != INF else "inf"
-                    print(
-                        f"  -> update {adj}: g {old_shown} -> {adj_new_try_gScore}"
-                        f" (w={weight}), h={h(adj, goal)}, f={f_adj} via {current}"
+                    log_lines.append(
+                        (
+                            "update",
+                            adj,
+                            old_shown,
+                            adj_new_try_gScore,
+                            weight,
+                            h(adj, goal),
+                            f_adj,
+                            current,
+                        )
                     )
+                    visited.update((adj, current))
 
+    if verbose:
+        _print_a_star_log(log_lines, visited, node_fmt)
     return g, parent, iteration, expanded  # pseudocode: return failure
+
+
+def _print_a_star_log(
+    log_lines: List[Tuple], visited: Set[Node], node_fmt: Optional[NodeFmt]
+) -> None:
+    """Flush a_star()'s buffered verbose trace, labeling nodes via node_fmt.
+
+    Mirrors dijkstra_utils.py's _run_dijkstra end-of-run print block, so both
+    algorithms' traces line up the same way when node_fmt is given.
+
+    args:
+        log_lines: Buffered ("extract"/"goal"/"update") entries recorded during the run.
+        visited: All nodes seen, used to compute id/label column widths.
+        node_fmt: Optional formatter mapping a node to a display label.
+    """
+    id_width = max((len(n) for n in visited), default=0)
+    label_width = max((len(node_fmt(n)) for n in visited), default=0) if node_fmt else 0
+    for entry in log_lines:
+        if entry[0] == "extract":
+            _, iteration_no, current, g_current, h_current = entry
+            current_label = format_node_label(current, node_fmt, label_width)
+            print(
+                f"\nIteration {iteration_no}: extract {current:<{id_width}}{current_label}"
+                f" with g={g_current} and h={h_current}, f={g_current + h_current}"
+            )
+        elif entry[0] == "goal":
+            print("  -> goal reached!")
+        else:
+            _, adj, old_shown, adj_new_try_gScore, weight, h_adj, f_adj, current = entry
+            adj_label = format_node_label(adj, node_fmt, label_width)
+            via_label = format_node_label(current, node_fmt)
+            print(
+                f"  -> update {adj:<{id_width}}{adj_label}: g {old_shown} ->"
+                f" {adj_new_try_gScore} (w={weight}), h={h_adj}, f={f_adj}"
+                f" via {current}{via_label}"
+            )
