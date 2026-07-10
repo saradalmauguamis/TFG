@@ -385,6 +385,30 @@ def format_path_lines(path: List[Node], node_fmt: NodeFmt) -> List[str]:
     return [f"{node}{format_node_label(node, node_fmt)}" for node in path]
 
 
+def resolve_classify_endpoints(path: List[Node]) -> Tuple[Node, Node]:
+    """Return the (source-side, target-side) platform classify() should use.
+
+    classify (barcelona_division.py) only accepts platforms, but SOURCE/TARGET
+    may be entrances -- on FULL_GRAPH entrances are reachable directly, so
+    algo_source/algo_target (best_over_candidate_pairs' output) can themselves
+    be entrances there, unlike WITHOUT_ENTRANCES_GRAPH where they're always
+    already-reduced platforms (see resolve_search_endpoints). Either way,
+    finalize_path's path runs entrance -> platform -> ... -> platform ->
+    entrance whenever an endpoint is an entrance, so its second/second-to-last
+    vertex is the platform actually used to enter/exit through.
+
+    args:
+        path: The finalized SOURCE -> TARGET path, from finalize_path.
+
+    returns:
+        (source_platform, target_platform): path[0]/path[-1] as-is when
+        already a platform, otherwise path[1]/path[-2].
+    """
+    source_platform = path[1] if path[0].startswith("E.") else path[0]
+    target_platform = path[-2] if path[-1].startswith("E.") else path[-1]
+    return source_platform, target_platform
+
+
 def entrance_endpoint_shift() -> int:
     """Return how many of SOURCE/TARGET are entrances restored onto the path.
 
@@ -720,7 +744,6 @@ def main() -> None:
         target_platforms,
         partial(cut_dijkstra, verbose=False),
     )
-    region_case = classify(algo_source, algo_target)
 
     runs = {"Dijkstra": (dijkstra_parent, dijkstra_expanded, dijkstra_iterations)}
     for label, h in heuristics.items():
@@ -736,6 +759,7 @@ def main() -> None:
     if not path:
         raise ValueError(f"No path found from {SOURCE} to {TARGET}; nothing to draw.")
     path_vertices = len(path)
+    region_case = classify(*resolve_classify_endpoints(path))
 
     output_path = draw_and_save_figure(
         runs,
