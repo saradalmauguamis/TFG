@@ -4,7 +4,7 @@ heuristic (h_geo, h_bcn, h_cheat) actually extracted while searching SOURCE -> T
 The whole graph (graph_inspection/graph_draw/graph.py's load_graph, same source as
 shortest_paths_algorithms/analysis/regions_graph.py) is painted light grey first, then each
 algorithm's extracted nodes and shortest-path-tree edges (parent links) are layered on
-top of it, in a fixed order: Cut-Dijkstra, then A* (h_geo), A* (h_bcn), A* (h_cheat) --
+top of it, in a fixed order: Cut-Dijkstra, then A*_geo, A*_bcn, A*_cheat --
 COLOR_BY_HEURISTIC's own order (shortest_paths_algorithms/analysis/algorithms_comparison.py),
 reused here directly so a heuristic's color always means the same thing across every
 chart in this package. Later layers paint over earlier ones wherever two algorithms
@@ -15,7 +15,8 @@ algorithm's pseudocode -- see a_star_utils.py's a_star() and dijkstra_utils.py's
 _run_dijkstra() for where it's tracked purely for this kind of traceability -- but
 `parent` already is, for both algorithms.
 
-Output_name: {region_case}_{GRAPH_MODE_LABEL}_{SOURCE}_to_{TARGET}.png saved into
+Output_name: {region_case}_{GRAPH_MODE_LABEL}_{SOURCE}_to_{TARGET}.png ({region_case}_
+{GRAPH_MODE_LABEL}_bcn_{SOURCE}_to_{TARGET}.png when SHOW_H_BCN is True) saved into
 'shortest_paths_algorithms/analysis/resources/extracted_nodes' (EXTRACTED_NODES_DIR,
 shortest_paths_algorithms/paths.py). region_case (one of barcelona_division.classify's
 CC/CB/BC/SB/DB cases) is computed from the actual (algo_source, algo_target) platform
@@ -60,11 +61,13 @@ from data_validation.gtfs_utils import (  # noqa: E402
     check_missing_files,
     load_stop_names,
     print_file_disclaimer,
+    seconds_to_hms,
 )
 from graph_inspection.graph_draw.graph import load_graph  # noqa: E402
 from shortest_paths_algorithms.algorithms_utils import (  # noqa: E402
     FULL_GRAPH,
     GRAPH_MODE_LABEL,
+    INF,
     WITHOUT_ENTRANCES_GRAPH,
     EntranceToPlatforms,
     Graph,
@@ -79,6 +82,7 @@ from shortest_paths_algorithms.algorithms_utils import (  # noqa: E402
     report_missing_platform_candidates,
     resolve_search_endpoints,
     stop_label,
+    with_adjusted_target_weight,
 )
 from shortest_paths_algorithms.analysis.algorithms_comparison import (  # noqa: E402
     COLOR_BY_HEURISTIC,
@@ -116,6 +120,12 @@ from shortest_paths_algorithms.a_star.heuristics.h_bcn import (  # noqa: E402
 )
 from shortest_paths_algorithms.dijkstra.dijkstra_utils import cut_dijkstra  # noqa: E402
 from shortest_paths_algorithms.paths import EXTRACTED_NODES_DIR  # noqa: E402
+
+# Toggle to include/exclude h_bcn from the run and the figure/legend below.
+SHOW_H_BCN = True
+
+# Toggle to include/exclude the region_case branch-bridge diamond and its legend entry.
+SHOW_BRIDGE = True
 
 # Human-readable GRAPH_MODE label for the figure's title, distinct from
 # GRAPH_MODE_LABEL's terse "full"/"no_pw" used in the output filename.
@@ -439,7 +449,7 @@ def legend_label_with_stats(label: str, iterations: int, proportion: float) -> s
         proportion: path_vertices / iterations for this run.
 
     returns:
-        e.g. "A* (h_bcn) (18 it, prop=0.61)".
+        e.g. "A*_bcn (18 it, prop=0.61)".
     """
     return (
         f"{LEGEND_LABEL_BY_HEURISTIC[label]} ({iterations} it, prop={proportion:.2f})"
@@ -454,6 +464,7 @@ def draw_and_save_figure(
     entrance_plat_from: Dict[str, Set[str]],
     node_fmt: NodeFmt,
     region_case: str,
+    optimum_weight_text: str,
 ) -> Path:
     """Draw every algorithm's extracted layer over the whole subway graph and save the PNG.
 
@@ -475,6 +486,8 @@ def draw_and_save_figure(
         node_fmt: Callable to label a node (stop name and line), for the
             sidebar.
         region_case: This SOURCE/TARGET pair's classify() case, from main().
+        optimum_weight_text: "Optimum weight: ..." line, same format as
+            print_path_summary (algorithms_utils.py), for the sidebar.
 
     returns:
         The path the PNG was saved to.
@@ -493,6 +506,7 @@ def draw_and_save_figure(
     proportion: float
     bridge_nodes: List[Node]
     output_dir: Path
+    bcn_tag: str
     output_path: Path
     shift: int
 
@@ -518,6 +532,8 @@ def draw_and_save_figure(
     # layers (painted last) sit on top wherever two algorithms extract the same node/edge.
     shift = entrance_endpoint_shift()
     for label in COLOR_BY_HEURISTIC:
+        if label == "a_star_h_bcn" and not SHOW_H_BCN:
+            continue
         parent, expanded, iterations = runs[label]
         color = COLOR_BY_HEURISTIC[label]
         nodes, edges = extracted_nodes_and_edges(expanded, parent, nx_graph)
@@ -579,33 +595,34 @@ def draw_and_save_figure(
         )
     )
 
-    bridge_nodes = resolve_bridge_highlights(
-        region_case, entrance_plat_to, entrance_plat_from
-    )
-    if bridge_nodes:
-        nx.draw_networkx_nodes(
-            nx_graph,
-            pos,
-            nodelist=bridge_nodes,
-            node_shape="D",
-            node_size=BRIDGE_NODE_SIZE,
-            node_color=BRIDGE_COLOR,
-            edgecolors="white",
-            linewidths=1.2,
-            ax=ax,
+    if SHOW_BRIDGE:
+        bridge_nodes = resolve_bridge_highlights(
+            region_case, entrance_plat_to, entrance_plat_from
         )
-        legend_handles.append(
-            plt.Line2D(
-                [0],
-                [0],
-                marker="D",
-                color="none",
-                markerfacecolor=BRIDGE_COLOR,
-                markeredgecolor="white",
-                markersize=10,
-                label="Branch bridge",
+        if bridge_nodes:
+            nx.draw_networkx_nodes(
+                nx_graph,
+                pos,
+                nodelist=bridge_nodes,
+                node_shape="D",
+                node_size=BRIDGE_NODE_SIZE,
+                node_color=BRIDGE_COLOR,
+                edgecolors="white",
+                linewidths=1.2,
+                ax=ax,
             )
-        )
+            legend_handles.append(
+                plt.Line2D(
+                    [0],
+                    [0],
+                    marker="D",
+                    color="none",
+                    markerfacecolor=BRIDGE_COLOR,
+                    markeredgecolor="white",
+                    markersize=10,
+                    label="Branch bridge",
+                )
+            )
 
     ax.legend(
         handles=legend_handles,
@@ -620,7 +637,8 @@ def draw_and_save_figure(
         0.01,
         0.98,
         f"Shortest path ({path_vertices} vertices):\n"
-        + "\n".join(format_path_lines(path, node_fmt)),
+        + "\n".join(format_path_lines(path, node_fmt))
+        + f"\n{optimum_weight_text}",
         transform=ax.transAxes,
         fontsize=11,
         va="top",
@@ -640,7 +658,9 @@ def draw_and_save_figure(
     ax.text(
         0.01,
         0.01,
-        "Cut-Dijkstra, then A* (h_geo), A* (h_bcn), A* (h_cheat), painted in that order",
+        "Cut-Dijkstra, then A*_geo, "
+        + ("A*_bcn, " if SHOW_H_BCN else "")
+        + "A*_cheat, painted in that order",
         transform=ax.transAxes,
         ha="left",
         va="bottom",
@@ -652,9 +672,10 @@ def draw_and_save_figure(
 
     output_dir = Path(EXTRACTED_NODES_DIR)
     output_dir.mkdir(parents=True, exist_ok=True)
+    bcn_tag = "bcn_" if SHOW_H_BCN else ""
     output_path = (
         output_dir
-        / f"{region_case}_{GRAPH_MODE_LABEL[GRAPH_MODE]}_{SOURCE}_to_{TARGET}.png"
+        / f"{region_case}_{GRAPH_MODE_LABEL[GRAPH_MODE]}_{bcn_tag}{SOURCE}_to_{TARGET}.png"
     )
     fig.savefig(output_path, dpi=200)
     plt.close(fig)
@@ -678,12 +699,17 @@ def main() -> None:
     node_fmt: NodeFmt
     source_platforms: Set[Node]
     target_platforms: Set[Node]
+    entry_total: int
     algo_source: Node
     algo_target: Node
     region_case: str
+    dijkstra_dist: Dict[Node, int]
     dijkstra_parent: Dict[Node, Optional[Node]]
     dijkstra_expanded: Dict[Node, bool]
     dijkstra_iterations: int
+    best_weight: int
+    total: int
+    optimum_weight_text: str
     path: List[Node]
     path_vertices: int
     output_path: Path
@@ -712,11 +738,14 @@ def main() -> None:
     depth_from, depth_to = build_depth_tables(graph)
     heuristics = {
         "a_star_h_geo": build_h_geo(coords, v_max),
-        "a_star_h_bcn": build_h_bcn(WEIGHTS_FILE, coords, v_max, depth_from, depth_to),
         "a_star_h_cheat": build_h_cheat(graph),
     }
+    if SHOW_H_BCN:
+        heuristics["a_star_h_bcn"] = build_h_bcn(
+            WEIGHTS_FILE, coords, v_max, depth_from, depth_to
+        )
 
-    source_platforms, target_platforms, _ = resolve_search_endpoints(
+    source_platforms, target_platforms, entry_total = resolve_search_endpoints(
         GRAPH_MODE, SOURCE, TARGET, entrance_plat_from, entrance_plat_to
     )
     if report_missing_platform_candidates(
@@ -734,7 +763,7 @@ def main() -> None:
     (
         algo_source,
         algo_target,
-        _,
+        dijkstra_dist,
         dijkstra_parent,
         dijkstra_iterations,
         dijkstra_expanded,
@@ -743,6 +772,14 @@ def main() -> None:
         source_platforms,
         target_platforms,
         partial(cut_dijkstra, verbose=False),
+    )
+    best_weight = dijkstra_dist[algo_target]
+    total = with_adjusted_target_weight(
+        dijkstra_dist, TARGET, best_weight, entry_total
+    )[TARGET]
+    optimum_weight_text = (
+        f"Optimum weight: {'inf' if total == INF else seconds_to_hms(total)}"
+        " (format: HH:MM:SS)"
     )
 
     runs = {"Dijkstra": (dijkstra_parent, dijkstra_expanded, dijkstra_iterations)}
@@ -769,6 +806,7 @@ def main() -> None:
         entrance_plat_from,
         node_fmt,
         region_case,
+        optimum_weight_text,
     )
     print(f"{output_path.name} generated into {output_path.relative_to(_PROJECT_ROOT)}")
 

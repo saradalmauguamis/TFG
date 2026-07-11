@@ -82,9 +82,9 @@ from shortest_paths_algorithms.paths import (  # noqa: E402
 # Dijkstra, so the legend says so regardless of which graph mode is plotted.
 LEGEND_LABEL_BY_HEURISTIC = {
     "Dijkstra": "Cut-Dijkstra",
-    "a_star_h_geo": "A* (h_geo)",
-    "a_star_h_bcn": "A* (h_bcn)",
-    "a_star_h_cheat": "A* (h_cheat)",
+    "a_star_h_geo": "A*_geo",
+    "a_star_h_bcn": "A*_bcn",
+    "a_star_h_cheat": "A*_cheat",
 }
 
 COLOR_BY_HEURISTIC = {
