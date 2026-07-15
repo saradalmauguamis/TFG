@@ -19,4 +19,5 @@ shortest_paths_algorithms/dijkstra/resources/dijkstra_*_to_*.txt
 shortest_paths_algorithms/a_star/resources/a_star_*_to_*.txt
 shortest_paths_algorithms/analysis/resources/extracted_nodes/*
 shortest_paths_algorithms/a_star/resources/i want these ones/*
-.theory_notes/books/Heuristics - Judea Pearl.pdf
+.theory_notes/books/*
+.vscode

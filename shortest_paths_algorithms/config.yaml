@@ -3,7 +3,7 @@
 # script -- see shortest_paths_algorithms/config.py for how these are loaded, and
 # shortest_paths_algorithms/paths.py for the equivalent file-path centralization.
 
-source: "E.12201"
-target: "E.12001"
+source: "E.33403"
+target: "E.52001"
 graph_mode: without_entrances_graph  # options: full_graph, without_entrances_graph
-heuristic_name: h_geo  # options: h_geo, h_cheat, h_bcn
+heuristic_name: h_bcn  # options: h_geo, h_cheat, h_bcn
