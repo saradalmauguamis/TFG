@@ -648,7 +648,7 @@ def draw_and_save_figure(
 
     fig.suptitle(
         f"{region_case} case ({GRAPH_MODE_TITLE[GRAPH_MODE]}):"
-        f" extracted nodes from {SOURCE} to {TARGET}",
+        f" extracted nodes from {node_fmt(SOURCE)} to {node_fmt(TARGET)}",
         y=0.995,
         fontsize=14,
         color="#0b0b0b",
@@ -791,7 +791,13 @@ def main() -> None:
         runs[label] = (parent, expanded, iterations)
 
     path = finalize_path(
-        GRAPH_MODE, dijkstra_parent, algo_source, algo_target, SOURCE, TARGET, node_fmt
+        GRAPH_MODE,
+        runs["a_star_h_cheat"][0],
+        algo_source,
+        algo_target,
+        SOURCE,
+        TARGET,
+        node_fmt,
     )
     if not path:
         raise ValueError(f"No path found from {SOURCE} to {TARGET}; nothing to draw.")

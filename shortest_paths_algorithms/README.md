@@ -83,7 +83,34 @@ Important paths shared across `shortest_paths_algorithms/`'s modules.
   `algorithms_utils.py`.
 - `heuristics/`: one module per interchangeable, admissible heuristic, each exposing a `build_h_*`
   factory that pre-binds its dependencies into a plain `Heuristic(node, target)`:
-  - `h_geo.py`: straight-line distance / v_max.
+  - `h_geo.py`: straight-line distance / v_max, floored to an int:
+
+    $$
+    h\_geo(n, t) = \left\lfloor \frac{\text{straight\_line\_distance}(n, t)}{v_{\max}} \right\rfloor
+    $$
+
+    where:
+    - `straight_line_distance(a, b)` is the flat-earth distance between `a` and `b`'s
+      `(lat, lon)` coordinates, scaling longitude by $\cos(\bar\phi)$ (mean latitude) so degrees
+      of longitude and latitude are weighted by their actual physical length at that latitude:
+
+      $$
+      \text{straight\_line\_distance}(a,b) = R\sqrt{\left(\Delta\lambda\cos\bar\phi\right)^2 + \Delta\phi^2}
+      $$
+
+      with $R$ the Earth's radius, $\Delta\lambda$/$\Delta\phi$ the longitude/latitude
+      difference between $a$ and $b$ (in radians), and $\bar\phi$ the mean latitude of $a$ and
+      $b$ (in radians).
+    - `v_max` is the fastest implied speed across any single edge in the real graph, i.e. the
+      edge $(u,v)$ whose straight-line distance per second of travel time is largest:
+
+      $$
+      v_{\max} = \max_{(u,v)\in E} \frac{\text{straight\_line\_distance}(u,v)}{w(u,v)}
+      $$
+
+      This is what keeps `h_geo` admissible: no edge in the graph is ever crossed faster than
+      $v_{\max}$, so straight-line distance divided by $v_{\max}$ can never overestimate the true
+      travel time along any path from `n` to `t`.
   - `h_cheat.py`: the real optimal cost via `cut_dijkstra`, only useful to see how A* behaves with
     a perfect heuristic, since computing it already requires solving the shortest path.
   - `h_bcn.py`: a Barcelona region/bridge-aware heuristic built on `barcelona_division.py`.
