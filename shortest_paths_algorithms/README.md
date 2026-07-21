@@ -41,6 +41,9 @@ Given an entry source and an entry target, we want to find the shortest path whi
 minimum number of iterations: for that we need algorithms that solve the routing problem, and
 these are Dijkstra and A*.
 
+See [`WORKFLOW.md`](WORKFLOW.md) for the trail of ideas and intuitions that drove each step below,
+from the plain Dijkstra baseline to the final `A*_bcn` heuristic on the reduced graph.
+
 ## algorithms_utils.py
 
 Graph types (`Graph`, `Node`, `NodeFmt`), the `MinHeap` priority queue, path reconstruction
