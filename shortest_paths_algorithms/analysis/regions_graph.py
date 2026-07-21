@@ -4,8 +4,8 @@ the single bridge platform that reconnects each branch to the rest of the networ
 Reuses graph_inspection/graph_draw/graph.py's graph loading (GTFS-derived edges,
 weights, and the jittered synthetic-platform/entry positions) and recolors it
 against shortest_paths_algorithms/barcelona_division.py's Center/Branches partition
-instead of by subway line: every platform, and every SW/TF/PW edge touching it, is
-painted in its region's color -- except the edge connecting a branch's
+instead of by subway line: every platform, every entry/exit, and every SW/TF/PW edge
+touching it, is painted in its region's color -- except the edge connecting a branch's
 outermost platform to its bridge, which takes the branch's color (it's still part
 of the branch, structurally), and the bridge platform itself, which is highlighted
 in yellow, a color reserved from the region palette so it never doubles as a
@@ -23,10 +23,7 @@ _PROJECT_ROOT = str(Path(__file__).resolve().parents[2])
 if _PROJECT_ROOT not in sys.path:
     sys.path.insert(0, _PROJECT_ROOT)
 
-from graph_inspection.graph_draw.graph import (  # noqa: E402
-    ENTRY_NODE_COLOR,
-    load_graph,
-)
+from graph_inspection.graph_draw.graph import load_graph  # noqa: E402
 from shortest_paths_algorithms.barcelona_division import (  # noqa: E402
     Bridges,
     NODE_TO_BRANCH,
@@ -101,6 +98,25 @@ def pw_edge_color(u: str, v: str) -> str:
     return REGION_COLORS[node_region(platform)]
 
 
+def entry_node_color(entry_id: str, graph: nx.DiGraph) -> str:
+    """Color an entry node the same as its PW edge -- its connected platform's region color.
+
+    args:
+        entry_id: Entry/exit stop_id ("E." prefix).
+        graph: Graph containing the entry's PW edge(s) to its platform(s).
+
+    returns:
+        A value from REGION_COLORS.
+    """
+    platform = next(
+        neighbor
+        for neighbor in set(graph.predecessors(entry_id))
+        | set(graph.successors(entry_id))
+        if str(neighbor).startswith("1.")
+    )
+    return REGION_COLORS[node_region(platform)]
+
+
 def node_color(stop_id: str) -> str:
     """Color a platform node: yellow if it's a bridge, else its region's color.
 
@@ -155,15 +171,6 @@ def draw_regions_graph(
             markersize=10,
             label="Bridge vertices",
         ),
-        plt.Line2D(
-            [0],
-            [0],
-            marker="s",
-            color="none",
-            markerfacecolor=ENTRY_NODE_COLOR,
-            markersize=8,
-            label="Entry/Exit",
-        ),
     ]
 
     edge_color_fn_by_type = {
@@ -206,7 +213,7 @@ def draw_regions_graph(
         nodelist=entry_nodes,
         node_shape="s",
         node_size=6,
-        node_color=ENTRY_NODE_COLOR,
+        node_color=[entry_node_color(n, graph) for n in entry_nodes],
         ax=ax,
     )
     nx.draw_networkx_nodes(
