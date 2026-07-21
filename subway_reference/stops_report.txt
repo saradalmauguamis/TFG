@@ -1,0 +1,742 @@
+Disclaimer: for coherence we will consider the next file(s) from data:
+ - stops_subway.txt from /1_subway
+ - pathways.txt from /0_raw
+
+
+Printing stops and optional entrances of each line of Barcelona subway (show_entrances=True, use_artificial=False)
+
+
+==================================================
+L1
+==================================================
+1.111 - Hospital de Bellvitge
+     - E.1011101 - Ascensor - Residència sanitària
+     - E.11101 - Residència sanitària
+1.112 - Bellvitge
+     - E.1011201 - Ascensor - Rambla de la Marina / Avda. Granvia
+     - E.11201 - Rambla de la Marina / Avda. Granvia
+     - E.11202 - Rambla de la Marina / Merca 2
+     - E.11211 - Rambla de la Marina / Trav. Industrial
+     - E.11212 - Rambla de la Marina / Mercat Municipal
+1.113 - Av. Carrilet
+     - E.11301 - Prat de la Riba
+     - E.11311 - Avinguda Carrilet
+1.114 - Rambla Just Oliveras
+     - E.1011403 - Ascensor - Renfe
+     - E.11401 - Avinguda Can Serra
+     - E.11402 - Rambla Just Oliveras
+     - E.11403 - Renfe
+1.115 - Can Serra
+     - E.1011502 - Ascensor - Avinguda Can Serra
+     - E.11501 - Parc de les Planes
+     - E.11502 - Avinguda Can Serra
+1.116 - Florida
+     - E.1011601 - Ascensor - Avinguda Masnou
+     - E.11601 - Avinguda Masnou
+     - E.11602 - Blocs Florida
+1.117 - Torrassa
+     - E.1011711 - Ascensor - Av. Catalunya
+     - E.11711 - Av. Catalunya
+     - E.11712 - Rosalía de Castro
+1.118 - Santa Eulàlia
+     - E.11801 - Pont de la Torrassa
+     - E.11811 - Riera Blanca
+1.119 - Mercat Nou
+     - E.11901 - Riera de Tena
+1.120 - Plaça de Sants
+     - E.12001 - Alcolea (escala mecànica) (only platform --> entry pathway)
+     - E.12002 - Alcolea
+     - E.12003 - Olzinelles
+     - E.12011 - Cros
+     - E.12012 - Riego
+1.121 - Hostafrancs
+     - E.1012101 - Ascensor - Consell de Cent / Mercat
+     - E.12101 - Consell de Cent / Mercat
+     - E.12111 - Hostafrancs
+     - E.12121 - Moianès
+     - E.12131 - Consell de Cent
+1.122 - Espanya
+     - E.1012201 - Ascensor - Creu Coberta
+     - E.12201 - Creu Coberta
+     - E.12202 - Tarragona
+     - E.12211 - Exposició / Paral·lel
+     - E.12212 - Exposició / Gran Via
+1.123 - Rocafort
+     - E.1012301 - Ascensor - Rocafort / Diputació
+     - E.12301 - Rocafort / Diputació
+     - E.12302 - Rocafort / Sepúlveda
+     - E.12311 - Calàbria / Diputació
+     - E.12312 - Calàbria / Sepúlveda
+1.124 - Urgell
+     - E.1012401 - Ascensor - Comte d'Urgell
+     - E.12401 - Comte d'Urgell
+     - E.12411 - Villarroel / Diputació
+     - E.12412 - Villarroel / Sepúlveda
+1.125 - Universitat
+     - E.12501 - Ronda Universitat
+     - E.12502 - Pelai
+1.126 - Catalunya
+     - E.1012602 - Ascensor - Ronda Universitat
+     - E.12601 - Rambla Catalunya
+     - E.12602 - Ronda Universitat
+     - E.12611 - Passeig de Gràcia
+     - E.12612 - Ronda Sant Pere
+     - E.12613 - Centre Plaça
+1.127 - Urquinaona
+     - E.12701 - Plaça Urquinaona
+     - E.12711 - Trafalgar
+     - E.12721 - Bruc
+1.128 - Arc de Triomf
+     - E.1012801 - Ascensor - Avda. Vilanova
+     - E.12801 - Avda. Vilanova
+     - E.12811 - Nàpols
+     - E.12812 - Roger de Flor
+1.129 - Marina
+     - E.1012901 - Ascensor - L'Auditori
+     - E.12901 - L'Auditori
+     - E.12902 - Almogàvers
+1.130 - Glòries
+     - E.1013011 - Ascensor - Avda. Meridiana
+     - E.13001 - Plaça de les Glòries Catalanes
+     - E.13002 - Badajoz
+     - E.13011 - Avda. Meridiana
+1.131 - Clot
+     - E.1013101 - Ascensor - Aragó / Meridiana
+     - E.13101 - Aragó / Meridiana
+     - E.13111 - València
+1.132 - Navas
+     - E.1013201 - Ascensor - Navas de Tolosa
+     - E.13201 - Navas de Tolosa
+     - E.13211 - Biscaia
+1.133 - La Sagrera
+     - E.1013301 - Ascensor - Meridiana | Hondures
+     - E.1013302 - Ascensor - Garcilaso
+     - E.1013311 - Ascensor - Jardins d'Elx
+     - E.13301 - Meridiana | Hondures
+     - E.13302 - Garcilaso
+     - E.13303 - Hondures
+     - E.13311 - Jardins d'Elx
+1.134 - Fabra i Puig
+     - E.1013411 - Ascensor - Concepción Arenal
+     - E.13401 - Passeig Fabra i Puig
+     - E.13402 - Sòcrates
+     - E.13403 - Avinguda Meridiana
+     - E.13404 - Renfe
+     - E.13411 - Concepción Arenal
+1.135 - Sant Andreu
+     - E.1013501 - Ascensor - Plaça d'Orfila
+     - E.13501 - Plaça d'Orfila
+     - E.13511 - Joan Torras
+1.136 - Torras i Bages
+     - E.1013602 - Ascensor - Palomar / costat mar
+     - E.13601 - Palomar / costat muntanya
+     - E.13602 - Palomar / costat mar
+     - E.13611 - Passeig Santa Coloma / costat muntanya
+     - E.13612 - Passeig Santa Coloma / costat mar
+1.137 - Trinitat Vella
+     - E.1013702 - Ascensor - Parc de la Trinitat
+     - E.13701 - Via Bàrcino
+     - E.13702 - Parc de la Trinitat
+1.138 - Baró de Viver
+     - E.1013801 - Ascensor - Riu Besòs
+     - E.13801 - Riu Besòs
+1.139 - Santa Coloma
+     - E.1013901 - Ascensor - Plaça de la Vila
+     - E.13901 - Plaça de la Vila
+     - E.13902 - Llorenç Serra
+     - E.13903 - Avinguda Santa Coloma
+1.140 - Fondo
+     - E.1014002 - Ascensor - Mossèn Cinto Verdaguer
+     - E.14001 - Sicília
+     - E.14002 - Mossèn Cinto Verdaguer
+
+
+==================================================
+L2
+==================================================
+1.210 - Paral·lel
+     - E.1021002 - Ascensor - Avinguda Paral·lel
+     - E.21001 - Nou de la Rambla
+     - E.21002 - Avinguda Paral·lel
+     - E.21011 - Fontrodona
+     - E.21012 - Ronda Sant Pau
+1.211 - Sant Antoni
+     - E.1021101 - Ascensor - Villarroel
+     - E.21101 - Villarroel
+     - E.21111 - Sant Antoni Abat
+     - E.21112 - Urgell
+1.212 - Universitat
+     - E.1021201 - Ascensor - Plaça Universitat
+     - E.21201 - Plaça Universitat
+     - E.21211 - Ronda Sant Antoni
+1.213 - Passeig de Gràcia
+     - E.1021301 - Ascensor - Rbla. Catalunya
+     - E.21301 - Rbla. Catalunya
+     - E.21311 - Pau Claris
+1.214 - Tetuan
+     - E.1021402 - Ascensor - Casp / Passeig de Sant Joan
+     - E.21401 - Diputació / Passeig de Sant Joan
+     - E.21402 - Casp / Passeig de Sant Joan
+1.215 - Monumental
+     - E.1021501 - Ascensor - Marina
+     - E.21501 - Marina
+     - E.21502 - Marina / Plaça de Toros
+1.216 - Sagrada Família
+     - E.1021601 - Ascensor - Mallorca - Marina
+     - E.21601 - Mallorca - Marina
+1.217 - Encants
+     - E.1021702 - Ascensor - València / Aragó
+     - E.21701 - València / Mallorca
+     - E.21702 - València / Aragó
+1.218 - Clot
+     - E.1021801 - Ascensor - Sibelius
+     - E.21801 - Sibelius
+1.219 - Bac de Roda
+     - E.1021901 - Ascensor - Fluvià
+     - E.21901 - Fluvià
+     - E.21911 - Bac de Roda
+1.220 - Sant Martí
+     - E.1022001 - Ascensor - Agricultura
+     - E.22001 - Agricultura
+     - E.22011 - Cantàbria
+1.221 - La Pau
+1.222 - Verneda
+     - E.1022201 - Ascensor - Santander
+     - E.22201 - Santander
+     - E.22202 - Ctra. Mataró
+1.223 - Artigues | Sant Adrià
+     - E.1022301 - Ascensor - Ctra. Santa Coloma
+     - E.22301 - Ctra. Santa Coloma
+     - E.22302 - Avinguda Joan XXIII
+1.224 - Sant Roc
+     - E.1022402 - Ascensor - Alfons XII
+     - E.22401 - Plaça Sant Roc
+     - E.22402 - Alfons XII
+1.225 - Gorg
+     - E.1022502 - Ascensor - Guifré
+     - E.22501 - Avinguda Alfons XIII
+     - E.22502 - Guifré
+1.226 - Pep Ventura
+     - E.1022601 - Ascensor - Avinguda Alfons XIII
+     - E.22601 - Avinguda Alfons XIII
+     - E.22602 - Avinguda Marquès de Mont-roig
+     - E.22603 - Plaça Països Catalans
+1.227 - Badalona Pompeu Fabra
+     - E.1022701 - Ascensor - Avinguda Martí Pujol
+     - E.1022711 - Ascensor - La Creu
+     - E.22701 - Avinguda Martí Pujol
+     - E.22711 - La Creu
+
+
+==================================================
+L3
+==================================================
+1.314 - Zona Universitària
+     - E.31401 - Avinguda Diagonal
+     - E.31402 - Facultat d'Estudis Empresarials
+     - E.31403 - Dr. Marañón / Diagonal
+     - E.31404 - Parc Cervantes
+1.315 - Palau Reial
+     - E.1031501 - Ascensor - Facultat de Ciències
+     - E.31501 - Facultat de Ciències
+     - E.31503 - Avda. Diagonal
+     - E.31504 - Palau de Pedralbes
+1.316 - Maria Cristina
+     - E.1031603 - Ascensor - Gran Via Carles III
+     - E.31602 - Av. Diagonal / Doctor Ferran
+     - E.31603 - Gran Via Carles III
+     - E.31604 - Capità Arenas
+1.317 - Les Corts
+     - E.1031701 - Ascensor - Travessera de les Corts
+     - E.31701 - Travessera de les Corts
+     - E.31702 - Joan Güell
+1.318 - Plaça del Centre
+     - E.1031801 - Ascensor - Plaça del Centre (mar)
+     - E.31801 - Plaça del Centre (mar)
+     - E.31802 - Plaça del Centre (muntanya)
+1.319 - Sants Estació
+     - E.1031901 - Ascensor - Pl. Països Catalans / Numància / Ambulatori
+     - E.31901 - Pl. Països Catalans / Numància / Ambulatori
+     - E.31902 - Av. Josep Tarradellas
+     - E.31911 - Numància
+     - E.31912 - Dolors Batlle i Sunyer
+1.320 - Tarragona
+     - E.1032004 - Ascensor - Aragó
+     - E.32001 - Elisi
+     - E.32002 - València
+     - E.32003 - Tarragona
+     - E.32004 - Aragó
+1.321 - Espanya
+     - E.1032101 - Ascensor - Avinguda Paral·lel
+     - E.32101 - Avinguda Paral·lel
+     - E.32102 - Exposició
+1.322 - Poble Sec
+     - E.1032201 - Ascensor - Manso
+     - E.32201 - Manso
+     - E.32202 - Teodor Bonaplata
+     - E.32211 - Parlament
+1.323 - Paral·lel
+1.324 - Drassanes
+     - E.1032401 - Ascensor - La Rambla
+     - E.1032411 - Ascensor - Drassanes
+     - E.32401 - La Rambla
+     - E.32403 - Santa Madrona
+     - E.32411 - Drassanes
+1.325 - Liceu
+     - E.1032521 - Ascensor - La Rambla / Teatre Liceu
+     - E.1032531 - Ascensor - La Rambla / Teatre Liceu
+     - E.32501 - La Rambla / Mercat de la Boqueria
+     - E.32511 - La Rambla / Mercat de la Boqueria
+     - E.32521 - La Rambla / Teatre Liceu
+     - E.32531 - La Rambla / Teatre Liceu
+1.326 - Catalunya
+     - E.1032603 - Ascensor - Pelai
+     - E.32601 - La Rambla
+     - E.32603 - Pelai
+     - E.32604 - Bergara
+1.327 - Passeig de Gràcia
+     - E.1032701 - Ascensor - Aragó / Pau Claris
+     - E.32701 - Aragó / Pau Claris
+     - E.32702 - Aragó / Rambla Catalunya
+     - E.32711 - Consell de Cent
+1.328 - Diagonal
+     - E.1032801 - Ascensor - Pg. de Gràcia / Rambla Catalunya
+     - E.32801 - Pg. de Gràcia / Rambla Catalunya
+     - E.32802 - Pg. de Gràcia / Pau Claris
+     - E.32803 - Pg. de Gràcia (escala mecànica)
+     - E.32811 - Diagonal / Rambla Catalunya
+     - E.32812 - Diagonal / Pau Claris
+1.329 - Fontana
+     - E.32901 - Gran de Gràcia / Astúries
+1.330 - Lesseps
+     - E.1033011 - Ascensor - Plaça Lesseps
+     - E.33001 - Septimània
+     - E.33011 - Plaça Lesseps
+1.331 - Vallcarca
+     - E.1033101 - Ascensor - Avinguda República Argentina
+     - E.33101 - Avinguda República Argentina
+     - E.33102 - Gomis
+     - E.33103 - Avinguda Vallcarca + Parc Güell
+1.332 - Penitents
+     - E.1033202 - Ascensor - Anna Piferrer
+     - E.33201 - Avinguda Vallcarca
+     - E.33202 - Anna Piferrer
+1.333 - Vall d'Hebron
+     - E.1033301 - Ascensor - Mercat de Vall d'Hebron
+     - E.33301 - Mercat de Vall d'Hebron
+1.334 - Montbau
+     - E.1033402 - Ascensor - Residència Sanitària / Llars Mundet
+     - E.33402 - Residència Sanitària / Llars Mundet
+     - E.33403 - Palau  Olímpic Vall d'Hebron
+1.335 - Mundet
+     - E.1033503 - Ascensor - Passeig Vall d'Hebron
+     - E.33501 - Can Marcet
+     - E.33502 - Salesians
+     - E.33503 - Passeig Vall d'Hebron
+1.336 - Valldaura
+     - E.1033601 - Ascensor - Passeig Valldaura
+     - E.33601 - Passeig Valldaura
+1.337 - Canyelles
+     - E.1033701 - Ascensor - Via Favència
+     - E.33701 - Via Favència
+     - E.33711 - García Lorca
+1.338 - Roquetes
+     - E.1033801 - Ascensor - Vidal i Guasch
+     - E.1033811 - Ascensor - Jaume Pinent
+     - E.33801 - Vidal i Guasch
+     - E.33811 - Jaume Pinent
+     - E.33812 - Carrer de les Torres
+1.339 - Trinitat Nova
+     - E.33901 - Palamós
+
+
+==================================================
+L4
+==================================================
+1.413 - La Pau
+     - E.1041301 - Ascensor - Rambla Guipúscoa / Ca n'Oliva
+     - E.41301 - Rambla Guipúscoa / Ca n'Oliva
+1.414 - Besòs
+     - E.1041402 - Ascensor - Tram Besòs
+     - E.41401 - Gran Via de les Corts Catalanes
+     - E.41402 - Tram Besòs
+1.415 - Besòs Mar
+     - E.1041501 - Ascensor - Jaume Fabre
+     - E.41501 - Jaume Fabre
+     - E.41511 - Ferrer Bassa
+1.416 - El Maresme | Fòrum
+     - E.1041601 - Ascensor - Rambla de Prim
+     - E.41601 - Rambla de Prim
+     - E.41611 - Avinguda Diagonal
+1.417 - Selva de Mar
+     - E.1041711 - Ascensor - Provençals
+     - E.41701 - Selva de Mar
+     - E.41711 - Provençals
+1.418 - Poblenou
+     - E.1041801 - Ascensor - Pujades / Bilbao
+     - E.41801 - Pujades / Bilbao
+1.419 - Llacuna
+     - E.1041901 - Ascensor - Pujades / Ciutat de Granada
+     - E.41901 - Pujades / Ciutat de Granada
+1.420 - Bogatell
+     - E.1042011 - Ascensor - Pujades
+     - E.42001 - Pujades / Pere IV
+     - E.42011 - Pujades
+1.421 - Ciutadella | Vila Olímpica
+     - E.42101 - Avinguda Icària
+     - E.42102 - Zoo
+1.422 - Barceloneta
+     - E.1042201 - Ascensor - Plaça Pau Vila
+     - E.42201 - Plaça Pau Vila
+1.423 - Jaume I
+     - E.1042301 - Ascensor - Plaça de l'Àngel
+     - E.1042311 - Ascensor - Argenteria
+     - E.42301 - Plaça de l'Àngel
+     - E.42311 - Argenteria
+1.424 - Urquinaona
+     - E.42401 - Plaça Urquinaona
+     - E.42411 - Jonqueres
+1.425 - Passeig de Gràcia
+     - E.42501 - Passeig de Gràcia / Gran Via
+1.426 - Girona
+     - E.1042601 - Ascensor - Consell de Cent
+     - E.42601 - Consell de Cent
+     - E.42602 - Girona
+1.427 - Verdaguer
+     - E.42701 - Passeig Sant Joan
+1.428 - Joanic
+     - E.1042801 - Ascensor - Escorial
+     - E.42801 - Escorial
+     - E.42802 - Pi i Margall
+1.429 - Alfons X
+     - E.1042901 - Ascensor - Ronda Guinardó
+     - E.42901 - Ronda Guinardó
+     - E.42902 - Lepant
+     - E.42903 - Plaça Alfons el Savi
+1.430 - Guinardó | Hospital de Sant Pau
+     - E.1043001 - Ascensor - Sant Quintí
+     - E.43001 - Sant Quintí
+     - E.43012 - Hospital de Sant Pau
+1.431 - Maragall
+     - E.1043102 - Ascensor - Ronda Guinardó - costat Muntanya
+     - E.43101 - Ronda Guinardó - costat Mar
+     - E.43102 - Ronda Guinardó - costat Muntanya
+1.432 - Llucmajor
+     - E.1043201 - Ascensor - Passeig Verdum / Llucmajor
+     - E.43201 - Passeig Verdum / Llucmajor
+     - E.43202 - Plaça Jardins d'Alfàbia
+     - E.43211 - Pi i Molist
+1.433 - Via Júlia
+     - E.1043301 - Ascensor - Via Júlia / Joaquim Valls
+     - E.43301 - Via Júlia / Joaquim Valls
+     - E.43311 - Via Júlia / Argullós
+1.434 - Trinitat Nova
+     - E.43401 - Pedrosa
+     - E.43402 - Aiguablava
+
+
+==================================================
+L5
+==================================================
+1.509 - Cornellà Centre
+     - E.1050901 - Ascensor - Plaça Estació
+     - E.50901 - Plaça Estació
+1.510 - Gavarra
+     - E.1051001 - Ascensor - Lindavista
+     - E.51001 - Lindavista
+     - E.51002 - Pl. Catalunya
+1.511 - Sant Ildefons
+     - E.1051102 - Ascensor - Mercat Sant Ildefons
+     - E.51101 - Avinguda República Argentina
+     - E.51102 - Mercat Sant Ildefons
+1.512 - Can Boixeres
+     - E.1051201 - Ascensor - Estronci
+     - E.51201 - Estronci
+1.513 - Can Vidalet
+     - E.1051311 - Ascensor - Maladeta
+     - E.51301 - Hortènsia
+     - E.51311 - Maladeta
+1.514 - Pubilla Cases
+     - E.1051401 - Ascensor - Avinguda Josep Molins
+     - E.51401 - Avinguda Josep Molins
+     - E.51402 - Esteve Grau
+     - E.51411 - Doctor Ramon Solanich
+1.555 - Ernest Lluch
+     - E.105501 - Ascensor - Avinguda de Xile
+     - E.55501 - Avinguda de Xile
+     - E.55502 - Cementiri de Sants
+1.515 - Collblanc
+     - E.51501 - Travessera de les Corts
+     - E.51502 - Doctor Martí i Julià
+     - E.51511 - Sant Ramon
+1.516 - Badal
+     - E.1051611 - Ascensor - Carrer de Sants / Arizala
+     - E.51601 - Carrer de Sants
+     - E.51602 - Carreras i Candi
+     - E.51611 - Carrer de Sants / Arizala
+1.517 - Plaça de Sants
+     - E.51701 - Plaça de Sants
+     - E.51702 - Galileu
+1.518 - Sants Estació
+     - E.1051802 - Ascensor - Estació RENFE / Pl. Països Catalans
+     - E.51801 - Estació RENFE / Pl. Joan Peiró
+     - E.51802 - Estació RENFE / Pl. Països Catalans
+1.519 - Entença
+     - E.1051901 - Ascensor - Rocafort
+     - E.51901 - Rocafort
+     - E.51911 - Entença
+1.520 - Hospital Clínic
+     - E.1052012 - Ascensor - Rosselló
+     - E.52001 - Villarroel
+     - E.52012 - Rosselló
+1.521 - Diagonal
+     - E.1052101 - Ascensor - Rambla Catalunya
+     - E.52101 - Rambla Catalunya
+     - E.52111 - Rosselló / FGC
+1.522 - Verdaguer
+     - E.52201 - Bailèn
+     - E.52211 - Avinguda Diagonal
+     - E.52212 - Girona
+1.523 - Sagrada Família
+     - E.1052301 - Ascensor - Provença / Avinguda Gaudí
+     - E.52301 - Provença / Avinguda Gaudí
+     - E.52311 - Sardenya
+     - E.52312 - Plaça de la Sagrada Família
+1.524 - Sant Pau | Dos de Maig
+     - E.1052401 - Ascensor - Dos de Maig
+     - E.52401 - Dos de Maig
+     - E.52411 - Cartagena
+1.525 - Camp de l'Arpa
+     - E.1052501 - Ascensor - Passeig Maragall
+     - E.52501 - Passeig Maragall
+     - E.52511 - Indústria
+1.526 - La Sagrera
+     - E.1052611 - Ascensor - Felip II
+     - E.52611 - Felip II
+1.527 - Congrés
+     - E.1052701 - Ascensor - Matanzas
+     - E.52701 - Matanzas
+     - E.52711 - Francesc Tàrrega
+1.528 - Maragall
+     - E.1052801 - Ascensor - Ramon Albó
+     - E.52801 - Ramon Albó
+     - E.52811 - Avinguda dels Quinze
+     - E.52812 - Prat d'en Roquer
+1.529 - Virrei Amat
+     - E.1052903 - Ascensor - Virrei Amat (muntanya)
+     - E.52901 - Pi i Molist
+     - E.52902 - Fabra i Puig
+     - E.52903 - Virrei Amat (muntanya)
+     - E.52911 - Felip II / Virrei Amat
+     - E.52912 - Virrei Amat (mar)
+1.530 - Vilapicina
+     - E.1053011 - Ascensor - Passeig de les Palmeres
+     - E.1053012 - Ascensor - Teide
+     - E.53001 - Canfranc
+     - E.53002 - Cartellà
+     - E.53011 - Passeig de les Palmeres
+     - E.53012 - Teide
+1.531 - Horta
+     - E.1053111 - Ascensor - Lisboa
+     - E.53101 - Plaça Eivissa
+     - E.53102 - Tajo
+     - E.53111 - Lisboa
+1.532 - El Carmel
+     - E.1053201 - Ascensor - Plaça Pastrana
+     - E.1053211 - Ascensor - Llobregós
+     - E.53201 - Plaça Pastrana
+     - E.53211 - Llobregós
+     - E.53212 - Mercat
+1.533 - El Coll | La Teixonera
+     - E.1053301 - Ascensor - Passeig Mare de Déu del Coll
+     - E.1053311 - Ascensor - Arenys
+     - E.53301 - Passeig Mare de Déu del Coll
+     - E.53302 - Beat Almató
+     - E.53311 - Arenys
+1.534 - Vall d'Hebron
+     - E.1053401 - Ascensor - Residència Sanitària
+     - E.53401 - Residència Sanitària
+     - E.53402 - Avinguda Jordà
+
+
+==================================================
+L9S
+==================================================
+1.901 - Aeroport T1
+     - E.90101 - Aeroport T1
+1.903 - Aeroport T2
+     - E.1090301 - Ascensor - Aeroport T2
+     - E.90301 - Aeroport T2
+1.904 - Mas Blau
+     - E.1090401 - Ascensor - Avinguda de Les Garrigues / Alta Ribagorça
+     - E.90401 - Avinguda de Les Garrigues / Alta Ribagorça
+1.905 - Parc Nou
+     - E.1090501 - Ascensor - Riu Llobregat / Riu Xúquer
+     - E.90501 - Riu Llobregat / Riu Xúquer
+     - E.90511 - Riu Llobregat / Riu Ebre
+1.906 - Cèntric
+     - E.1090601 - Ascensor - Plaça Catalunya
+     - E.90601 - Plaça Catalunya
+     - E.90602 - C. Lleida
+1.907 - El Prat Estació
+     - E.1090701 - Ascensor - Doctor Soler i Torrens
+     - E.90701 - Doctor Soler i Torrens
+1.909 - Les Moreres
+     - E.1090901 - Ascensor - Av. Verge de Montserrat / Ctra. de la Marina
+     - E.90901 - Av. Verge de Montserrat / Ctra. de la Marina
+     - E.90902 - Av. Verge de Montserrat / Les Moreres
+1.910 - Mercabarna
+     - E.1091001 - Ascensor - Carrer K / Carrer Transversal 6
+     - E.91001 - Carrer K / Carrer Transversal 6
+1.911 - Parc Logístic
+     - E.1091101 - Ascensor - Av. Parc Logístic / C. Número Un
+     - E.91101 - Av. Parc Logístic / C. Número Un
+     - E.91102 - Av. Parc Logístic / C. Número Vint-i-cinc
+1.912 - Fira
+     - E.1091201 - Ascensor - Botànica + Accés NORD | EST
+     - E.91201 - Botànica + Accés NORD | EST
+     - E.91202 - Accés SUD
+1.913 - Europa | Fira
+     - E.1091301 - Ascensor - Fira Gran Via
+     - E.1091311 - Ascensor - Plaça Europa
+     - E.91301 - Fira Gran Via
+     - E.91311 - Plaça Europa
+1.914 - Can Tries | Gornal
+     - E.1091401 - Ascensor - Can Tries - Narcís de Monturiol
+     - E.91401 - Can Tries - Narcís de Monturiol
+1.915 - Torrassa
+1.916 - Collblanc
+     - E.1091601 - Ascensor - Av. Sant Ramon
+     - E.91601 - Av. Sant Ramon
+1.918 - Zona Universitària
+     - E.1091801 - Ascensor - Dr. Marañón
+     - E.91801 - Dr. Marañón
+
+
+==================================================
+L9N
+==================================================
+1.930 - La Sagrera
+1.932 - Onze de Setembre
+     - E.1093201 - Ascensor - Onze de Setembre
+     - E.93201 - Onze de Setembre
+1.933 - Bon Pastor
+     - E.1093301 - Ascensor - Sant Adrià
+     - E.93301 - Sant Adrià
+1.940 - Can Peixauet
+     - E.1094001 - Ascensor - Avinguda Santa Coloma
+     - E.94001 - Avinguda Santa Coloma
+     - E.94002 - Avinguda Banús Baixa
+1.941 - Santa Rosa
+     - E.94101 - Banús Baixa
+1.942 - Fondo
+1.943 - Església Major
+     - E.1094301 - Ascensor - Mossèn Camil Rossell
+     - E.1094302 - Ascensor - Mossèn Camil Rossell
+     - E.1094303 - Ascensor - Mossèn Camil Rossell
+     - E.94301 - Mossèn Camil Rossell
+1.944 - Singuerlín
+     - E.1094401 - Ascensor - Passatge de Salvatella
+     - E.94401 - Passatge de Salvatella
+1.945 - Can Zam
+     - E.1094501 - Ascensor - Francesc Macià
+     - E.94501 - Francesc Macià
+
+
+==================================================
+L10S
+==================================================
+1.951 - ZAL | Riu Vell
+     - E.95101 - Carrer A / Carrer 5
+     - E.95102 - Riu Llobregat
+     - E.95103 - ZAL
+1.952 - Ecoparc
+     - E.95201 - Ecoparc
+     - E.95202 - Carrer A / Carrer 4
+     - E.95203 - Carrer A (costat mar)
+1.953 - Port Comercial | La Factoria
+     - E.95301 - Carrer A / Carrer 25
+     - E.95302 - Carrer A / Carrer 27
+     - E.95303 - Carrer A (costat mar)
+1.954 - Zona Franca
+     - E.95401 - Carrer A / Carrer 1
+     - E.95402 - Carrer A / Carrer 2
+     - E.95403 - Carrer A (costat mar)
+1.956 - Foc
+     - E.1095601 - Ascensor - Fira Gran Via (Pavellons 6·7·8)
+     - E.1095602 - Ascensor - Foc (costat Montjuïc)
+     - E.95601 - Fira Gran Via (Pavellons 6·7·8)
+     - E.95602 - Foc (costat Montjuïc)
+1.957 - Foneria
+     - E.1095701 - Ascensor - Jardins dels Drets Humans
+     - E.1095702 - Ascensor - Mercat de la Marina
+     - E.95701 - Jardins dels Drets Humans
+     - E.95702 - Mercat de la Marina
+1.958 - Ciutat de la Justícia
+     - E.1095801 - Ascensor - Gran Via / Alhambra
+     - E.95801 - Gran Via / Alhambra
+     - E.95802 - Ciutat de la Justícia
+1.959 - Provençana
+     - E.1095901 - Ascensor - Aprestadora / Rosell
+     - E.95901 - Aprestadora / Rosell
+1.914 - Can Tries | Gornal
+     - E.1091401 - Ascensor - Can Tries - Narcís de Monturiol
+     - E.91401 - Can Tries - Narcís de Monturiol
+1.915 - Torrassa
+1.916 - Collblanc
+     - E.1091601 - Ascensor - Av. Sant Ramon
+     - E.91601 - Av. Sant Ramon
+
+
+==================================================
+L10N
+==================================================
+1.930 - La Sagrera
+1.932 - Onze de Setembre
+     - E.1093201 - Ascensor - Onze de Setembre
+     - E.93201 - Onze de Setembre
+1.933 - Bon Pastor
+     - E.1093301 - Ascensor - Sant Adrià
+     - E.93301 - Sant Adrià
+1.934 - Llefià
+     - E.1093402 - Ascensor - Avinguda d'Amèrica (mercat)
+     - E.93401 - Avinguda d'Amèrica
+     - E.93402 - Avinguda d'Amèrica (mercat)
+     - E.93403 - Ronda Sant Antoni
+1.935 - La Salut
+     - E.1093503 - Ascensor - Juan Valera
+     - E.93501 - Marquès de Sant Mori
+     - E.93502 - Quevedo
+     - E.93503 - Juan Valera
+     - E.93504 - Austràlia
+1.936 - Gorg
+     - E.1093601 - Ascensor - Antoni Bori
+     - E.93601 - Antoni Bori
+
+
+==================================================
+L11
+==================================================
+1.1136 - Trinitat Nova
+1.1137 - Casa de l'Aigua
+     - E.113701 - Aiguablava
+1.1138 - Torre Baró | Vallbona
+     - E.1113801 - Ascensor - Avinguda Escolapi Càncer
+     - E.1113811 - Ascensor - Sant Feliu de Codines
+     - E.113801 - Avinguda Escolapi Càncer
+     - E.113811 - Sant Feliu de Codines
+1.1139 - Ciutat Meridiana
+     - E.1113901 - Ascensor - Avinguda Rasos de Peguera
+     - E.113901 - Avinguda Rasos de Peguera
+1.1140 - Can Cuiàs
+     - E.1114001 - Ascensor - Circumval·lació
+     - E.114001 - Circumval·lació
+     - E.114011 - Les Fustes
+
+
+==================================================
+FM
+==================================================
+1.9901 - Paral·lel
+1.9902 - Parc de Montjuïc
+     - E.990201 - Avinguda Miramar

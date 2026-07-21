@@ -43,7 +43,7 @@ from data_validation.gtfs_utils import (  # noqa: E402
     load_trip_ids_by_route,
     seconds_to_hms,
 )
-from scripts.basics import (  # noqa: E402
+from subway_reference.subway_lines import (  # noqa: E402
     subway_route_names_stop_ids,
     subway_routes_names_ids,
 )
@@ -182,9 +182,9 @@ def main() -> None:
     group_pairs: Dict[GroupKey, List[Tuple[str, str]]] = {}
     samples_by_group: Dict[GroupKey, Dict[Tuple[str, str], List[int]]] = {}
     avg_by_group: Dict[GroupKey, Dict[Tuple[str, str], Optional[PairRecord]]] = {}
-    check_missing_files([TRIPS_FILE, STOP_TIMES_DOORS_FILE, STOPS_SUBWAY_FILE])
+    check_missing_files([STOP_TIMES_DOORS_FILE, STOPS_SUBWAY_FILE, TRIPS_FILE])
 
-    print_file_disclaimer([TRIPS_FILE, STOP_TIMES_DOORS_FILE, STOPS_SUBWAY_FILE])
+    print_file_disclaimer([STOP_TIMES_DOORS_FILE, STOPS_SUBWAY_FILE, TRIPS_FILE])
 
     shared_platform_lines = build_shared_platform_lines(subway_route_names_stop_ids)
     stops_by_lines = group_shared_stops_by_lines(shared_platform_lines)

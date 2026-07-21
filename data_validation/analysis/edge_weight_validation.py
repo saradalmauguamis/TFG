@@ -21,7 +21,7 @@ actually moving) only as a diagnostic, via
 dwell-time noise versus genuine travel-time variance.
 
 Because this script reads the post-duplication stop_times, it uses
-`scripts.basics.subway_route_names_stop_ids_artificial` (the per-line stop_id
+`subway_reference.subway_lines.subway_route_names_stop_ids_artificial` (the per-line stop_id
 lists rewritten for split shared platforms) rather than the original
 `subway_route_names_stop_ids`, which still has lines sharing a stop_id and so
 no longer matches the IDs in `stop_times_shared.txt`.
@@ -61,7 +61,7 @@ from data_validation.gtfs_utils import (  # noqa: E402
     print_file_disclaimer,
     seconds_to_hms,
 )
-from scripts.basics import (  # noqa: E402
+from subway_reference.subway_lines import (  # noqa: E402
     subway_route_names_stop_ids_artificial,
     subway_routes_names_ids,
 )
@@ -196,7 +196,7 @@ def _format_pct(count: int, total: int) -> str:
     returns:
             Percentage string, e.g. "12.3%", or "0.0%" when total is zero.
     """
-    return f"{count / total:.1%}" if total else "0.0%"
+    return f"{count / total:.2%}" if total else "0.0%"
 
 
 def _stop_labels(stop_names: Dict[str, str], a: str, b: str) -> Tuple[str, str]:
@@ -979,10 +979,10 @@ def print_executive_summary(
         reasons: List[str] = []
         cv = cv_by_key.get(key)
         if cv is not None and cv >= min_cv:
-            reasons.append(f"CV={cv:.1%}")
+            reasons.append(f"CV={cv:.2%}")
         hourly_pct = hourly_by_key.get(key)
         if hourly_pct is not None and hourly_pct >= min_hourly_range_pct:
-            reasons.append(f"hourly range={hourly_pct:.1%}")
+            reasons.append(f"hourly range={hourly_pct:.2%}")
 
         reasons_str = f"  [{', '.join(reasons)}]" if reasons else ""
         print(

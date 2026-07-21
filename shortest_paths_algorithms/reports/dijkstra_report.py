@@ -96,7 +96,9 @@ _PROJECT_ROOT = str(Path(__file__).resolve().parents[2])
 if _PROJECT_ROOT not in sys.path:
     sys.path.insert(0, _PROJECT_ROOT)
 
-from scripts.basics import subway_route_names_stop_ids_artificial  # noqa: E402
+from subway_reference.subway_lines import (  # noqa: E402
+    subway_route_names_stop_ids_artificial,
+)
 
 from data_validation.gtfs_utils import (  # noqa: E402
     STOPS_FILE,

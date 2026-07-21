@@ -2,7 +2,7 @@
 
 Every stop_id below is in the post-shared-platform-duplication ("artificial")
 scheme, matching WEIGHTS_FILE (data_validation/gtfs_utils.py) and
-scripts.basics.subway_route_names_stop_ids_artificial, since that is the id
+subway_reference.subway_lines.subway_route_names_stop_ids_artificial, since that is the id
 scheme the real graph (built via build_graph_from_weights, in
 shortest_paths_algorithms/algorithms_utils.py) actually runs on.
 
@@ -25,7 +25,7 @@ walks to compute depth_from_bridge/depth_to_bridge.
 
 from typing import Dict, Optional, Set
 
-from scripts.basics import subway_route_names_stop_ids_artificial
+from subway_reference.subway_lines import subway_route_names_stop_ids_artificial
 
 Branches = {
     "Branch_L1": ["1.111", "1.112", "1.113", "1.114", "1.115", "1.116"],
