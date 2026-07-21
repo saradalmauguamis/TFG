@@ -11,8 +11,7 @@ graph_inspection/
 ├── graph_draw/
 │   ├── graph.py
 │   └── resources/
-├── graph_report.py
-└── subway_maps/
+└── graph_report.py
 ```
 
 ---
@@ -50,10 +49,7 @@ entries/platforms of all vertices, SW/TF/PW of all arrows). Also reports "arrow 
 arrows versus the maximum possible directed arrows for `|V|` vertices (`|V|*(|V|-1)`). Ends with a
 reminder of what each vertex/edge kind means.
 
-### `subway_maps/`
 
-Reference JPGs of Barcelona's subway lines (one per line, plus the full network map), used for
-visual cross-checking against `graph_draw.py`'s output and against the GTFS data more generally.
 
 ---
 

@@ -4,7 +4,7 @@ Default run (detect, `WORKFLOW.md` step 5): reads `stop_times_cleaned.txt`/
 `trips_cleaned.txt` from `2_duplicated_trips` and `stops_subway.txt` from
 `1_subway`. For each trip, compares each consecutive stop pair (gap of
 exactly one in `stop_sequence`) against the expected order from
-`scripts.basics.subway_route_names_stop_ids` (reversed when
+`subway_reference.subway_lines.subway_route_names_stop_ids` (reversed when
 `direction_id == 1`). Writes `wrong_stop_sequences.txt` to `3_stop_sequence`,
 consumed by `processing/3_stop_sequence.py`.
 
@@ -27,7 +27,7 @@ PROJECT_ROOT = Path(__file__).resolve().parents[3]
 if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT))
 
-from scripts.basics import (  # noqa: E402
+from subway_reference.subway_lines import (  # noqa: E402
     subway_route_names_stop_ids,
     subway_routes_names_ids,
 )

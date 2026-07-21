@@ -914,7 +914,7 @@ def build_stop_to_lines(
 
     args:
         route_names_stop_ids: Mapping from line name to its ordered stop_id list,
-            e.g. `scripts.basics.subway_route_names_stop_ids`.
+            e.g. `subway_reference.subway_lines.subway_route_names_stop_ids`.
 
     returns:
         Mapping from stop_id to the list of line names it belongs to.
@@ -935,7 +935,7 @@ def build_shared_platform_lines(
 
     args:
         route_names_stop_ids: Mapping from line name to its ordered stop_id list,
-            e.g. `scripts.basics.subway_route_names_stop_ids`.
+            e.g. `subway_reference.subway_lines.subway_route_names_stop_ids`.
 
     returns:
         `build_stop_to_lines` restricted to stop_ids served by more than one line.
@@ -1058,11 +1058,11 @@ def build_trip_groups_by_line(
 
     args:
         route_names_stop_ids: Mapping from line name to its ordered stop_id
-            list, e.g. `scripts.basics.subway_route_names_stop_ids` (or its
+            list, e.g. `subway_reference.subway_lines.subway_route_names_stop_ids` (or its
             `_artificial` post-duplication variant, for analyses that read
             stop_times after shared-platform duplication).
         routes_names_ids: Mapping from line name to route_id, e.g.
-            `scripts.basics.subway_routes_names_ids`.
+            `subway_reference.subway_lines.subway_routes_names_ids`.
         trips_file: Path to the trips file used to resolve each trip's
             direction_id.
 
@@ -1406,14 +1406,14 @@ def build_stop_id_order_index(
 ) -> Dict[str, int]:
     """Flatten a line -> stop_id list mapping into one canonical rank per stop_id.
 
-    Walks `route_names_stop_ids` the same way `scripts/stops_report.py` already
+    Walks `route_names_stop_ids` the same way `subway_reference/stops_report.py` already
     does (line by line, then stop by stop), so sorting by this index lines up
     with that canonical order. The first line to mention a stop_id wins its
     rank.
 
     args:
         route_names_stop_ids: Mapping from line name to its ordered stop_id
-            list, e.g. `scripts.basics.subway_route_names_stop_ids_artificial`.
+            list, e.g. `subway_reference.subway_lines.subway_route_names_stop_ids_artificial`.
 
     returns:
         Mapping from stop_id to its 0-based canonical rank. Stop_ids outside
