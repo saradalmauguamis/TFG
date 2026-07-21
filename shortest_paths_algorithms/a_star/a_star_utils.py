@@ -136,7 +136,7 @@ def a_star(
                         adj, f_adj
                     )  # pseudocode: Open.add_with_priority(adj, g, h)
                 else:
-                    Open.requeue_with_priority(
+                    Open.decrease_priority(
                         adj, f_adj
                     )  # pseudocode: else Open.requeue_with_priority(adj, g, h)
 
