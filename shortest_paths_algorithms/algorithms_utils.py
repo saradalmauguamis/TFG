@@ -303,7 +303,7 @@ class MinHeap:
         Dijkstra (slide 18)       A* (slide 45)
         add_with_priority      —  add_with_priority
         extract_min            —  extract_min
-        decrease_priority      —  requeue_with_priority
+        decrease_priority      —  requeue_with_priority (both use decrease_priority here)
         (implicit via dist=∞)  —  belongs_to
 
     All three mutating operations run in O(log₂ Q̄) time (Alsedà, slide 34).
@@ -500,7 +500,8 @@ class MinHeap:
         upward, so heapify_up suffices.
 
         This is the operation the pseudocode calls Pq.decrease_priority in Dijkstra
-        (slide 18). For A*, use requeue_with_priority instead.
+        (slide 18) and Open.requeue_with_priority in A* (slide 45); both use this
+        single method here.
 
         T_DP time taken & run |E| - |V| times (relaxation loop runs at most |E| times).
 
@@ -511,20 +512,6 @@ class MinHeap:
         i = self._pos[vertex]
         self._heap[i] = (new_priority, vertex)
         self.heapify_up(i)  # new priority is smaller, so only go up
-
-    def requeue_with_priority(self, vertex: Node, new_priority: int) -> None:
-        """Requeue a vertex with a lower f-value, in O(log₂ Q̄) time.
-
-        Corresponds to requeue in Alsedà (slide 87). This is the operation the
-        A* pseudocode calls Open.requeue_with_priority (Alsedà, slide 45).
-        Functionally identical to decrease_priority and named separately to match
-        the A* pseudocode terminology exactly.
-
-        args:
-            vertex: The vertex already present in the Open queue.
-            new_priority: The new, smaller f=g+h value to assign to the vertex.
-        """
-        self.decrease_priority(vertex, new_priority)
 
 
 # ---------------------------------------------------------------------------
