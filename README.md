@@ -22,7 +22,9 @@ TFG/
 - [`data_validation/`](data_validation/README.md) — pipeline for validating, processing, and
   analysing the GTFS subway data.
 - [`graph_inspection/`](graph_inspection/README.md) — subway graph drawing and reporting tools.
-- [`shortest_paths_algorithms/`](shortest_paths_algorithms/README.md) — Dijkstra and A* implementations.
+- [`shortest_paths_algorithms/`](shortest_paths_algorithms/README.md) — Dijkstra and A*
+  implementations; see [`shortest_paths_algorithms/WORKFLOW.md`](shortest_paths_algorithms/WORKFLOW.md)
+  for the reasoning trail behind each heuristic.
 - [`subway_reference/`](subway_reference/README.md) — static reference data, maps, and reports
   about Barcelona's subway lines/stops, shared across the other folders.
 - [`scripts/`](scripts/README.md) — standalone utilities shared across the other folders.
