@@ -1,5 +1,23 @@
 # Modeling and Optimization of Routes in Barcelona's Public Transport Network
 
+## About
+
+This repository implements and compares shortest path algorithms for the Barcelona subway
+network, built from official GTFS data provided by TMB, including the Montjuïc Funicular. It
+investigates strategies to reduce the number of iterations needed to reach the optimal route,
+developing a network-specific heuristic based on the topology of the Barcelona metro system and
+a graph reduction technique, and comparing them against Dijkstra's algorithm and A* with a
+conventional geometric heuristic. Combining these strategies achieves an approximately 6.5-fold
+reduction in iterations compared with the initial solution based on Dijkstra's algorithm.
+
+The work splits into two main phases: [`data_validation/`](data_validation/README.md) builds and
+validates the weighted graph from raw GTFS data, with
+[`data_validation/WORKFLOW.md`](data_validation/WORKFLOW.md) walking through the end-to-end run
+order across scripts; and [`shortest_paths_algorithms/`](shortest_paths_algorithms/README.md)
+implements and compares the search algorithms and heuristics, with
+[`shortest_paths_algorithms/WORKFLOW.md`](shortest_paths_algorithms/WORKFLOW.md) walking through
+the reasoning behind each one.
+
 ## Repository Structure
 
 ```

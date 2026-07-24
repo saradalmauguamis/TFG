@@ -5,7 +5,7 @@ Reuses graph_inspection/graph_draw/graph.py's graph loading (GTFS-derived edges,
 weights, and the jittered synthetic-platform/entry positions) and recolors it
 against shortest_paths_algorithms/barcelona_division.py's Center/Branches partition
 instead of by subway line: every platform, every entry/exit, and every SW/TF/PW edge
-touching it, is painted in its region's color -- except the edge connecting a branch's
+touching it, is painted in its region's color, except the edge connecting a branch's
 outermost platform to its bridge, which takes the branch's color (it's still part
 of the branch, structurally), and the bridge platform itself, which is highlighted
 in yellow, a color reserved from the region palette so it never doubles as a
@@ -69,7 +69,7 @@ def node_region(stop_id: str) -> str:
 
 def region_edge_color(u: str, v: str) -> str:
     """Color an SW/TF edge: same-region color, or the branch's color if the edge
-    crosses into Center -- which can only be the branch's single bridge connection.
+    crosses into Center (which can only be the branch's single bridge connection).
 
     args:
         u: Source platform stop_id.
@@ -99,7 +99,7 @@ def pw_edge_color(u: str, v: str) -> str:
 
 
 def entry_node_color(entry_id: str, graph: nx.DiGraph) -> str:
-    """Color an entry node the same as its PW edge -- its connected platform's region color.
+    """Color an entry node the same as its PW edge: its connected platform's region color.
 
     args:
         entry_id: Entry/exit stop_id ("E." prefix).

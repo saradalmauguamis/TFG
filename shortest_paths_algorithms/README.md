@@ -35,11 +35,12 @@ shortest_paths_algorithms/
         └── extracted_nodes/
 ```
 
-The aim is modelling and optimizing routes in Barcelona's subway network. For that, the graph was
-already built in `data_validation`, ending with [`WEIGHTS_FILE`](../data/6_weights/weights.txt).
-Given an entry source and an entry target, we want to find the shortest path while doing the
-minimum number of iterations: for that we need algorithms that solve the routing problem, and
-these are Dijkstra and A*.
+The aim is modelling and optimizing routes in Barcelona's subway network. Once
+[`data_validation/`](../data_validation/README.md) builds the weighted graph, ending with
+[`WEIGHTS_FILE`](../data/6_weights/weights.txt), this folder studies strategies to find the
+shortest path between an entry source and an entry target while doing the minimum number of
+iterations: for that we need algorithms that solve the routing problem, and these are Dijkstra and
+A*.
 
 See [`WORKFLOW.md`](WORKFLOW.md) for the trail of ideas and intuitions that drove each step below,
 from the plain Dijkstra baseline to the final `A*_bcn` heuristic on the reduced graph.
@@ -114,8 +115,16 @@ Important paths shared across `shortest_paths_algorithms/`'s modules.
       This is what keeps `h_geo` admissible: no edge in the graph is ever crossed faster than
       $v_{\max}$, so straight-line distance divided by $v_{\max}$ can never overestimate the true
       travel time along any path from `n` to `t`.
-  - `h_cheat.py`: the real optimal cost via `cut_dijkstra`, only useful to see how A* behaves with
-    a perfect heuristic, since computing it already requires solving the shortest path.
+  - `h_cheat.py`: the ideal heuristic, the real optimal cost between two vertices $n, t \in V$,
+    computed via `cut_dijkstra`:
+
+    $$
+    h\_cheat(n, t) = \sigma(n, t)
+    $$
+
+    where $\sigma(n,t)$ denotes the minimum weight between `n` and `t`. Only useful to see how A*
+    behaves with a perfect heuristic, since computing it already requires solving the shortest
+    path.
   - `h_bcn.py`: a Barcelona region/bridge-aware heuristic built on `barcelona_division.py`.
     Reduces node/target to the platform(s) they connect to, then estimates the remaining cost via
     `h_geo` across the dense Center or exact precomputed bridge depths within/between branches:

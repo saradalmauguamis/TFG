@@ -4,15 +4,15 @@ heuristic (h_geo, h_bcn, h_cheat) actually extracted while searching SOURCE -> T
 The whole graph (graph_inspection/graph_draw/graph.py's load_graph, same source as
 shortest_paths_algorithms/analysis/regions_graph.py) is painted light grey first, then each
 algorithm's extracted nodes and shortest-path-tree edges (parent links) are layered on
-top of it, in a fixed order: Cut-Dijkstra, then A*_geo, A*_bcn, A*_cheat --
+top of it, in a fixed order: Cut-Dijkstra, then A*_geo, A*_bcn, A*_cheat, following
 COLOR_BY_HEURISTIC's own order (shortest_paths_algorithms/analysis/algorithms_comparison.py),
 reused here directly so a heuristic's color always means the same thing across every
 chart in this package. Later layers paint over earlier ones wherever two algorithms
 extract the same node/edge.
 
 `expanded` (which nodes were extracted before the search stopped) is not part of either
-algorithm's pseudocode -- see a_star_utils.py's a_star() and dijkstra_utils.py's
-_run_dijkstra() for where it's tracked purely for this kind of traceability -- but
+algorithm's pseudocode (see a_star_utils.py's a_star() and dijkstra_utils.py's
+_run_dijkstra() for where it's tracked purely for this kind of traceability), but
 `parent` already is, for both algorithms.
 
 Output_name: {region_case}_{GRAPH_MODE_LABEL}_{SOURCE}_to_{TARGET}.png ({region_case}_
@@ -26,15 +26,15 @@ drives resolve_bridge_highlights: whichever endpoint(s) region_case names as a b
 compute_bridge, same lookup regions_graph.py uses) marked with a diamond in BRIDGE_COLOR.
 
 Since the deliverable is the PNG alone (no companion .txt report), everything that would
-otherwise be printed -- the shortest path (stop id + name, same format as
-print_path_summary in shortest_paths_algorithms/algorithms_utils.py, but one node per line
-instead of joined by "->") and each algorithm's iterations/proportion
-(path_vertices / iterations, same metric as shortest_paths_algorithms/reports/, except
-iterations is bumped by entrance_endpoint_shift() -- see its docstring -- whenever
-GRAPH_MODE is WITHOUT_ENTRANCES_GRAPH and SOURCE/TARGET are entrances, so the denominator
-accounts for the same restored endpoints finalize_path already added to path_vertices) --
-is drawn directly on the figure: the path as a sidebar in the plot's top-left corner,
-iterations/proportion folded into each algorithm's own legend entry.
+otherwise be printed is drawn directly on the figure: the shortest path (stop id + name, same
+format as print_path_summary in shortest_paths_algorithms/algorithms_utils.py, but one node
+per line instead of joined by "->") as a sidebar in the plot's top-left corner, and each
+algorithm's iterations/proportion (path_vertices / iterations, same metric as
+shortest_paths_algorithms/reports/, except iterations is bumped by entrance_endpoint_shift()
+whenever GRAPH_MODE is WITHOUT_ENTRANCES_GRAPH and SOURCE/TARGET are entrances, so the
+denominator accounts for the same restored endpoints finalize_path already added to
+path_vertices; see entrance_endpoint_shift's own docstring) folded into each algorithm's own
+legend entry.
 """
 
 from __future__ import annotations
@@ -157,7 +157,7 @@ ENDPOINT_NODE_SIZE = 400
 
 # Whichever of SOURCE/TARGET region_case names as a branch endpoint (see
 # resolve_bridge_highlights) gets its branch's bridge platform marked with a diamond in
-# BRIDGE_COLOR -- the same color regions_graph.py reserves for "bridge", so it reads as
+# BRIDGE_COLOR, the same color regions_graph.py reserves for "bridge", so it reads as
 # the same concept across every chart in this package.
 BRIDGE_NODE_SIZE = 200
 
@@ -307,7 +307,7 @@ def draw_endpoints(
     ax: plt.Axes, graph: nx.DiGraph, pos: Dict[Node, Tuple[float, float]]
 ) -> None:
     """Paint SOURCE and TARGET last, in their own reserved colors/shapes, above every
-    algorithm layer -- a triangle for SOURCE, a star for TARGET, both white-edged so
+    algorithm layer: a triangle for SOURCE, a star for TARGET, both white-edged so
     they read clearly even sitting on top of a same-colored algorithm node.
 
     args:
@@ -348,7 +348,7 @@ def resolve_bridge_highlights(
 
     Mirrors barcelona_division.classify's naming: region_case names TARGET's branch
     whenever its second letter is B (CB/SB/DB) and SOURCE's whenever its first letter is B
-    (BC/SB/DB) -- see shortest_paths_algorithms/barcelona_division.py's classify docstring for the
+    (BC/SB/DB); see shortest_paths_algorithms/barcelona_division.py's classify docstring for the
     5-case table. Whichever endpoint(s) region_case names, resolved to platform(s) through
     h_bcn's own plat_to/plat_from (so an entry/exit maps to exactly the platforms h_bcn
     itself would route it through, instead of a separate ad-hoc lookup), find_branch/
@@ -401,7 +401,7 @@ def resolve_classify_endpoints(path: List[Node]) -> Tuple[Node, Node]:
     """Return the (source-side, target-side) platform classify() should use.
 
     classify (barcelona_division.py) only accepts platforms, but SOURCE/TARGET
-    may be entrances -- on FULL_GRAPH entrances are reachable directly, so
+    may be entrances: on FULL_GRAPH entrances are reachable directly, so
     algo_source/algo_target (best_over_candidate_pairs' output) can themselves
     be entrances there, unlike WITHOUT_ENTRANCES_GRAPH where they're always
     already-reduced platforms (see resolve_search_endpoints). Either way,
@@ -434,7 +434,7 @@ def entrance_endpoint_shift() -> int:
 
     returns:
         0, 1 or 2: how many of SOURCE/TARGET are entrances, only on
-        WITHOUT_ENTRANCES_GRAPH -- always 0 on FULL_GRAPH.
+        WITHOUT_ENTRANCES_GRAPH (always 0 on FULL_GRAPH).
     """
     if GRAPH_MODE != WITHOUT_ENTRANCES_GRAPH:
         return 0
@@ -473,7 +473,7 @@ def draw_and_save_figure(
     Layers the whole subway network (base layer), each algorithm's extracted
     nodes/edges (in COLOR_BY_HEURISTIC's fixed order), SOURCE/TARGET, and any
     region_case bridge highlight, then the legend and the shortest-path
-    sidebar -- see the module docstring for the full picture.
+    sidebar; see the module docstring for the full picture.
 
     args:
         runs: label -> (parent, expanded, iterations), one entry per algorithm
@@ -634,7 +634,7 @@ def draw_and_save_figure(
     )
 
     # Sidebar sits inside the axes (not a separate figure margin), in the plot's own
-    # top-left empty corner -- same "inside the square" placement as the legend.
+    # top-left empty corner, the same "inside the square" placement as the legend.
     ax.text(
         0.01,
         0.98,

@@ -1,4 +1,5 @@
-"""Dijkstra's algorithm based on Lluís Alsedà pseudo-code"""
+"""Dijkstra's algorithm, based on Lluís Alsedà's pseudo-code, run on small example graphs to
+understand how the algorithm works before trusting it on real data."""
 
 from __future__ import annotations
 import sys

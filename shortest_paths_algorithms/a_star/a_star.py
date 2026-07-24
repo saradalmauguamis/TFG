@@ -8,9 +8,9 @@ Aim:
 shortest_paths_algorithms/a_star/a_star_utils.py implements A* generically, taking any
 admissible heuristic h(node, target) as a parameter; the concrete heuristics
 (h_geo, h_cheat, h_bcn) are built in shortest_paths_algorithms/a_star/heuristics/,
-one module each -- see their docstrings for their definitions. This script only
+one module each; see their docstrings for their definitions. This script only
 wires that machinery to the real subway graph: the graph itself (via
-build_graph_from_weights, shared withdijkstra.py), the real stop coordinates,
+build_graph_from_weights, shared with dijkstra.py), the real stop coordinates,
 and SOURCE/TARGET.
 
 Methodology:
@@ -25,7 +25,7 @@ Methodology:
 
 Note: unlike dijkstra.py, there is no "full" run to print a whole distances
 table from (a_star_utils.py's a_star always stops as soon as the target is
-extracted, same as cut_dijkstra -- see its own docstring), so only
+extracted, same as cut_dijkstra; see its own docstring), so only
 dist[TARGET] is guaranteed optimal here (by the convergence theorem); this
 script reports that value and the path, not a full per-node distances table.
 """
@@ -148,7 +148,7 @@ def main() -> None:
     print_graph_size(graph)
 
     if HEURISTIC_NAME == H_CHEAT:
-        # h_cheat only needs graph -- coords/v_max are geography-only inputs
+        # h_cheat only needs graph: coords/v_max are geography-only inputs
         # h_geo/h_bcn need, so skip computing them entirely for this heuristic.
         h = build_h_cheat(graph)
     else:
@@ -156,7 +156,7 @@ def main() -> None:
         v_max, (v_max_from, v_max_to) = compute_v_max(graph, coords)
         print(
             f"v_max (fastest implied edge speed): {v_max:.3f} m/s ({v_max * 3.6:.1f} km/h)"
-            f" -- found at edge {v_max_from} ({node_fmt(v_max_from)})"
+            f", found at edge {v_max_from} ({node_fmt(v_max_from)})"
             f" -> {v_max_to} ({node_fmt(v_max_to)})"
         )
         if HEURISTIC_NAME == H_GEO:

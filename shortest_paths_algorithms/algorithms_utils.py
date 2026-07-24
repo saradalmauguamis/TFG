@@ -23,7 +23,7 @@ INF = (
 # ---------------------------------------------------------------------------
 # FULL_GRAPH keeps every edge (SW/TF/PW), so entrances (E.*) are reachable
 # directly, exactly like WEIGHTS_FILE itself. WITHOUT_ENTRANCES_GRAPH drops PW
-# (entrance<->platform pathway) rows, isolating every entrance -- a search must
+# (entrance<->platform pathway) rows, isolating every entrance, so a search must
 # then be run against platform endpoints only, see resolve_platform_candidates/
 # restore_entrance_endpoints below for accepting entrance SOURCE/TARGET anyway.
 GraphMode = str
@@ -224,7 +224,7 @@ def resolve_platform_candidates(
     be a platform (returned as-is via plat_from/plat_to) or an entrance
     (reduced to the platform(s) it connects to in that direction). Either set
     coming back empty means that end has no PW edge in that direction, so no
-    path exists no matter which candidate is tried -- mirrors h_bcn's own INF
+    path exists no matter which candidate is tried, mirroring h_bcn's own INF
     return for the same situation (a_star/heuristics/h_bcn.py). A set with more
     than one candidate (a platform reachable via more than one directed PW edge)
     is returned as-is too: the caller is expected to try every candidate and
@@ -260,7 +260,7 @@ def restore_entrance_endpoints(
 
     Counterpart to resolve_platform_candidates: once a search on
     WITHOUT_ENTRANCES_GRAPH finds a platform-to-platform path, this restores
-    whichever original endpoint(s) were actually entrances -- the same spirit
+    whichever original endpoint(s) were actually entrances, in the same spirit
     as apply_liceu_entrance_fix's path post-processing, applied after it.
 
     args:
@@ -601,7 +601,7 @@ def _print_liceu_disclaimer(
         f"{original}{format_node_label(original, node_fmt)} only serves the "
         f"opposite direction. You are enforced to {role} through "
         f"{replacement}{format_node_label(replacement, node_fmt)} instead, a "
-        f"few meters away -- the walking time between the two is treated as "
+        f"few meters away; the walking time between the two is treated as "
         f"equal, so the weight reported below is unaffected."
     )
 
@@ -809,7 +809,7 @@ def with_adjusted_target_weight(
 
     args:
         dist: The winning candidate's dist (Dijkstra) or g (A*) mapping.
-        target: The query's original target (platform or entrance) -- the key
+        target: The query's original target (platform or entrance): the key
             being adjusted, which may not even be a key of dist (e.g. an
             entrance absent from a WITHOUT_ENTRANCES_GRAPH search's own dist).
         best_weight: The raw weight found between algo_source/algo_target, or
@@ -843,8 +843,8 @@ def best_over_candidate_pairs(
 ]:
     """Run a target-directed search once per (source, target) candidate pair, keeping the cheapest.
 
-    Shared by any target-directed algorithm -- cut_dijkstra or a_star, unlike
-    plain dijkstra() (see dijkstra_utils.best_over_source_candidates) -- that
+    Shared by any target-directed algorithm (cut_dijkstra or a_star, unlike
+    plain dijkstra(); see dijkstra_utils.best_over_source_candidates) that
     stops early at one specific target and so needs a fresh run per (source,
     target) pair, rather than one run per source. a_star.py binds `search` to
     a_star with h/verbose pre-bound via functools.partial; extracted_nodes_graph.py

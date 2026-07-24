@@ -1,10 +1,10 @@
 """Sanity check: for every platform pair, optimum_weight must agree across reports.
 
-The 4 reports for one graph mode -- dijkstra_{mode}_report.txt,
+The 4 reports for one graph mode: dijkstra_{mode}_report.txt,
 a_star_{mode}_geo_report.txt, a_star_{mode}_h_bcn_report.txt, and
 a_star_{mode}_h_cheat_report.txt (shortest_paths_algorithms/reports/resources/, paths
 in shortest_paths_algorithms/paths.py), picked via GRAPH_MODE (FULL_GRAPH or
-WITHOUT_ENTRANCES_GRAPH, see shortest_paths_algorithms/algorithms_utils.py) -- all
+WITHOUT_ENTRANCES_GRAPH, see shortest_paths_algorithms/algorithms_utils.py), all
 run the same collect_platform_pairs pairs over the same graph
 (shortest_paths_algorithms/reports/report_utils.py), just with different
 search algorithms/heuristics. The actual path found for a pair can legitimately

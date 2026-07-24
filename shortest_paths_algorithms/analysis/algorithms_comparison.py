@@ -25,7 +25,7 @@ Requires: one report file per heuristic per graph mode (DIJKSTRA_REPORT_FULL_FIL
 DIJKSTRA_REPORT_NO_PW_FILE, A_STAR_GEO_REPORT_FULL_FILE/A_STAR_GEO_REPORT_NO_PW_FILE,
 A_STAR_CHEAT_REPORT_FULL_FILE/A_STAR_CHEAT_REPORT_NO_PW_FILE,
 A_STAR_BCN_REPORT_FULL_FILE/A_STAR_BCN_REPORT_NO_PW_FILE, from
-shortest_paths_algorithms/paths.py -- the full/no_pw pair generated with
+shortest_paths_algorithms/paths.py, the full/no_pw pair generated with
 GRAPH_MODE=FULL_GRAPH/WITHOUT_ENTRANCES_GRAPH respectively, see
 shortest_paths_algorithms/algorithms_utils.py), each with at
 least the source_id, target_id, and proportion columns (report_fieldnames,
@@ -39,7 +39,7 @@ Two outputs are built, from HEURISTIC_REPORTS_BY_MODE:
   from the no_pw half to the full half).
 - *_combined_report.txt / *_combined_chart.png: both FULL_GRAPH and
   WITHOUT_ENTRANCES_GRAPH reports together, two adjacent bars per heuristic per
-  case (full graph, no_pw graph) -- same COLOR_BY_HEURISTIC per heuristic in
+  case (full graph, no_pw graph): same COLOR_BY_HEURISTIC per heuristic in
   both bars, with the no_pw bar hatched (HATCH_BY_MODE) so the two graph modes
   stay visually distinct without needing a second color scale.
 
@@ -94,7 +94,7 @@ COLOR_BY_HEURISTIC = {
     "a_star_h_cheat": "#d99f3d",
 }
 
-# One report file per heuristic (outer key), per graph mode (inner key) --
+# One report file per heuristic (outer key), per graph mode (inner key):
 # every heuristic/mode combination LEGEND_LABEL_BY_HEURISTIC and
 # GRAPH_MODE_LABEL (algorithms_utils.py) can name.
 HEURISTIC_REPORTS_BY_MODE: Dict[str, Dict[str, str]] = {
@@ -264,12 +264,12 @@ def plot_comparison(
             f"{label}_{mode}_proportion_mean" (multiple modes) column per
             (label, mode) pair in used.
         output_path: Destination .png path.
-        used: (label, mode) pairs to draw a bar for, in draw order --
+        used: (label, mode) pairs to draw a bar for, in draw order:
             heuristic-major, so one heuristic's full/no_pw bars sit adjacent
             (build_combined's own order).
         modes: Which graph modes are being plotted (["full"], ["no_pw"], or
             ["full", "no_pw"]); len(modes) > 1 is what turns on hatching and
-            the second (mode) legend -- a single mode looks exactly as this
+            the second (mode) legend; a single mode looks exactly as this
             chart always has.
     """
     multi_mode = len(modes) > 1
@@ -350,7 +350,7 @@ def plot_comparison(
     ax.tick_params(axis="both", colors="#898781", length=0)
 
     # One legend entry per heuristic color, plus (multi_mode only) one per
-    # graph-mode hatch -- built from Patch handles instead of each bar's own
+    # graph-mode hatch, built from Patch handles instead of each bar's own
     # label, since a bar can only carry one legend entry and we need color
     # (heuristic) and hatch (mode) to be explained separately.
     heuristic_handles = [
