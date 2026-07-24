@@ -53,6 +53,12 @@ TFG/
 
 ## Setup
 
+Requires Python 3.10+. On macOS, the `python3` on `PATH` is often Apple's older bundled system
+Python (3.9 or earlier), which is too old for this project's dependencies; check with
+`python3 --version` first, and if it's below 3.10, install a newer Python (e.g.
+`brew install python@3.12`) and use that interpreter (e.g. `python3.12`) in the step below instead
+of the bare `python3`.
+
 Use the commands below for your operating system.
 
 ### 1. Create Virtual Environment
