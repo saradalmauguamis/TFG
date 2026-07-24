@@ -18,11 +18,11 @@ repos:
         types: [file]
         description: "Ensure function-local assignments are declared at the top of the function"
       - id: check-requirements-updated
-        name: Ensure requirements.txt matches .venv pip freeze
+        name: Ensure .venv satisfies requirements.txt
         entry: python3 hooks/check_requirements_up_to_date.py
         language: system
         pass_filenames: false
-        description: "Fail commit if requirements.txt differs from .venv pip freeze"
+        description: "Fail commit if .venv is missing a requirements.txt package or its pin"
 
   # General file cleanup
   - repo: https://github.com/pre-commit/pre-commit-hooks
