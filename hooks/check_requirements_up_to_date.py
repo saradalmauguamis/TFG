@@ -1,12 +1,14 @@
 #!/usr/bin/env python3
 """
-Check that .venv pip freeze equals requirements.txt.
-Exits 0 if equal or if .venv not found; exits 1 with message if different.
+Check that every package declared in requirements.txt is installed in .venv
+and satisfies its version pin.
+Exits 0 if satisfied or if .venv not found; exits 1 with details if not.
 """
 from pathlib import Path
+import re
 import subprocess
 import sys
-from typing import List, Optional
+from typing import Dict, List, Optional, Tuple
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
 VENV_PY = (
@@ -16,121 +18,164 @@ VENV_PY = (
     / ("python.exe" if sys.platform == "win32" else "python")
 )
 REQ_FILE = REPO_ROOT / "requirements.txt"
+REQ_PATTERN = re.compile(
+    r"^([A-Za-z0-9_.\-]+)\s*(>=|==|<=|~=|>|<)\s*([A-Za-z0-9_.\-]+)$"
+)
+
+
+def normalize(name: str) -> str:
+    """Normalize a package name for comparison (PEP 503-style).
+
+    args:
+        name: Raw package name.
+
+    returns:
+        Lowercased name with runs of `-`/`_`/`.` collapsed to a single `-`.
+    """
+    return re.sub(r"[-_.]+", "-", name).lower()
+
+
+def parse_version(text: str) -> Tuple[int, ...]:
+    """Parse a dotted, numeric-led version string into a comparable tuple.
+
+    args:
+        text: Version string such as "3.12.1".
+
+    returns:
+        Tuple of each dot-separated component's leading integer.
+    """
+    parts: List[int] = []
+    for chunk in text.split("."):
+        match = re.match(r"\d+", chunk)
+        parts.append(int(match.group()) if match else 0)
+    return tuple(parts)
+
+
+def satisfies(installed: str, operator: str, required: str) -> bool:
+    """Check whether an installed version satisfies a requirement operator.
+
+    args:
+        installed: Installed version string.
+        operator: One of ">=", "==", "<=", "~=", ">", "<".
+        required: Required version string from requirements.txt.
+
+    returns:
+        True if the installed version satisfies the constraint.
+    """
+    inst: Tuple[int, ...] = parse_version(installed)
+    req: Tuple[int, ...] = parse_version(required)
+
+    if operator == ">=":
+        return inst >= req
+    if operator == "<=":
+        return inst <= req
+    if operator == ">":
+        return inst > req
+    if operator == "<":
+        return inst < req
+    return inst[: len(req)] == req
 
 
 def read_requirements(path: Path) -> List[str]:
-    """Read `requirements.txt` and return list of non-empty, non-comment lines.
-
-    Tries common encodings and falls back to a permissive decode to avoid
-    crashing on BOM or platform-specific encodings.
+    """Read requirements.txt and return its non-empty, non-comment lines.
 
     args:
         path: Path to the requirements.txt file.
 
     returns:
-        List of package requirement strings (non-empty, non-comment lines).
+        List of requirement strings.
     """
     lines: List[str] = []
-    text: Optional[str] = None
     if not path.exists():
-        return []
-    # Try common encodings: utf-8, utf-8-sig (BOM), then latin-1 as a fallback.
-    for enc in ("utf-8", "utf-8-sig", "latin-1"):
-        try:
-            text = path.read_text(encoding=enc)
-            break
-        except UnicodeDecodeError:
-            continue
-    if text is None:
-        # Last resort: open in binary and decode ignoring errors
-        try:
-            raw = path.read_bytes()
-            text = raw.decode("utf-8", errors="ignore")
-        except Exception:
-            return []
-
+        return lines
     lines = [
         line.strip()
-        for line in text.splitlines()
+        for line in path.read_text(encoding="utf-8").splitlines()
         if line.strip() and not line.lstrip().startswith("#")
     ]
     return lines
 
 
-def pip_freeze(python_exec: Path) -> Optional[List[str]]:
-    """Run pip freeze using the provided Python executable.
+def installed_versions(python_exec: Path) -> Optional[Dict[str, str]]:
+    """Return every installed package's version, keyed by normalized name.
 
     args:
-        python_exec: Path to the Python executable to run pip freeze with.
+        python_exec: Path to the Python executable to query.
 
     returns:
-        List of package strings from pip freeze output, or None if execution fails.
+        Dict of normalized name -> version string, or None if the query fails.
     """
     result: Optional[subprocess.CompletedProcess] = None
+    versions: Dict[str, str] = {}
+
     try:
         result = subprocess.run(
-            [str(python_exec), "-m", "pip", "freeze"],
+            [str(python_exec), "-m", "pip", "list", "--format=freeze"],
             capture_output=True,
             check=False,
             text=True,
         )
-        if result.returncode != 0:
-            print(f"Could not run pip freeze using {python_exec}:")
-            print(result.stderr.strip())
-            return None
-        return [line.strip() for line in result.stdout.splitlines() if line.strip()]
     except Exception as e:
-        print(f"Could not run pip freeze using {python_exec}: {e}")
+        print(f"Could not run pip list using {python_exec}: {e}")
         return None
+    if result.returncode != 0:
+        print(f"Could not run pip list using {python_exec}:")
+        print(result.stderr.strip())
+        return None
+    for line in result.stdout.splitlines():
+        if "==" not in line:
+            continue
+        name, version = line.strip().split("==", 1)
+        versions[normalize(name)] = version
+    return versions
 
 
 def main() -> int:
-    """Check that requirements.txt matches .venv pip freeze.
+    """Check that .venv satisfies every pin declared in requirements.txt.
 
     args:
         None. Uses module-level constants REQ_FILE and VENV_PY.
 
     returns:
-        Exit code: 0 if requirements match or .venv not found, 1 if mismatch detected.
+        Exit code: 0 if satisfied or .venv not found, 1 if a pin is unmet.
     """
-    frozen: Optional[List[str]] = None
-    frozen_list: List[str] = []
-    set_req: set[str] = set()
-    set_frozen: set[str] = set()
-    added: List[str] = []
-    removed: List[str] = []
-
     reqs: List[str] = read_requirements(REQ_FILE)
+    installed: Optional[Dict[str, str]] = None
+    problems: List[str] = []
+
     if not VENV_PY.exists():
         print(
             f".venv python not found at {VENV_PY}. Skipping strict check "
-            "(activate .venv and run `pip freeze > requirements.txt` if needed)."
+            "(activate .venv and run `pip install -r requirements.txt` if needed)."
         )
         return 0
-    frozen = pip_freeze(VENV_PY)
-    if frozen is None:
-        print("Failed to obtain pip freeze output. Skipping.")
+    installed = installed_versions(VENV_PY)
+    if installed is None:
+        print("Failed to obtain installed package versions. Skipping.")
         return 0
-    # frozen is Optional[List[str]]; at this point it's not None
-    frozen_list = frozen
-    if frozen_list == reqs:
+
+    for req in reqs:
+        match = REQ_PATTERN.match(req)
+        if not match:
+            name = re.split(r"[<>=~]", req, 1)[0].strip()
+            if normalize(name) not in installed:
+                problems.append(f"{req}: not installed in .venv")
+            continue
+        name, operator, version = match.groups()
+        installed_version = installed.get(normalize(name))
+        if installed_version is None:
+            problems.append(f"{req}: not installed in .venv")
+        elif not satisfies(installed_version, operator, version):
+            problems.append(f"{req}: found {installed_version} in .venv")
+
+    if not problems:
         return 0
-    set_req = set(reqs)
-    set_frozen = set(frozen_list)
-    added = sorted(set_frozen - set_req)
-    removed = sorted(set_req - set_frozen)
-    print("requirements.txt is OUT OF DATE with .venv pip freeze.")
-    if added:
-        print("\nPackages present in .venv but missing from requirements.txt:")
-        for p in added:
-            print("  +", p)
-    if removed:
-        print("\nPackages present in requirements.txt but not in .venv:")
-        for p in removed:
-            print("  -", p)
-    print("\nUpdate requirements with (from repo root):")
-    print("  activate the virtual environment for your OS")
-    print("  python -m pip freeze > requirements.txt")
+
+    print("requirements.txt is not satisfied by .venv:")
+    for problem in problems:
+        print("  -", problem)
+    print("\nInstall/upgrade with (from repo root, with .venv activated):")
+    print("  python -m pip install -r requirements.txt")
     return 1
 
 

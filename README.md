@@ -49,7 +49,7 @@ TFG/
 - [`hooks/`](hooks/README.md) — pre-commit hook scripts; see that README for what gets checked.
 - `.gitignore` — files and folders excluded from version control.
 - `.pre-commit-config.yaml` — pre-commit hook registration (see [`hooks/README.md`](hooks/README.md)).
-- `requirements.txt` — pinned Python dependencies for `.venv`.
+- `requirements.txt` — direct Python dependencies for `.venv`.
 
 ## Setup
 
@@ -80,6 +80,10 @@ source .venv/bin/activate
 ```bash
 python -m pip install -r requirements.txt
 ```
+
+`requirements.txt` pins minimum versions, not exact ones, so this installs on any Python/OS. See
+the comment at the top of that file for the exact versions the thesis's reported results were
+produced with, in case a re-run ever needs to rule out a library-version difference.
 
 ### 4. Install Pre-commit Hook
 
