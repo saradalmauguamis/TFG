@@ -1,7 +1,7 @@
 # Shortest Paths Algorithms Workflow
 
 Unlike [`data_validation/WORKFLOW.md`](../data_validation/WORKFLOW.md), this isn't a workflow of
-data stages with a required run order — it's the trail of ideas and intuitions behind each step,
+data stages with a required run order; it's the trail of ideas and intuitions behind each step,
 from a plain Dijkstra up to an A* variant that, per iteration, finds 0.39 vertices of the shortest
 path (up from 0.06 at the start).
 
@@ -21,7 +21,7 @@ weight to make sure it's still finding correct shortest paths.
    **[`data_validation/processing/6_weights.py`](../data_validation/processing/6_weights.py)**.
 
 Dijkstra alone gives no sense of whether its iteration count is *good*. It needs a reference to be
-judged against — which motivates A*.
+judged against, which motivates A*.
 
 ## 2. A reference ceiling: A*_cheat
 
@@ -38,7 +38,7 @@ judged against — which motivates A*.
    every algorithm agrees on the optimum path weight for the same queries.
 
 Dijkstra means 0.06, A*_cheat means 0.99. The gap between them shows there's real room for a
-heuristic to reduce iterations — 0.99 is the ceiling, not a target.
+heuristic to reduce iterations: 0.99 is the ceiling, not a target.
 
 ## 3. A first real heuristic: A*_geo
 
@@ -46,7 +46,7 @@ heuristic to reduce iterations — 0.99 is the ceiling, not a target.
     distance heuristic, built and reported the same way (report, then the optimum-weight sanity
     check).
 
-Mean 0.12 — better than Dijkstra, but still far from the 0.99 ceiling shown by A*_cheat.
+Mean 0.12, better than Dijkstra, but still far from the 0.99 ceiling shown by A*_cheat.
 
 ## 4. Exploiting the graph's own structure
 
@@ -74,8 +74,8 @@ this graph.
     checking them. The entry cost already added in `h_bcn` isn't enough to fix this, and it can't be
     raised further without breaking the heuristic's admissibility. The fix instead has to be at the
     graph level: filter out the `PW` (pathway) edges from the weights file so entrances stop being
-    routinely expanded. This produces two graph variants — `full_graph` and
-    `without_entrances_graph` — selectable via `graph_mode` in
+    routinely expanded. This produces two graph variants, `full_graph` and
+    `without_entrances_graph`, selectable via `graph_mode` in
     **[`config.yaml`](config.yaml)**.
 16. For each algorithm, repeat the full cycle on the reduced graph: report, then the
     optimum-weight sanity check.
@@ -85,6 +85,6 @@ this graph.
 ## Outcome
 
 Starting point, Dijkstra on the full graph: mean 0.06 (100 iterations find only 6 vertices of the
-shortest path). End point, A*_bcn on the `without_entrances_graph`: mean 0.39 — driven first by a
+shortest path). End point, A*_bcn on the `without_entrances_graph`: mean 0.39, driven first by a
 region-aware heuristic tailored to this network's center/branch structure, then by removing the
 entrance vertices that were diluting every algorithm's iterations regardless of heuristic.

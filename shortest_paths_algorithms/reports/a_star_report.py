@@ -3,8 +3,8 @@
 
 Output_name: a_star_{full,no_pw}_geo_report.txt (HEURISTIC_NAME="h_geo"),
 a_star_{full,no_pw}_h_cheat_report.txt (HEURISTIC_NAME="h_cheat"), or
-a_star_{full,no_pw}_h_bcn_report.txt (HEURISTIC_NAME="h_bcn") -- the full/no_pw
-half picked by GRAPH_MODE (see shortest_paths_algorithms/algorithms_utils.py) --
+a_star_{full,no_pw}_h_bcn_report.txt (HEURISTIC_NAME="h_bcn"), with the full/no_pw
+half picked by GRAPH_MODE (see shortest_paths_algorithms/algorithms_utils.py),
 saved into 'shortest_paths_algorithms/reports/resources'
 
 This is the evaluation counterpart to dijkstra_report.py
@@ -52,7 +52,7 @@ geographically): a single a_star call takes ~1.7ms with HEURISTIC_NAME="h_geo",
 ~3ms with "h_bcn" (still pure arithmetic and dict lookups, no shortest-path
 solve), and ~183ms with "h_cheat" (every call triggers a fresh cut_dijkstra).
 Across all 29,070 directed platform pairs, that's well under a minute for
-h_geo, 11.8s for h_bcn, and 485.4s (~16.7ms average per pair) for h_cheat --
+h_geo, 11.8s for h_bcn, and 485.4s (~16.7ms average per pair) for h_cheat;
 even that worst case is only an 8-minute one-off cost, not worth adding
 parallelism for, so this script is intentionally left sequential, exactly as
 in dijkstra_report.py. Those h_cheat figures were themselves measured with
@@ -214,7 +214,7 @@ def main() -> Tuple[List[ReportRow], float]:
     graph = build_graph_from_weights(WEIGHTS_FILE, GRAPH_MODE)
 
     if HEURISTIC_NAME == H_CHEAT:
-        # h_cheat only needs graph -- coords/v_max are geography-only inputs
+        # h_cheat only needs graph; coords/v_max are geography-only inputs
         # h_geo/h_bcn need, so skip computing them entirely for this heuristic.
         h = build_h_cheat(graph)
     else:

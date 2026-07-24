@@ -57,7 +57,7 @@ class ReportRow(NamedTuple):
 
     Shared row shape for dijkstra_report.txt (cut_dijkstra) and
     a_star_geo_report.txt (a_star): iterations means cut_iterations for the
-    former and a_star_iterations for the latter -- report_fieldnames and
+    former and a_star_iterations for the latter; report_fieldnames and
     report_row_to_csv_dict take the actual column name as a parameter so
     each report's output file still shows its own algorithm-specific label.
     """

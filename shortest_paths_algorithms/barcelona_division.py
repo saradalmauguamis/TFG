@@ -15,7 +15,7 @@ shortest_paths_algorithms/algorithms_utils.py) actually runs on.
 
 Every branch is a simple chain (verified against the real graph: every stop
 has exactly one in-branch predecessor and successor, except the two ends,
-which have one neighbor each -- the bridge itself is one such end, and is not
+which have one neighbor each, the bridge itself being one such end and not
 part of the branch's tuple below), so each Branches[branch] tuple is ordered
 outside --> inside: index 0 is the branch's outer end (farthest from the bridge),
 the last index is the stop directly adjacent to the bridge. This ordering is

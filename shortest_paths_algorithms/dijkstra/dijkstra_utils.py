@@ -233,7 +233,7 @@ def best_over_source_candidates(
 
     dijkstra(graph, source) already gives the distance to every node reachable
     from source in one run, so unlike cut_dijkstra/a_star (target-directed,
-    stop early at one specific target -- a fresh run is needed per (source,
+    stop early at one specific target, so a fresh run is needed per (source,
     target) pair), only one run per source_platforms candidate is needed here,
     regardless of how many target_platforms candidates there are.
 
@@ -246,7 +246,7 @@ def best_over_source_candidates(
         (best_source, best_target, dist, parent, iterations): the winning
         candidate pair, and the full dijkstra() output from its winning run
         (dist/parent cover every node reachable from best_source, not just
-        best_target -- the caller can read best_weight back out as
+        best_target: the caller can read best_weight back out as
         dist[best_target]).
     """
     best_weight = INF

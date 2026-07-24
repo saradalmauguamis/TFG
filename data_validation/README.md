@@ -1,6 +1,7 @@
 # Data Validation
 
-Pipeline for validating, processing, and analysing the GTFS subway data.
+Pipeline for validating, processing, and analysing the GTFS subway data, with the aim of
+building the weighted graph used by [`shortest_paths_algorithms/`](../shortest_paths_algorithms/README.md).
 
 See [`WORKFLOW.md`](WORKFLOW.md) for the end-to-end run order across scripts.
 

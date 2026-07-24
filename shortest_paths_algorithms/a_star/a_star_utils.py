@@ -82,7 +82,7 @@ def a_star(
     g: Dict[Node, int] = {node: INF for node in nodes}  # pseudocode: g[G.order] <- ∞
     expanded: Dict[Node, bool] = {
         node: False for node in nodes
-    }  # not in the pseudocode -- see expanded's docstring above
+    }  # not in the pseudocode (see expanded's docstring above)
 
     iteration = 0
 
@@ -97,7 +97,7 @@ def a_star(
     while not Open.is_empty():  # pseudocode: while not Open.IsEmpty do
         current, _ = Open.extract_min()  # pseudocode: current <- Open.extract_min(g, h)
         expanded[current] = (
-            True  # not in the pseudocode -- see expanded's docstring above
+            True  # not in the pseudocode (see expanded's docstring above)
         )
 
         iteration += 1

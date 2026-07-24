@@ -12,7 +12,7 @@ both to the platform(s) they connect to via a directed pathway edge (plat_from
 for node, plat_to for target), adding the fixed 60s pathway cost
 (entry_cost) for whichever end is an entrance, then takes the cheapest
 h_regions_cases estimate across every (node-side platform, target-side platform)
-pair -- this preserves admissibility since h_regions_cases(p, q) is itself an
+pair, which preserves admissibility since h_regions_cases(p, q) is itself an
 admissible estimate for every candidate pair, so the minimum over all pairs
 can never exceed the true cost via whichever pair the optimal path actually uses.
 
@@ -104,7 +104,7 @@ def build_depth_tables(graph: Graph) -> Tuple[DepthTable, DepthTable]:
     and successor, endpoints have one), a single walk along that chain,
     accumulating the forward edge weight for depth_from_bridge and the
     reverse edge weight for depth_to_bridge at each step, gives the exact
-    (not just admissible-lower-bound) cost -- no shortest-path search
+    (not just admissible-lower-bound) cost: no shortest-path search
     (Dijkstra/BFS) needed, since there is only ever one possible path.
 
     args:

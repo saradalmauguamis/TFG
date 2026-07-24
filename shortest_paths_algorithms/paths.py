@@ -35,7 +35,7 @@ A_STAR_BCN_REPORT_NO_PW_FILE = os.path.join(
 )
 # algorithms_comparison.py builds two variants: FULL_FILE aggregates only the
 # full-graph reports, COMBINED_FILE aggregates full and no_pw side by side
-# (see its HEURISTIC_REPORTS_BY_MODE) -- not a "full"/"no_pw" pair like the
+# (see its HEURISTIC_REPORTS_BY_MODE), not a "full"/"no_pw" pair like the
 # per-heuristic reports above, since COMBINED_FILE contains both at once.
 ALGORITHMS_COMPARISON_REPORT_FULL_FILE = os.path.join(
     str(_ANALYSIS_RESOURCES_DIR), "algorithms_comparison_full_report.txt"
