@@ -1,8 +1,6 @@
 """Convert GTFS `.txt` files to `.xlsx`.
 
-Reads GTFS `.txt` files from `DATA_DIR` (a pipeline stage folder under
-`data/`, configurable via the `GTFS_DATA_DIR` env var read by
-`data_validation.gtfs_utils`) and exports them to `data/excel_exports`:
+Reads GTFS `.txt` files from `INPUT_DIR` and exports them to `OUTPUT_DIR`:
 one `.xlsx` file per `.txt` table. Large tables are split across multiple
 files to stay within Excel's row limit.
 """
@@ -20,35 +18,44 @@ REPO_ROOT = Path(__file__).resolve().parents[1]
 if str(REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(REPO_ROOT))
 
-from data_validation.gtfs_utils import BASE, check_missing_files  # noqa: E402
-from shortest_paths_algorithms.paths import (  # noqa: E402
-    ALGORITHMS_COMPARISON_REPORT_FILE,
+from data_validation.gtfs_utils import (  # noqa: E402,F401
+    BASE,
+    DOORS_BASE,
+    DUPLICATED_TRIPS_BASE,
+    RAW_BASE,
+    SHARED_PLATFORMS_BASE,
+    STOP_SEQUENCE_BASE,
+    SUBWAY_BASE,
+    WEIGHTS_BASE,
+    check_missing_files,
+)
+from shortest_paths_algorithms.paths import (  # noqa: E402,F401
+    ALGORITHMS_COMPARISON_REPORT_FULL_FILE,
+    REPORTS_BASE,
 )
 
-# DATA_DIR defaults to the analysis comparison report
-# (Path(ALGORITHMS_COMPARISON_REPORT_FILE).parent); point it at
-# Path(REPORTS_BASE) (shortest_paths_algorithms.paths) to convert the
-# platform-to-platform reports instead, at any other `_DEFAULT_*_DATA_DIR`
-# constant from data_validation.gtfs_utils (e.g. `_DEFAULT_RAW_DATA_DIR`,
-# `_DEFAULT_SUBWAY_DATA_DIR`) to convert that stage, or at any other folder
-# of comma-separated .txt files.
-DATA_DIR = Path(ALGORITHMS_COMPARISON_REPORT_FILE).parent
+# Pick exactly ONE input directory by uncommenting it (leave the rest commented).
+INPUT_DIR = Path(RAW_BASE)  # data/0_raw
+# INPUT_DIR = Path(SUBWAY_BASE)  # data/1_subway
+# INPUT_DIR = Path(DUPLICATED_TRIPS_BASE)  # data/2_duplicated_trips
+# INPUT_DIR = Path(STOP_SEQUENCE_BASE)  # data/3_stop_sequence
+# INPUT_DIR = Path(DOORS_BASE)  # data/4_doors_time
+# INPUT_DIR = Path(SHARED_PLATFORMS_BASE)  # data/5_shared_platforms
+# INPUT_DIR = Path(WEIGHTS_BASE)  # data/6_weights
+# INPUT_DIR = Path(REPORTS_BASE)  # reports/resources (platform-to-platform reports)
+# INPUT_DIR = Path(ALGORITHMS_COMPARISON_REPORT_FULL_FILE).parent  # analysis/resources
 
 # Set this to a filename like 'trips.txt' to convert only one file.
-# Set it to None to convert every .txt file in DATA_DIR.
-TXT_FILE_NAME: Optional[str] = "algorithms_comparison_report.txt"
+# Set it to None to convert every .txt file in INPUT_DIR.
+TXT_FILE_NAME: Optional[str] = "pathways.txt"
 
 # Excel limits one sheet to 1,048,576 rows total, including the header.
 EXCEL_MAX_ROWS = 800_000
 EXCEL_MAX_DATA_ROWS = EXCEL_MAX_ROWS - 1
 
-# True writes .xlsx exports next to the source .txt (DATA_DIR/excel_exports,
-# e.g. shortest_paths_algorithms/reports/resources/excel_exports); False writes them
-# to the shared data/excel_exports folder alongside every other pipeline
-# stage's exports.
-EXPORT_NEXT_TO_SOURCE: bool = True
-
-OUTPUT_DIR = (DATA_DIR if EXPORT_NEXT_TO_SOURCE else Path(BASE)) / "excel_exports"
+# Pick exactly ONE output directory by uncommenting it (leave the rest commented).
+OUTPUT_DIR = Path(BASE) / "excel_exports"  # shared data/excel_exports folder
+# OUTPUT_DIR = INPUT_DIR / "excel_exports"  # next to the source .txt
 
 
 def get_txt_files(data_dir: Path, txt_file_name: Optional[str]) -> List[Path]:
@@ -67,7 +74,7 @@ def get_txt_files(data_dir: Path, txt_file_name: Optional[str]) -> List[Path]:
     if not all_txt_files:
         raise FileNotFoundError(
             f"No .txt files were found in {data_dir}. "
-            "Set GTFS_DATA_DIR if your data is in a different location."
+            "Set INPUT_DIR to a different location."
         )
 
     if txt_file_name is None:
@@ -174,9 +181,9 @@ def main() -> None:
     summary_df: pd.DataFrame
 
     OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
-    txt_files = get_txt_files(DATA_DIR, TXT_FILE_NAME)
+    txt_files = get_txt_files(INPUT_DIR, TXT_FILE_NAME)
 
-    print(f"Input folder: {DATA_DIR}")
+    print(f"Input folder: {INPUT_DIR}")
     print(f"Output folder: {OUTPUT_DIR}")
     print(
         f"Conversion mode: {'all .txt files' if TXT_FILE_NAME is None else 'single file'}"

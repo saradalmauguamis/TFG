@@ -8,6 +8,7 @@ TFG/
 ├── data_validation/
 ├── graph_inspection/
 ├── shortest_paths_algorithms/
+├── subway_reference/
 ├── scripts/
 ├── hooks/
 ├── .gitignore
@@ -21,9 +22,12 @@ TFG/
 - [`data_validation/`](data_validation/README.md) — pipeline for validating, processing, and
   analysing the GTFS subway data.
 - [`graph_inspection/`](graph_inspection/README.md) — subway graph drawing and reporting tools.
-- [`shortest_paths_algorithms/`](shortest_paths_algorithms/README.md) — Dijkstra and A* implementations.
-- [`scripts/`](scripts/README.md) — reference data and standalone utilities shared across the
-  other folders.
+- [`shortest_paths_algorithms/`](shortest_paths_algorithms/README.md) — Dijkstra and A*
+  implementations; see [`shortest_paths_algorithms/WORKFLOW.md`](shortest_paths_algorithms/WORKFLOW.md)
+  for the reasoning trail behind each heuristic.
+- [`subway_reference/`](subway_reference/README.md) — static reference data, maps, and reports
+  about Barcelona's subway lines/stops, shared across the other folders.
+- [`scripts/`](scripts/README.md) — standalone utilities shared across the other folders.
 - [`hooks/`](hooks/README.md) — pre-commit hook scripts; see that README for what gets checked.
 - `.gitignore` — files and folders excluded from version control.
 - `.pre-commit-config.yaml` — pre-commit hook registration (see [`hooks/README.md`](hooks/README.md)).

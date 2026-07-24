@@ -4,6 +4,8 @@
 shortest_paths_algorithms/
 ├── algorithms_utils.py
 ├── barcelona_division.py
+├── config.py
+├── config.yaml
 ├── paths.py
 ├── dijkstra/
 │   ├── dijkstra.py
@@ -39,6 +41,9 @@ Given an entry source and an entry target, we want to find the shortest path whi
 minimum number of iterations: for that we need algorithms that solve the routing problem, and
 these are Dijkstra and A*.
 
+See [`WORKFLOW.md`](WORKFLOW.md) for the trail of ideas and intuitions that drove each step below,
+from the plain Dijkstra baseline to the final `A*_bcn` heuristic on the reduced graph.
+
 ## algorithms_utils.py
 
 Graph types (`Graph`, `Node`, `NodeFmt`), the `MinHeap` priority queue, path reconstruction
@@ -51,6 +56,13 @@ Region/bridge partition (`Branches`, `Bridges`, `Regions`) of the Barcelona subw
 Center/Branch case classifier (`classify`) and bridge helpers (`find_branch`, `compute_bridge`)
 built on top of it. Used by `a_star/heuristics/h_bcn.py` (the `h_bcn` heuristic itself) and
 `analysis/algorithms_comparison.py` (to classify platform pairs by Center/Branch case).
+
+## config.py
+
+Loads `config.yaml` once and exposes `SOURCE`/`TARGET`/`GRAPH_MODE`/`HEURISTIC_NAME` as constants,
+so `dijkstra.py`, `a_star.py`, `extracted_nodes_graph.py`, and the `reports/` scripts all read the
+same experiment parameters instead of each hardcoding its own copy. Edit `config.yaml` to change
+SOURCE/TARGET/GRAPH_MODE/HEURISTIC_NAME instead of editing constants in each script.
 
 ## paths.py
 
@@ -69,17 +81,88 @@ Important paths shared across `shortest_paths_algorithms/`'s modules.
 ## a_star/
 
 - `a_star.py`: the main file, mirroring `dijkstra.py` but for A*, picking one of the three
-  heuristics in `heuristics/` via `HEURISTIC_NAME`.
+  heuristics in `heuristics/`.
 - `a_star_utils.py`: the algorithm-agnostic core shared by every heuristic, built on top of
-  `algorithms_utils.py`: the `Heuristic` type and the `a_star` function itself.
+  `algorithms_utils.py`.
 - `heuristics/`: one module per interchangeable, admissible heuristic, each exposing a `build_h_*`
   factory that pre-binds its dependencies into a plain `Heuristic(node, target)`:
-  - `h_geo.py`: straight-line distance / v_max, admissible and actually usable.
+  - `h_geo.py`: straight-line distance / v_max, floored to an int:
+
+    $$
+    h\_geo(n, t) = \left\lfloor \frac{\text{straight\_line\_distance}(n, t)}{v_{\max}} \right\rfloor
+    $$
+
+    where:
+    - `straight_line_distance(a, b)` is the flat-earth distance between `a` and `b`'s
+      `(lat, lon)` coordinates, scaling longitude by $\cos(\bar\phi)$ (mean latitude) so degrees
+      of longitude and latitude are weighted by their actual physical length at that latitude:
+
+      $$
+      \text{straight\_line\_distance}(a,b) = R\sqrt{\left(\Delta\lambda\cos\bar\phi\right)^2 + \Delta\phi^2}
+      $$
+
+      with $R$ the Earth's radius, $\Delta\lambda$/$\Delta\phi$ the longitude/latitude
+      difference between $a$ and $b$ (in radians), and $\bar\phi$ the mean latitude of $a$ and
+      $b$ (in radians).
+    - `v_max` is the fastest implied speed across any single edge in the real graph, i.e. the
+      edge $(u,v)$ whose straight-line distance per second of travel time is largest:
+
+      $$
+      v_{\max} = \max_{(u,v)\in E} \frac{\text{straight\_line\_distance}(u,v)}{w(u,v)}
+      $$
+
+      This is what keeps `h_geo` admissible: no edge in the graph is ever crossed faster than
+      $v_{\max}$, so straight-line distance divided by $v_{\max}$ can never overestimate the true
+      travel time along any path from `n` to `t`.
   - `h_cheat.py`: the real optimal cost via `cut_dijkstra`, only useful to see how A* behaves with
     a perfect heuristic, since computing it already requires solving the shortest path.
-  - `h_bcn.py`: a Barcelona region/bridge-aware heuristic built on `barcelona_division.py`. Reduces
-    node/target to the platform(s) they connect to, then estimates the remaining cost via `h_geo`
-    across the dense Center or exact precomputed bridge depths within/between branches.
+  - `h_bcn.py`: a Barcelona region/bridge-aware heuristic built on `barcelona_division.py`.
+    Reduces node/target to the platform(s) they connect to, then estimates the remaining cost via
+    `h_geo` across the dense Center or exact precomputed bridge depths within/between branches:
+
+    $$
+    h\_bcn(n, t)=
+    \begin{cases}
+    0, & \text{if } n = t,\\[1ex]
+    \infty, & \text{if } \text{plat\_from}(n) \text{ or } \text{plat\_to}(t) \text{ is empty},\\[1ex]
+    \text{entry\_cost}(n)
+    +\displaystyle\min_{p\in \text{plat\_from}(n),\,q\in \text{plat\_to}(t)}
+    \text{h\_regions\_cases}(p,q)
+    +\text{entry\_cost}(t),
+    & \text{otherwise.}
+    \end{cases}
+    $$
+
+    where:
+    - `plat_from(n)` is the set of platforms reachable from `n`: if `n` is already a platform,
+      `plat_from(n) = {n}`; if `n` is an entrance, `plat_from(n)` is the set of platforms that
+      entrance gives access to.
+    - `plat_to(t)` is the set of platforms that lead into `t`: if `t` is already a platform,
+      `plat_to(t) = {t}`; if `t` is an entrance, `plat_to(t)` is the set of platforms from which
+      that entrance can be reached.
+    - `entry_cost(·)` is the entrance cost: the fixed pathway cost if the node is an entrance, `0`
+      if it's already a platform.
+    - `h_regions_cases(p, q)` is the inter-platform heuristic defined below.
+
+    $$
+    \text{h\_regions\_cases}(p,q)=
+    \begin{cases}
+    h\_geo(p,q), & \text{if } (p,q) \in CC,\\[1ex]
+    \text{depth\_from\_bridge}(q)-\text{depth\_from\_bridge}(p),
+    & \text{if } (p,q) \in SB \text{ and } \text{depth\_from\_bridge}(p)<\text{depth\_from\_bridge}(q),\\[1ex]
+    \text{depth\_to\_bridge}(p)-\text{depth\_to\_bridge}(q),
+    & \text{if } (p,q) \in SB \text{ otherwise},\\[1ex]
+    h\_geo(p,\text{compute\_bridge}(q))+\text{depth\_from\_bridge}(q), & \text{if } (p,q) \in CB,\\[1ex]
+    \text{depth\_to\_bridge}(p)+h\_geo(\text{compute\_bridge}(p),q), & \text{if } (p,q) \in BC,\\[1ex]
+    \text{depth\_to\_bridge}(p)+h\_geo(\text{compute\_bridge}(p),\text{compute\_bridge}(q))+\text{depth\_from\_bridge}(q),
+    & \text{if } (p,q) \in DB.
+    \end{cases}
+    $$
+
+    where `compute_bridge(p)` and `compute_bridge(q)` are the bridge platforms of the branches `p`
+    and `q` belong to, respectively. `depth_from_bridge(x)` is the exact cost from the branch's
+    bridge platform to `x`, and `depth_to_bridge(x)` is the exact cost from `x` to the branch's
+    bridge platform.
 - `a_star_example.py`: a small toy graph with a hardcoded heuristic, separate from the real
   subway data.
 - `resources/`: `.txt` traces generated by `a_star.py`.
@@ -94,12 +177,13 @@ call since each report depends on the other's output for its analysis:
 - `dijkstra_report.py`: aimed to prove whether a heuristic is needed at all, since the graph is
   small enough that it might not be. Runs `cut_dijkstra` over every directed platform pair to
   measure, via `proportion = path_vertices / cut_iterations`, where a heuristic could help. Writes
-  `DIJKSTRA_REPORT_FILE`.
+  `DIJKSTRA_REPORT_FULL_FILE` or `DIJKSTRA_REPORT_NO_PW_FILE`.
 - `a_star_report.py`: reruns the same pairs with A*, so its `proportion` can be compared
-  side-by-side against `dijkstra_report.txt` to see how much of that theoretical opportunity a
+  side-by-side against `dijkstra_no_pw_report.txt` to see how much of that theoretical opportunity a
   heuristic actually captures. Can do the same with any of the three heuristics in
-  `a_star/heuristics/` (`h_geo`, `h_bcn`, or `h_cheat`), picked via `HEURISTIC_NAME`.
-- `optimum_weight_check.py`: sanity check across the four reports above verifying that
+  `a_star/heuristics/` (`h_geo`, `h_bcn`, or `h_cheat`), and either
+  graph mode.
+- `optimum_weight_check.py`: sanity check across the six reports above verifying that
   `optimum_weight` agrees for every platform pair even when the actual path found differs, since it
   never reruns a search and just cross-compares the reports' own columns. Exits non-zero if a
   weight or reachability mismatch is found.
@@ -107,14 +191,16 @@ call since each report depends on the other's output for its analysis:
 
 ## analysis/
 
-- `algorithms_comparison.py`: aggregates the `reports/` outputs (Dijkstra, A* with `h_geo`, A* with
-  `h_bcn`, A* with `h_cheat`) by graph region instead of only the single global `proportion` each
+- `algorithms_comparison.py`: aggregates the `reports/` outputs (Dijkstra, `A*_geo`, `A*_bcn`,
+  `A*_cheat`) by graph region instead of only the single global `proportion` each
   report already prints on its own, splitting every platform pair into a Center/Branch case via
-  `barcelona_division.py`. Writes `algorithms_comparison_report.txt` (convertible via
-  `scripts/from_txt_to_xlsx.py`) and a grouped bar chart, `algorithms_comparison_chart.png`.
+  `barcelona_division.py`. Builds two outputs: `algorithms_comparison_full_report.txt`/`_full_chart.png`
+  (`FULL_GRAPH` only) and `algorithms_comparison_combined_report.txt`/`_combined_chart.png`
+  (`FULL_GRAPH` and `WITHOUT_ENTRANCES_GRAPH` side by side, one bar per heuristic per graph mode,
+  the `no_pw` bar hatched so the two modes stay visually distinct), letting the two graph modes
+  be compared directly. Both `.txt` tables are convertible via `scripts/from_txt_to_xlsx.py`.
 - `regions_graph.py`: draws the whole subway network colored by `barcelona_division.py`'s
-  Center/Branch regions instead of by line, reusing `graph_inspection/graph_draw/graph.py`'s graph
-  loading. Each branch's single bridge platform is highlighted in yellow. Writes
+  Center/Branch regions. Writes
   `barcelona_regions_graph.png`.
 - `extracted_nodes_graph.py`: for a single hardcoded `SOURCE` -> `TARGET` pair, runs `cut_dijkstra`
   and all three A* heuristics and draws which nodes/edges each one actually extracted, layered over

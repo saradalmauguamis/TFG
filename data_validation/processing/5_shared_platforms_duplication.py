@@ -6,7 +6,7 @@ travel times depending on the line, so the graph must not merge them into a
 single node. This script splits every shared stop_id into one new stop_id per
 line that serves it, detected generically via
 `gtfs_utils.build_shared_platform_lines` from
-`scripts.basics.subway_route_names_stop_ids`, so it is not hardcoded to L9/L10
+`subway_reference.subway_lines.subway_route_names_stop_ids`, so it is not hardcoded to L9/L10
 and stays reproducible and scalable if the network grows new shared platforms
 in the future, and rewrites every file that references the original stop_id.
 
@@ -75,7 +75,7 @@ from data_validation.gtfs_utils import (  # noqa: E402
     read_header,
     write_rows,
 )
-from scripts.basics import (  # noqa: E402
+from subway_reference.subway_lines import (  # noqa: E402
     subway_route_names_stop_ids,
     subway_routes_names_ids,
 )

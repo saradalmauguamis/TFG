@@ -79,7 +79,7 @@ For every row where `arrival_time == departure_time` at a terminal stop, the scr
 
 Also reads `trips_cleaned.txt` from `data/2_duplicated_trips` to resolve each stop_times row's trip to its line.
 
-Shared platforms (stops served by more than one line, e.g. the L9S/L10S and L9N/L10N overlaps) are detected generically from `scripts/basics.py`'s `subway_route_names_stop_ids`; no line names are hardcoded, so any future shared platform is picked up automatically. Each shared `stop_id` (e.g. `1.930`) is split into one new id per serving line (`1.9300`, `1.9301`, ...):
+Shared platforms (stops served by more than one line, e.g. the L9S/L10S and L9N/L10N overlaps) are detected generically from `subway_reference/subway_lines.py`'s `subway_route_names_stop_ids`; no line names are hardcoded, so any future shared platform is picked up automatically. Each shared `stop_id` (e.g. `1.930`) is split into one new id per serving line (`1.9300`, `1.9301`, ...):
 
 - **STOPS / PATHWAYS / TRANSFERS**: one duplicated row per line. PATHWAYS/TRANSFERS additionally get a direct correspondence edge between every pair of a platform's new ids, using the minimum `min_transfer_time` found in `transfers.txt` as the traversal time.
 - **STOP_TIMES**: the shared `stop_id` is *replaced* (not duplicated) with the single new id matching that row's own trip's line, since a trip belongs to exactly one line.

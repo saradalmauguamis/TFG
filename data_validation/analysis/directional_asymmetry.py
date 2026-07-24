@@ -4,7 +4,7 @@ The script uses stop_times_doors.txt and trips_cleaned.txt.
 
 The aim of this script is to determine whether it is necessary a directed graph.
 
-For each subway line in `scripts.basics.subway_route_names_stop_ids`, trips are
+For each subway line in `subway_reference.subway_lines.subway_route_names_stop_ids`, trips are
 restricted to that line's own route_id, and the consecutive stop pairs of its
 canonical stop order are compared direction_id=0 (a -> b) against
 direction_id=1 (b -> a). All lines share a single pass over stop_times_doors.txt,
@@ -34,7 +34,7 @@ from data_validation.gtfs_utils import (  # noqa: E402
     print_file_disclaimer,
     seconds_to_hms,
 )
-from scripts.basics import (  # noqa: E402
+from subway_reference.subway_lines import (  # noqa: E402
     subway_route_names_stop_ids,
     subway_routes_names_ids,
 )

@@ -65,8 +65,7 @@ def compute_v_max(
 
     Scans every directed edge already in the graph (built from WEIGHTS_FILE)
     and takes the maximum of straight_line_distance(u, v) / weight(u, v),
-    the ratio the a_star() admissibility proof (a_star.py module docstring)
-    relies on.
+    the ratio h_geo's admissibility (module docstring above) relies on.
 
     args:
         graph: A directed, weighted graph, as returned by build_graph_from_weights.

@@ -50,7 +50,7 @@ from data_validation.gtfs_utils import (  # noqa: E402
     round_half_up_mean,
     write_rows,
 )
-from scripts.basics import (  # noqa: E402
+from subway_reference.subway_lines import (  # noqa: E402
     subway_route_names_stop_ids_artificial,
     subway_routes_names_ids,
 )

@@ -22,7 +22,7 @@ PROJECT_ROOT = Path(__file__).resolve().parents[2]
 if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT))
 
-from scripts.basics import subway_routes_names_ids  # noqa: E402
+from subway_reference.subway_lines import subway_routes_names_ids  # noqa: E402
 from data_validation.gtfs_utils import (  # noqa: E402
     _PROJECT_ROOT,
     DOORS_FILE,

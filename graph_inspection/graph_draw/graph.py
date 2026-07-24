@@ -50,7 +50,7 @@ EDGE_TYPE_LABELS = {
     "TF": "Transfer (TF)",
 }
 NON_LINE_EDGE_COLOR = "#444444"
-PW_EDGE_COLOR = "#dddddd"
+PW_EDGE_COLOR = "#bbbbbb"
 EDGE_COLOR_BY_TYPE = {
     "PW": PW_EDGE_COLOR,
     "TF": NON_LINE_EDGE_COLOR,

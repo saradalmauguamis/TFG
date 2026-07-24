@@ -13,7 +13,7 @@ Reads:
 
 > Used to decide whether it is necessary to duplicate the shared platforms so each line gets its own edge weight.
 
-Compares average travel times across whichever lines share a platform. Shared platforms are derived automatically from `subway_route_names_stop_ids` (`scripts/basics.py`), grouped by the exact set of lines serving each one; no line names are hardcoded, so this generalizes to however many lines (and platforms) end up sharing stops.
+Compares average travel times across whichever lines share a platform. Shared platforms are derived automatically from `subway_route_names_stop_ids` (`subway_reference/subway_lines.py`), grouped by the exact set of lines serving each one; no line names are hardcoded, so this generalizes to however many lines (and platforms) end up sharing stops.
 
 Shared platforms currently detected:
 

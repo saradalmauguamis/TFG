@@ -21,26 +21,43 @@ case (e.g. crossing into or out of a branch vs. staying inside the dense
 Center), which the single aggregate proportion already reported by
 a_star_report.py/dijkstra_report.py cannot show on its own.
 
-Requires: one report file per heuristic (DIJKSTRA_REPORT_FILE, A_STAR_GEO_REPORT_FILE,
-A_STAR_CHEAT_REPORT_FILE, from shortest_paths_algorithms/paths.py), each with at
+Requires: one report file per heuristic per graph mode (DIJKSTRA_REPORT_FULL_FILE/
+DIJKSTRA_REPORT_NO_PW_FILE, A_STAR_GEO_REPORT_FULL_FILE/A_STAR_GEO_REPORT_NO_PW_FILE,
+A_STAR_CHEAT_REPORT_FULL_FILE/A_STAR_CHEAT_REPORT_NO_PW_FILE,
+A_STAR_BCN_REPORT_FULL_FILE/A_STAR_BCN_REPORT_NO_PW_FILE, from
+shortest_paths_algorithms/paths.py -- the full/no_pw pair generated with
+GRAPH_MODE=FULL_GRAPH/WITHOUT_ENTRANCES_GRAPH respectively, see
+shortest_paths_algorithms/algorithms_utils.py), each with at
 least the source_id, target_id, and proportion columns (report_fieldnames,
 shortest_paths_algorithms/reports/report_utils.py). proportion there means
 path_vertices / iterations, i.e. how close a search came to only ever
 extracting nodes on the optimal path.
 
-Output_name: algorithms_comparison_report.txt (a plain comma-separated table,
-convertible via scripts/from_txt_to_xlsx.py) and algorithms_comparison_chart.png,
-both saved into 'shortest_paths_algorithms/analysis/resources'
+Two outputs are built, from HEURISTIC_REPORTS_BY_MODE:
+- *_full_report.txt / *_full_chart.png: FULL_GRAPH reports only, one bar per
+  heuristic per case, same as this module originally produced (just switched
+  from the no_pw half to the full half).
+- *_combined_report.txt / *_combined_chart.png: both FULL_GRAPH and
+  WITHOUT_ENTRANCES_GRAPH reports together, two adjacent bars per heuristic per
+  case (full graph, no_pw graph) -- same COLOR_BY_HEURISTIC per heuristic in
+  both bars, with the no_pw bar hatched (HATCH_BY_MODE) so the two graph modes
+  stay visually distinct without needing a second color scale.
+
+Output_name: algorithms_comparison_{full,combined}_report.txt (plain
+comma-separated tables, convertible via scripts/from_txt_to_xlsx.py) and
+algorithms_comparison_{full,combined}_chart.png, all saved into
+'shortest_paths_algorithms/analysis/resources'
 """
 
 from __future__ import annotations
 
 import sys
 from pathlib import Path
-from typing import List, Optional
+from typing import Dict, List, Optional, Tuple
 
 import matplotlib.pyplot as plt
 import pandas as pd
+from matplotlib.patches import Patch
 
 _PROJECT_ROOT = str(Path(__file__).resolve().parents[2])
 if _PROJECT_ROOT not in sys.path:
@@ -48,39 +65,57 @@ if _PROJECT_ROOT not in sys.path:
 
 from shortest_paths_algorithms.barcelona_division import classify  # noqa: E402
 from shortest_paths_algorithms.paths import (  # noqa: E402
-    A_STAR_BCN_REPORT_FILE,
-    A_STAR_CHEAT_REPORT_FILE,
-    A_STAR_GEO_REPORT_FILE,
-    ALGORITHMS_COMPARISON_REPORT_FILE,
-    DIJKSTRA_REPORT_FILE,
+    A_STAR_CHEAT_REPORT_FULL_FILE,
+    A_STAR_CHEAT_REPORT_NO_PW_FILE,
+    A_STAR_GEO_REPORT_FULL_FILE,
+    A_STAR_GEO_REPORT_NO_PW_FILE,
+    A_STAR_BCN_REPORT_FULL_FILE,
+    A_STAR_BCN_REPORT_NO_PW_FILE,
+    ALGORITHMS_COMPARISON_REPORT_COMBINED_FILE,
+    ALGORITHMS_COMPARISON_REPORT_FULL_FILE,
+    DIJKSTRA_REPORT_FULL_FILE,
+    DIJKSTRA_REPORT_NO_PW_FILE,
 )
 
-HEURISTIC_REPORTS = {
-    "Dijkstra": DIJKSTRA_REPORT_FILE,
-    "a_star_h_geo": A_STAR_GEO_REPORT_FILE,
-    "a_star_h_bcn": A_STAR_BCN_REPORT_FILE,
-    "a_star_h_cheat": A_STAR_CHEAT_REPORT_FILE,
-}
 # Dijkstra has no heuristic, so only a_star_h_* labels get an "A*" prefix in the chart legend.
-# DIJKSTRA_REPORT_FILE is generated via cut_dijkstra (see dijkstra_report.py), not plain
-# Dijkstra, so the legend says so.
+# The no_pw reports are generated via cut_dijkstra (see dijkstra_report.py), not plain
+# Dijkstra, so the legend says so regardless of which graph mode is plotted.
 LEGEND_LABEL_BY_HEURISTIC = {
     "Dijkstra": "Cut-Dijkstra",
-    "a_star_h_geo": "A* (h_geo)",
-    "a_star_h_bcn": "A* (h_bcn)",
-    "a_star_h_cheat": "A* (h_cheat)",
+    "a_star_h_geo": "A*_geo",
+    "a_star_h_bcn": "A*_bcn",
+    "a_star_h_cheat": "A*_cheat",
 }
-# Pastel categorical colors, one per heuristic, chosen to stay clearly distinct
-# (validated via the dataviz skill's validate_palette.js: worst adjacent CVD
-# ΔE 43.6, comfortably above the >=12 target -- the original set had h_geo and
-# h_bcn both reading as near-identical greens). Fixed order so the same
-# heuristic always gets the same color across runs/charts.
+
 COLOR_BY_HEURISTIC = {
     "Dijkstra": "#e87ba4",
     "a_star_h_geo": "#1baf7a",
     "a_star_h_bcn": "#9c85d1",
     "a_star_h_cheat": "#d99f3d",
 }
+
+# One report file per heuristic (outer key), per graph mode (inner key) --
+# every heuristic/mode combination LEGEND_LABEL_BY_HEURISTIC and
+# GRAPH_MODE_LABEL (algorithms_utils.py) can name.
+HEURISTIC_REPORTS_BY_MODE: Dict[str, Dict[str, str]] = {
+    "full": {
+        "Dijkstra": DIJKSTRA_REPORT_FULL_FILE,
+        "a_star_h_geo": A_STAR_GEO_REPORT_FULL_FILE,
+        "a_star_h_bcn": A_STAR_BCN_REPORT_FULL_FILE,
+        "a_star_h_cheat": A_STAR_CHEAT_REPORT_FULL_FILE,
+    },
+    "no_pw": {
+        "Dijkstra": DIJKSTRA_REPORT_NO_PW_FILE,
+        "a_star_h_geo": A_STAR_GEO_REPORT_NO_PW_FILE,
+        "a_star_h_bcn": A_STAR_BCN_REPORT_NO_PW_FILE,
+        "a_star_h_cheat": A_STAR_CHEAT_REPORT_NO_PW_FILE,
+    },
+}
+MODE_LABEL = {"full": "Full graph", "no_pw": "Without entrances (no PW)"}
+# Solid for full, hatched for no_pw: the combined chart tells graph modes apart
+# by pattern, not color, since color is already spent on COLOR_BY_HEURISTIC.
+HATCH_BY_MODE = {"full": "", "no_pw": "//"}
+
 CASE_DEFINITIONS = {
     "CC": "source and target both in the Center",
     "CB": "source in the Center, target in a Branch",
@@ -99,8 +134,14 @@ CASE_LEGEND_LINES = [
         for case, definition in list(CASE_DEFINITIONS.items())[3:]
     ),
 ]
-OUTPUT_PATH = Path(ALGORITHMS_COMPARISON_REPORT_FILE)
-CHART_OUTPUT_PATH = OUTPUT_PATH.parent / "algorithms_comparison_chart.png"
+OUTPUT_PATH_FULL = Path(ALGORITHMS_COMPARISON_REPORT_FULL_FILE)
+OUTPUT_PATH_COMBINED = Path(ALGORITHMS_COMPARISON_REPORT_COMBINED_FILE)
+CHART_OUTPUT_PATH_FULL = (
+    OUTPUT_PATH_FULL.parent / "algorithms_comparison_full_chart.png"
+)
+CHART_OUTPUT_PATH_COMBINED = (
+    OUTPUT_PATH_COMBINED.parent / "algorithms_comparison_combined_chart.png"
+)
 
 
 def analyze(path: str, dtype_ids: type = str) -> pd.DataFrame:
@@ -108,7 +149,7 @@ def analyze(path: str, dtype_ids: type = str) -> pd.DataFrame:
 
     args:
         path: Path to a report file with at least source_id, target_id, and
-            proportion columns (e.g. DIJKSTRA_REPORT_FILE).
+            proportion columns (e.g. DIJKSTRA_REPORT_NO_PW_FILE).
         dtype_ids: dtype forced on source_id/target_id, so ids like "1.111"
             are read as strings, not floats.
 
@@ -165,39 +206,110 @@ def case_sizes(df: pd.DataFrame) -> pd.DataFrame:
     return counts
 
 
-def plot_comparison(combined: pd.DataFrame, output_path: Path) -> None:
+def build_combined(modes: List[str]) -> Tuple[pd.DataFrame, List[Tuple[str, str]]]:
+    """Build the case-by-case comparison table for one or more graph modes.
+
+    args:
+        modes: Which HEURISTIC_REPORTS_BY_MODE keys to include, e.g. ["full"]
+            for the full-graph-only table/chart or ["full", "no_pw"] for the
+            combined one. Column names are prefixed with the mode only when
+            more than one mode is requested, so the full-only table's columns
+            stay exactly f"{label}_proportion_mean", not
+            f"{label}_full_proportion_mean".
+
+    returns:
+        (combined, used): combined is indexed by case in CASE_ORDER ("n",
+        "pct", a mean/median column pair per available (label, mode)
+        combination, and a trailing "legend" column); used is the ordered
+        list of (label, mode) pairs that actually had a report to load,
+        heuristic-major (both of one heuristic's modes adjacent) so
+        plot_comparison can group each heuristic's bars next to each other.
+    """
+    multi_mode = len(modes) > 1
+    summaries: List[pd.DataFrame] = []
+    used: List[Tuple[str, str]] = []
+    n_column: Optional[pd.DataFrame] = None
+    combined: pd.DataFrame
+
+    for label in LEGEND_LABEL_BY_HEURISTIC:
+        for mode in modes:
+            path = HEURISTIC_REPORTS_BY_MODE[mode][label]
+            if not Path(path).exists():
+                print(f"Skipping {label} ({mode}): no report found at {path}")
+                continue
+            df = analyze(path)
+            if n_column is None:
+                n_column = case_sizes(df)
+            summaries.append(summarize(df, f"{label}_{mode}" if multi_mode else label))
+            used.append((label, mode))
+
+    combined = pd.concat([n_column, *summaries], axis=1).reindex(CASE_ORDER)
+    combined["legend"] = [
+        CASE_DEFINITIONS.get(case, "All cases combined") for case in combined.index
+    ]
+    return combined.round(4), used
+
+
+def plot_comparison(
+    combined: pd.DataFrame,
+    output_path: Path,
+    used: List[Tuple[str, str]],
+    modes: List[str],
+) -> None:
     """Save a grouped bar chart of each heuristic's mean proportion, by case.
 
     args:
-        combined: The table from main(), indexed by case, with one
-            f"{label}_proportion_mean" column per available heuristic.
+        combined: The table from build_combined, indexed by case, with one
+            f"{label}_proportion_mean" (single mode) or
+            f"{label}_{mode}_proportion_mean" (multiple modes) column per
+            (label, mode) pair in used.
         output_path: Destination .png path.
+        used: (label, mode) pairs to draw a bar for, in draw order --
+            heuristic-major, so one heuristic's full/no_pw bars sit adjacent
+            (build_combined's own order).
+        modes: Which graph modes are being plotted (["full"], ["no_pw"], or
+            ["full", "no_pw"]); len(modes) > 1 is what turns on hatching and
+            the second (mode) legend -- a single mode looks exactly as this
+            chart always has.
     """
+    multi_mode = len(modes) > 1
     cases = [case for case in CASE_ORDER if case in combined.index]
-    labels = [
-        label
-        for label in HEURISTIC_REPORTS
-        if f"{label}_proportion_mean" in combined.columns
-    ]
-    bar_width = 0.8 / len(labels)
+    bar_width = 0.8 / len(used)
     positions = range(len(cases))
+    value_columns: List[str]
+    heuristic_handles: List[Patch]
+    mode_handles: List[Patch]
 
-    fig, ax = plt.subplots(figsize=(11, 5.5), facecolor="#fcfcfb")
+    fig, ax = plt.subplots(
+        figsize=(15, 5.5) if multi_mode else (11, 5.5), facecolor="#fcfcfb"
+    )
     ax.set_facecolor("#fcfcfb")
 
-    for i, label in enumerate(labels):
-        values = combined.loc[cases, f"{label}_proportion_mean"]
-        offsets = [pos + (i - (len(labels) - 1) / 2) * bar_width for pos in positions]
+    value_columns = [
+        f"{label}_{mode}_proportion_mean" if multi_mode else f"{label}_proportion_mean"
+        for label, mode in used
+    ]
+    for i, ((label, mode), column) in enumerate(zip(used, value_columns)):
+        values = combined.loc[cases, column]
+        offsets = [pos + (i - (len(used) - 1) / 2) * bar_width for pos in positions]
         bars = ax.bar(
             offsets,
             values,
             width=bar_width,
             color=COLOR_BY_HEURISTIC[label],
-            edgecolor="none",
-            label=LEGEND_LABEL_BY_HEURISTIC[label],
+            edgecolor="#52514e" if multi_mode else "none",
+            linewidth=0.6 if multi_mode else 0,
+            hatch=HATCH_BY_MODE[mode] if multi_mode else None,
             zorder=3,
         )
-        ax.bar_label(bars, fmt="%.2f", padding=2, color="#52514e", fontsize=8)
+        ax.bar_label(
+            bars,
+            fmt="%.2f",
+            padding=2,
+            color="#52514e",
+            fontsize=8 if not multi_mode else 6.5,
+            rotation=0 if not multi_mode else 90,
+        )
 
     ax.set_xticks(list(positions))
     ax.set_xticklabels(
@@ -209,7 +321,8 @@ def plot_comparison(combined: pd.DataFrame, output_path: Path) -> None:
     )
     ax.set_ylabel("Mean proportion (path_vertices / iterations)", color="#52514e")
     fig.suptitle(
-        "Algorithm performance by graph region",
+        "Algorithm performance by graph region"
+        + (": full graph vs graph without entrances" if multi_mode else ""),
         x=0.01,
         ha="left",
         y=0.99,
@@ -223,10 +336,10 @@ def plot_comparison(combined: pd.DataFrame, output_path: Path) -> None:
         color="#52514e",
         pad=12,
     )
+    # Rotated (multi_mode) value labels take up more vertical room per bar than
+    # horizontal ones, so they need more headroom above the tallest bar.
     ax.set_ylim(
-        0,
-        combined[[f"{label}_proportion_mean" for label in labels]].to_numpy().max()
-        * 1.15,
+        0, combined[value_columns].to_numpy().max() * (1.15 if not multi_mode else 1.3)
     )
 
     ax.yaxis.grid(True, color="#e1e0d9", linewidth=1, zorder=0)
@@ -235,16 +348,42 @@ def plot_comparison(combined: pd.DataFrame, output_path: Path) -> None:
         ax.spines[spine].set_visible(False)
     ax.spines["bottom"].set_color("#c3c2b7")
     ax.tick_params(axis="both", colors="#898781", length=0)
+
+    # One legend entry per heuristic color, plus (multi_mode only) one per
+    # graph-mode hatch -- built from Patch handles instead of each bar's own
+    # label, since a bar can only carry one legend entry and we need color
+    # (heuristic) and hatch (mode) to be explained separately.
+    heuristic_handles = [
+        Patch(
+            facecolor=COLOR_BY_HEURISTIC[label],
+            edgecolor="#52514e" if multi_mode else "none",
+            label=LEGEND_LABEL_BY_HEURISTIC[label],
+        )
+        for label in dict.fromkeys(label for label, _ in used)
+    ]
+    mode_handles = (
+        [
+            Patch(
+                facecolor="#dedcd2",
+                edgecolor="#52514e",
+                hatch=HATCH_BY_MODE[mode] or None,
+                label=MODE_LABEL[mode],
+            )
+            for mode in modes
+        ]
+        if multi_mode
+        else []
+    )
     # Legend lives above the axes (figure-level), not inside it: every case's
     # h_cheat bar sits near the top of the range, so an in-axes legend would
     # always collide with some bar's value label.
     fig.legend(
-        *ax.get_legend_handles_labels(),
+        handles=heuristic_handles + mode_handles,
         frameon=False,
         loc="upper right",
         bbox_to_anchor=(0.99, 0.90),
         labelcolor="#52514e",
-        ncol=3,
+        ncol=len(heuristic_handles) + len(mode_handles) if multi_mode else 3,
     )
 
     fig.text(0.01, 0.045, CASE_LEGEND_LINES[0], fontsize=7, color="#898781")
@@ -255,46 +394,45 @@ def plot_comparison(combined: pd.DataFrame, output_path: Path) -> None:
     plt.close(fig)
 
 
-def main() -> pd.DataFrame:
-    """Build the case-by-case comparison table across every available heuristic report.
+def main() -> Tuple[pd.DataFrame, pd.DataFrame]:
+    """Build both the full-only and combined (full + no_pw) comparison tables/charts.
 
     returns:
-        The combined comparison table (also written to OUTPUT_PATH and
-        charted to CHART_OUTPUT_PATH), indexed by case in CASE_ORDER: "n",
-        "pct", a mean/median column pair per available heuristic report, and
-        a trailing "legend" column spelling out each case.
+        (combined_full, combined_all): the two tables from build_combined,
+        also written to OUTPUT_PATH_FULL/OUTPUT_PATH_COMBINED and charted to
+        CHART_OUTPUT_PATH_FULL/CHART_OUTPUT_PATH_COMBINED.
     """
-    summaries: List[pd.DataFrame] = []
-    n_column: Optional[pd.DataFrame] = None
-    combined: pd.DataFrame
-
-    for label, path in HEURISTIC_REPORTS.items():
-        if not Path(path).exists():
-            print(f"Skipping {label}: no report found at {path}")
-            continue
-        df = analyze(path)
-        if n_column is None:
-            n_column = case_sizes(df)
-        summaries.append(summarize(df, label))
-
-    combined = pd.concat([n_column, *summaries], axis=1).reindex(CASE_ORDER)
-    combined["legend"] = [
-        CASE_DEFINITIONS.get(case, "All cases combined") for case in combined.index
-    ]
-    combined = combined.round(4)
+    combined_full: pd.DataFrame
+    used_full: List[Tuple[str, str]]
+    combined_all: pd.DataFrame
+    used_all: List[Tuple[str, str]]
 
     pd.set_option("display.float_format", lambda x: f"{x:.4f}")
-    print(combined)
 
-    OUTPUT_PATH.parent.mkdir(parents=True, exist_ok=True)
-    combined.to_csv(OUTPUT_PATH)
-    plot_comparison(combined, CHART_OUTPUT_PATH)
-    return combined
+    combined_full, used_full = build_combined(["full"])
+    print(combined_full)
+    OUTPUT_PATH_FULL.parent.mkdir(parents=True, exist_ok=True)
+    combined_full.to_csv(OUTPUT_PATH_FULL)
+    plot_comparison(combined_full, CHART_OUTPUT_PATH_FULL, used_full, ["full"])
+
+    combined_all, used_all = build_combined(["full", "no_pw"])
+    print(combined_all)
+    OUTPUT_PATH_COMBINED.parent.mkdir(parents=True, exist_ok=True)
+    combined_all.to_csv(OUTPUT_PATH_COMBINED)
+    plot_comparison(
+        combined_all, CHART_OUTPUT_PATH_COMBINED, used_all, ["full", "no_pw"]
+    )
+
+    return combined_full, combined_all
 
 
 if __name__ == "__main__":
     main()
-    print(f"{OUTPUT_PATH.name} generated into {OUTPUT_PATH.relative_to(_PROJECT_ROOT)}")
-    print(
-        f"{CHART_OUTPUT_PATH.name} generated into {CHART_OUTPUT_PATH.relative_to(_PROJECT_ROOT)}"
-    )
+    for report_path in (OUTPUT_PATH_FULL, OUTPUT_PATH_COMBINED):
+        print(
+            f"{report_path.name} generated into {report_path.relative_to(_PROJECT_ROOT)}"
+        )
+    for chart_path in (CHART_OUTPUT_PATH_FULL, CHART_OUTPUT_PATH_COMBINED):
+        print(
+            f"{chart_path.name} generated into {chart_path.relative_to(_PROJECT_ROOT)}"
+        )

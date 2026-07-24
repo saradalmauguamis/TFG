@@ -6,7 +6,7 @@ REPO_ROOT = Path(__file__).resolve().parents[1]
 if str(REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(REPO_ROOT))
 
-from scripts.basics import (  # noqa: E402
+from subway_reference.subway_lines import (  # noqa: E402
     subway_route_names_stop_ids,
     subway_route_names_stop_ids_artificial,
 )
@@ -26,6 +26,7 @@ from data_validation.gtfs_utils import (  # noqa: E402
 # (i.e. `subway_route_names_stop_ids_artificial`, against the `*_shared.txt`
 # files); False inspects the raw subway stage (`subway_route_names_stop_ids`).
 USE_ARTIFICIAL = True
+SHOW_ENTRANCES = True
 
 ROUTE_STOP_IDS = (
     subway_route_names_stop_ids_artificial
@@ -34,8 +35,6 @@ ROUTE_STOP_IDS = (
 )
 STOPS_FILE = Path(STOPS_SHARED_FILE if USE_ARTIFICIAL else STOPS_SUBWAY_FILE)
 PATHWAYS_FILE = Path(PATHWAYS_SHARED_FILE if USE_ARTIFICIAL else PATHWAYS_RAW_FILE)
-
-SHOW_ENTRANCES = True
 
 
 def _entrance_direction(entrance_id: str, forward: Set[str], backward: Set[str]) -> str:

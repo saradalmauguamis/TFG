@@ -1,6 +1,8 @@
 """Report, for every directed platform-to-platform route, how much a heuristic could help.
 
-Output_name: dijkstra_report.txt saved into 'shortest_paths_algorithms/reports/resources'
+Output_name: dijkstra_{full,no_pw}_report.txt (GRAPH_MODE-dependent, see
+shortest_paths_algorithms/algorithms_utils.py) saved into
+'shortest_paths_algorithms/reports/resources'
 
 Written as a standard comma-separated GTFS-style .txt file so it can be converted to
 .xlsx by scripts/from_txt_to_xlsx.py.
@@ -73,7 +75,7 @@ Methodology:
    builds each row via compute_report_row (reconstructing the path via
    rebuild_path from shortest_paths_algorithms/algorithms_utils.py).
 4. Sort all rows ascending by proportion, NA last, and write them to
-   dijkstra_report.txt.
+   OUTPUT_PATH.
 
 Note on parallelism: a single cut_dijkstra call on this graph takes well under
 1ms even for a very long route like E.11101 (Residència sanitària -- L1-Hospital
@@ -94,7 +96,9 @@ _PROJECT_ROOT = str(Path(__file__).resolve().parents[2])
 if _PROJECT_ROOT not in sys.path:
     sys.path.insert(0, _PROJECT_ROOT)
 
-from scripts.basics import subway_route_names_stop_ids_artificial  # noqa: E402
+from subway_reference.subway_lines import (  # noqa: E402
+    subway_route_names_stop_ids_artificial,
+)
 
 from data_validation.gtfs_utils import (  # noqa: E402
     STOPS_FILE,
@@ -105,11 +109,14 @@ from data_validation.gtfs_utils import (  # noqa: E402
     print_file_disclaimer,
 )
 from shortest_paths_algorithms.algorithms_utils import (  # noqa: E402
+    FULL_GRAPH,
+    WITHOUT_ENTRANCES_GRAPH,
     Node,
     NodeFmt,
     build_graph_from_weights,
     stop_label,
 )
+from shortest_paths_algorithms.config import GRAPH_MODE  # noqa: E402
 from shortest_paths_algorithms.reports.report_utils import (  # noqa: E402
     ReportRow,
     ReportRunner,
@@ -121,10 +128,17 @@ from shortest_paths_algorithms.dijkstra.dijkstra_utils import (  # noqa: E402
     Graph,
     cut_dijkstra,
 )
-from shortest_paths_algorithms.paths import DIJKSTRA_REPORT_FILE  # noqa: E402
+from shortest_paths_algorithms.paths import (  # noqa: E402
+    DIJKSTRA_REPORT_FULL_FILE,
+    DIJKSTRA_REPORT_NO_PW_FILE,
+)
 
 ITERATIONS_LABEL = "cut_iterations"
-OUTPUT_PATH = Path(DIJKSTRA_REPORT_FILE)
+_REPORT_FILE_BY_MODE = {
+    FULL_GRAPH: DIJKSTRA_REPORT_FULL_FILE,
+    WITHOUT_ENTRANCES_GRAPH: DIJKSTRA_REPORT_NO_PW_FILE,
+}
+OUTPUT_PATH = Path(_REPORT_FILE_BY_MODE[GRAPH_MODE])
 OUTPUT_NAME = OUTPUT_PATH.name
 FIELDNAMES = report_fieldnames(ITERATIONS_LABEL)
 
@@ -167,7 +181,7 @@ def main() -> Tuple[List[ReportRow], float]:
     stop_to_lines = build_stop_to_lines(subway_route_names_stop_ids_artificial)
     node_fmt = partial(stop_label, stop_names=stop_names, stop_to_lines=stop_to_lines)
 
-    graph = build_graph_from_weights(WEIGHTS_FILE)
+    graph = build_graph_from_weights(WEIGHTS_FILE, GRAPH_MODE)
     pairs = collect_platform_pairs(graph)
     runner = run_cut_dijkstra
 
