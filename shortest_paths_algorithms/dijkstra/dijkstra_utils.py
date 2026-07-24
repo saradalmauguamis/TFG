@@ -85,7 +85,7 @@ def _run_dijkstra(
 
         if stop_at is not None and node == stop_at:
             if verbose:
-                print("  -> goal reached!")
+                log_lines.append(("goal",))
             break
 
         for adj, weight in graph[
@@ -121,28 +121,44 @@ def _run_dijkstra(
                     visited.update((adj, node))
 
     if verbose:
-        id_width = max((len(n) for n in visited), default=0)
-        label_width = (
-            max((len(node_fmt(n)) for n in visited), default=0) if node_fmt else 0
-        )
-        for entry in log_lines:
-            if entry[0] == "extract":
-                _, iteration_no, node, best_dist = entry
-                node_label = format_node_label(node, node_fmt, label_width)
-                print(
-                    f"\nIteration {iteration_no}: extract {node:<{id_width}}{node_label}"
-                    f" with distance {best_dist}"
-                )
-            else:
-                _, adj, old_shown, dist_aux, weight, via_node = entry
-                adj_label = format_node_label(adj, node_fmt, label_width)
-                via_label = format_node_label(via_node, node_fmt)
-                print(
-                    f"  -> update {adj:<{id_width}}{adj_label}: {old_shown} ->"
-                    f" {dist_aux} (w={weight}) via {via_node}{via_label}"
-                )
+        _print_dijkstra_log(log_lines, visited, node_fmt)
 
     return dist, parent, iteration, expanded
+
+
+def _print_dijkstra_log(
+    log_lines: List[Tuple], visited: Set[Node], node_fmt: Optional[NodeFmt]
+) -> None:
+    """Flush _run_dijkstra()'s buffered verbose trace, labeling nodes via node_fmt.
+
+    Mirrors a_star_utils.py's _print_a_star_log, so both algorithms' traces
+    line up the same way when node_fmt is given.
+
+    args:
+        log_lines: Buffered ("extract"/"goal"/"update") entries recorded during the run.
+        visited: All nodes seen, used to compute id/label column widths.
+        node_fmt: Optional formatter mapping a node to a display label.
+    """
+    id_width = max((len(n) for n in visited), default=0)
+    label_width = max((len(node_fmt(n)) for n in visited), default=0) if node_fmt else 0
+    for entry in log_lines:
+        if entry[0] == "extract":
+            _, iteration_no, node, best_dist = entry
+            node_label = format_node_label(node, node_fmt, label_width)
+            print(
+                f"\nIteration {iteration_no}: extract {node:<{id_width}}{node_label}"
+                f" with distance {best_dist}"
+            )
+        elif entry[0] == "goal":
+            print("  -> goal reached!")
+        else:
+            _, adj, old_shown, dist_aux, weight, via_node = entry
+            adj_label = format_node_label(adj, node_fmt, label_width)
+            via_label = format_node_label(via_node, node_fmt)
+            print(
+                f"  -> update {adj:<{id_width}}{adj_label}: {old_shown} ->"
+                f" {dist_aux} (w={weight}) via {via_node}{via_label}"
+            )
 
 
 def dijkstra(

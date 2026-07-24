@@ -35,6 +35,7 @@ from shortest_paths_algorithms.paths import (  # noqa: E402,F401
 )
 
 # Pick exactly ONE input directory by uncommenting it (leave the rest commented).
+INPUT_DIR = Path(RAW_BASE)  # data/0_raw
 # INPUT_DIR = Path(SUBWAY_BASE)  # data/1_subway
 # INPUT_DIR = Path(DUPLICATED_TRIPS_BASE)  # data/2_duplicated_trips
 # INPUT_DIR = Path(STOP_SEQUENCE_BASE)  # data/3_stop_sequence
@@ -42,11 +43,11 @@ from shortest_paths_algorithms.paths import (  # noqa: E402,F401
 # INPUT_DIR = Path(SHARED_PLATFORMS_BASE)  # data/5_shared_platforms
 # INPUT_DIR = Path(WEIGHTS_BASE)  # data/6_weights
 # INPUT_DIR = Path(REPORTS_BASE)  # reports/resources (platform-to-platform reports)
-INPUT_DIR = Path(ALGORITHMS_COMPARISON_REPORT_FULL_FILE).parent  # analysis/resources
+# INPUT_DIR = Path(ALGORITHMS_COMPARISON_REPORT_FULL_FILE).parent  # analysis/resources
 
 # Set this to a filename like 'trips.txt' to convert only one file.
 # Set it to None to convert every .txt file in INPUT_DIR.
-TXT_FILE_NAME: Optional[str] = None
+TXT_FILE_NAME: Optional[str] = "pathways.txt"
 
 # Excel limits one sheet to 1,048,576 rows total, including the header.
 EXCEL_MAX_ROWS = 800_000
