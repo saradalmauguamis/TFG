@@ -1,0 +1,1333 @@
+Disclaimer: for coherence we will consider the next file(s) from data:
+ - weights.txt from /6_weights
+ - stops_shared.txt from /5_shared_platforms
+
+
+========================================================================================================
+From E.13002 (Badajoz -- L1-Glòries) --> to E.11101 (Residència sanitària -- L1-Hospital de Bellvitge)
+========================================================================================================
+
+
+Graph mode: full_graph
+
+Graph size: |V| = 673, |E| = 1419
+v_max (fastest implied edge speed): 11.215 m/s (40.4 km/h) -- found at edge 1.910 (L9S-Mercabarna) -> 1.911 (L9S-Parc Logístic)
+
+Iteration 1: extract E.13002   (Badajoz -- L1-Glòries                                                     ) with g=0 and h=841, f=841
+  -> update 1.130     (L1-Glòries                                                                ): g inf -> 60 (w=60), h=831, f=891 via E.13002 (Badajoz -- L1-Glòries)
+
+Iteration 2: extract 1.130     (L1-Glòries                                                                ) with g=60 and h=831, f=891
+  -> update 1.129     (L1-Marina                                                                 ): g inf -> 165 (w=105), h=772, f=937 via 1.130 (L1-Glòries)
+  -> update 1.131     (L1-Clot                                                                   ): g inf -> 164 (w=104), h=884, f=1048 via 1.130 (L1-Glòries)
+  -> update E.1013011 (Ascensor - Avda. Meridiana -- L1-Glòries                                  ): g inf -> 120 (w=60), h=826, f=946 via 1.130 (L1-Glòries)
+  -> update E.13001   (Plaça de les Glòries Catalanes -- L1-Glòries                              ): g inf -> 120 (w=60), h=833, f=953 via 1.130 (L1-Glòries)
+  -> update E.13011   (Avda. Meridiana -- L1-Glòries                                             ): g inf -> 120 (w=60), h=827, f=947 via 1.130 (L1-Glòries)
+
+Iteration 3: extract 1.129     (L1-Marina                                                                 ) with g=165 and h=772, f=937
+  -> update 1.128     (L1-Arc de Triomf                                                          ): g inf -> 243 (w=78), h=730, f=973 via 1.129 (L1-Marina)
+  -> update E.1012901 (Ascensor - L'Auditori -- L1-Marina                                        ): g inf -> 225 (w=60), h=780, f=1005 via 1.129 (L1-Marina)
+  -> update E.12901   (L'Auditori -- L1-Marina                                                   ): g inf -> 225 (w=60), h=782, f=1007 via 1.129 (L1-Marina)
+  -> update E.12902   (Almogàvers -- L1-Marina                                                   ): g inf -> 225 (w=60), h=782, f=1007 via 1.129 (L1-Marina)
+
+Iteration 4: extract E.1013011 (Ascensor - Avda. Meridiana -- L1-Glòries                                  ) with g=120 and h=826, f=946
+
+Iteration 5: extract E.13011   (Avda. Meridiana -- L1-Glòries                                             ) with g=120 and h=827, f=947
+
+Iteration 6: extract E.13001   (Plaça de les Glòries Catalanes -- L1-Glòries                              ) with g=120 and h=833, f=953
+
+Iteration 7: extract 1.128     (L1-Arc de Triomf                                                          ) with g=243 and h=730, f=973
+  -> update 1.127     (L1-Urquinaona                                                             ): g inf -> 329 (w=86), h=675, f=1004 via 1.128 (L1-Arc de Triomf)
+  -> update E.1012801 (Ascensor - Avda. Vilanova -- L1-Arc de Triomf                             ): g inf -> 303 (w=60), h=724, f=1027 via 1.128 (L1-Arc de Triomf)
+  -> update E.12801   (Avda. Vilanova -- L1-Arc de Triomf                                        ): g inf -> 303 (w=60), h=723, f=1026 via 1.128 (L1-Arc de Triomf)
+  -> update E.12811   (Nàpols -- L1-Arc de Triomf                                                ): g inf -> 303 (w=60), h=738, f=1041 via 1.128 (L1-Arc de Triomf)
+  -> update E.12812   (Roger de Flor -- L1-Arc de Triomf                                         ): g inf -> 303 (w=60), h=732, f=1035 via 1.128 (L1-Arc de Triomf)
+
+Iteration 8: extract 1.127     (L1-Urquinaona                                                             ) with g=329 and h=675, f=1004
+  -> update 1.126     (L1-Catalunya                                                              ): g inf -> 412 (w=83), h=630, f=1042 via 1.127 (L1-Urquinaona)
+  -> update 1.424     (L4-Urquinaona                                                             ): g inf -> 419 (w=90), h=658, f=1077 via 1.127 (L1-Urquinaona)
+  -> update E.12701   (Plaça Urquinaona -- L1-Urquinaona                                         ): g inf -> 389 (w=60), h=667, f=1056 via 1.127 (L1-Urquinaona)
+  -> update E.12711   (Trafalgar -- L1-Urquinaona                                                ): g inf -> 389 (w=60), h=668, f=1057 via 1.127 (L1-Urquinaona)
+  -> update E.12721   (Bruc -- L1-Urquinaona                                                     ): g inf -> 389 (w=60), h=680, f=1069 via 1.127 (L1-Urquinaona)
+
+Iteration 9: extract E.1012901 (Ascensor - L'Auditori -- L1-Marina                                        ) with g=225 and h=780, f=1005
+
+Iteration 10: extract E.12902   (Almogàvers -- L1-Marina                                                   ) with g=225 and h=782, f=1007
+
+Iteration 11: extract E.12901   (L'Auditori -- L1-Marina                                                   ) with g=225 and h=782, f=1007
+
+Iteration 12: extract E.12801   (Avda. Vilanova -- L1-Arc de Triomf                                        ) with g=303 and h=723, f=1026
+
+Iteration 13: extract E.1012801 (Ascensor - Avda. Vilanova -- L1-Arc de Triomf                             ) with g=303 and h=724, f=1027
+
+Iteration 14: extract E.12812   (Roger de Flor -- L1-Arc de Triomf                                         ) with g=303 and h=732, f=1035
+
+Iteration 15: extract E.12811   (Nàpols -- L1-Arc de Triomf                                                ) with g=303 and h=738, f=1041
+
+Iteration 16: extract 1.126     (L1-Catalunya                                                              ) with g=412 and h=630, f=1042
+  -> update 1.125     (L1-Universitat                                                            ): g inf -> 501 (w=89), h=593, f=1094 via 1.126 (L1-Catalunya)
+  -> update 1.326     (L3-Catalunya                                                              ): g inf -> 457 (w=45), h=629, f=1086 via 1.126 (L1-Catalunya)
+  -> update E.1012602 (Ascensor - Ronda Universitat -- L1-Catalunya                              ): g inf -> 472 (w=60), h=626, f=1098 via 1.126 (L1-Catalunya)
+  -> update E.12601   (Rambla Catalunya -- L1-Catalunya                                          ): g inf -> 472 (w=60), h=627, f=1099 via 1.126 (L1-Catalunya)
+  -> update E.12602   (Ronda Universitat -- L1-Catalunya                                         ): g inf -> 472 (w=60), h=625, f=1097 via 1.126 (L1-Catalunya)
+  -> update E.12611   (Passeig de Gràcia -- L1-Catalunya                                         ): g inf -> 472 (w=60), h=638, f=1110 via 1.126 (L1-Catalunya)
+  -> update E.12612   (Ronda Sant Pere -- L1-Catalunya                                           ): g inf -> 472 (w=60), h=641, f=1113 via 1.126 (L1-Catalunya)
+  -> update E.12613   (Centre Plaça -- L1-Catalunya                                              ): g inf -> 472 (w=60), h=633, f=1105 via 1.126 (L1-Catalunya)
+
+Iteration 17: extract 1.131     (L1-Clot                                                                   ) with g=164 and h=884, f=1048
+  -> update 1.132     (L1-Navas                                                                  ): g inf -> 260 (w=96), h=929, f=1189 via 1.131 (L1-Clot)
+  -> update 1.218     (L2-Clot                                                                   ): g inf -> 209 (w=45), h=885, f=1094 via 1.131 (L1-Clot)
+  -> update E.1013101 (Ascensor - Aragó / Meridiana -- L1-Clot                                   ): g inf -> 224 (w=60), h=879, f=1103 via 1.131 (L1-Clot)
+  -> update E.13101   (Aragó / Meridiana -- L1-Clot                                              ): g inf -> 224 (w=60), h=879, f=1103 via 1.131 (L1-Clot)
+  -> update E.13111   (València -- L1-Clot                                                       ): g inf -> 224 (w=60), h=892, f=1116 via 1.131 (L1-Clot)
+
+Iteration 18: extract E.12701   (Plaça Urquinaona -- L1-Urquinaona                                         ) with g=389 and h=667, f=1056
+
+Iteration 19: extract E.12711   (Trafalgar -- L1-Urquinaona                                                ) with g=389 and h=668, f=1057
+
+Iteration 20: extract E.12721   (Bruc -- L1-Urquinaona                                                     ) with g=389 and h=680, f=1069
+
+Iteration 21: extract 1.424     (L4-Urquinaona                                                             ) with g=419 and h=658, f=1077
+  -> update 1.423     (L4-Jaume I                                                                ): g inf -> 500 (w=81), h=664, f=1164 via 1.424 (L4-Urquinaona)
+  -> update 1.425     (L4-Passeig de Gràcia                                                      ): g inf -> 513 (w=94), h=642, f=1155 via 1.424 (L4-Urquinaona)
+  -> update E.42401   (Plaça Urquinaona -- L4-Urquinaona                                         ): g inf -> 479 (w=60), h=660, f=1139 via 1.424 (L4-Urquinaona)
+  -> update E.42411   (Jonqueres -- L4-Urquinaona                                                ): g inf -> 479 (w=60), h=661, f=1140 via 1.424 (L4-Urquinaona)
+
+Iteration 22: extract 1.326     (L3-Catalunya                                                              ) with g=457 and h=629, f=1086
+  -> update 1.325     (L3-Liceu                                                                  ): g inf -> 555 (w=98), h=615, f=1170 via 1.326 (L3-Catalunya)
+  -> update 1.327     (L3-Passeig de Gràcia                                                      ): g inf -> 552 (w=95), h=640, f=1192 via 1.326 (L3-Catalunya)
+  -> update E.1032603 (Ascensor - Pelai -- L3-Catalunya                                          ): g inf -> 517 (w=60), h=621, f=1138 via 1.326 (L3-Catalunya)
+  -> update E.32601   (La Rambla -- L3-Catalunya                                                 ): g inf -> 517 (w=60), h=623, f=1140 via 1.326 (L3-Catalunya)
+  -> update E.32603   (Pelai -- L3-Catalunya                                                     ): g inf -> 517 (w=60), h=620, f=1137 via 1.326 (L3-Catalunya)
+  -> update E.32604   (Bergara -- L3-Catalunya                                                   ): g inf -> 517 (w=60), h=622, f=1139 via 1.326 (L3-Catalunya)
+
+Iteration 23: extract 1.125     (L1-Universitat                                                            ) with g=501 and h=593, f=1094
+  -> update 1.124     (L1-Urgell                                                                 ): g inf -> 602 (w=101), h=542, f=1144 via 1.125 (L1-Universitat)
+  -> update 1.212     (L2-Universitat                                                            ): g inf -> 546 (w=45), h=584, f=1130 via 1.125 (L1-Universitat)
+  -> update E.12501   (Ronda Universitat -- L1-Universitat                                       ): g inf -> 561 (w=60), h=600, f=1161 via 1.125 (L1-Universitat)
+  -> update E.12502   (Pelai -- L1-Universitat                                                   ): g inf -> 561 (w=60), h=595, f=1156 via 1.125 (L1-Universitat)
+
+Iteration 24: extract 1.218     (L2-Clot                                                                   ) with g=209 and h=885, f=1094
+  -> update 1.217     (L2-Encants                                                                ): g inf -> 285 (w=76), h=841, f=1126 via 1.218 (L2-Clot)
+  -> update 1.219     (L2-Bac de Roda                                                            ): g inf -> 309 (w=100), h=964, f=1273 via 1.218 (L2-Clot)
+  -> update E.1021801 (Ascensor - Sibelius -- L2-Clot                                            ): g inf -> 269 (w=60), h=881, f=1150 via 1.218 (L2-Clot)
+  -> update E.21801   (Sibelius -- L2-Clot                                                       ): g inf -> 269 (w=60), h=881, f=1150 via 1.218 (L2-Clot)
+
+Iteration 25: extract E.12602   (Ronda Universitat -- L1-Catalunya                                         ) with g=472 and h=625, f=1097
+
+Iteration 26: extract E.1012602 (Ascensor - Ronda Universitat -- L1-Catalunya                              ) with g=472 and h=626, f=1098
+
+Iteration 27: extract E.12601   (Rambla Catalunya -- L1-Catalunya                                          ) with g=472 and h=627, f=1099
+
+Iteration 28: extract E.13101   (Aragó / Meridiana -- L1-Clot                                              ) with g=224 and h=879, f=1103
+
+Iteration 29: extract E.1013101 (Ascensor - Aragó / Meridiana -- L1-Clot                                   ) with g=224 and h=879, f=1103
+
+Iteration 30: extract E.12613   (Centre Plaça -- L1-Catalunya                                              ) with g=472 and h=633, f=1105
+
+Iteration 31: extract E.12611   (Passeig de Gràcia -- L1-Catalunya                                         ) with g=472 and h=638, f=1110
+
+Iteration 32: extract E.12612   (Ronda Sant Pere -- L1-Catalunya                                           ) with g=472 and h=641, f=1113
+
+Iteration 33: extract E.13111   (València -- L1-Clot                                                       ) with g=224 and h=892, f=1116
+
+Iteration 34: extract 1.217     (L2-Encants                                                                ) with g=285 and h=841, f=1126
+  -> update 1.216     (L2-Sagrada Família                                                        ): g inf -> 419 (w=134), h=780, f=1199 via 1.217 (L2-Encants)
+  -> update E.1021702 (Ascensor - València / Aragó -- L2-Encants                                 ): g inf -> 345 (w=60), h=838, f=1183 via 1.217 (L2-Encants)
+  -> update E.21701   (València / Mallorca -- L2-Encants                                         ): g inf -> 345 (w=60), h=837, f=1182 via 1.217 (L2-Encants)
+  -> update E.21702   (València / Aragó -- L2-Encants                                            ): g inf -> 345 (w=60), h=837, f=1182 via 1.217 (L2-Encants)
+
+Iteration 35: extract 1.212     (L2-Universitat                                                            ) with g=546 and h=584, f=1130
+  -> update 1.211     (L2-Sant Antoni                                                            ): g inf -> 630 (w=84), h=548, f=1178 via 1.212 (L2-Universitat)
+  -> update 1.213     (L2-Passeig de Gràcia                                                      ): g inf -> 632 (w=86), h=639, f=1271 via 1.212 (L2-Universitat)
+  -> update E.1021201 (Ascensor - Plaça Universitat -- L2-Universitat                            ): g inf -> 606 (w=60), h=589, f=1195 via 1.212 (L2-Universitat)
+  -> update E.21201   (Plaça Universitat -- L2-Universitat                                       ): g inf -> 606 (w=60), h=587, f=1193 via 1.212 (L2-Universitat)
+  -> update E.21211   (Ronda Sant Antoni -- L2-Universitat                                       ): g inf -> 606 (w=60), h=584, f=1190 via 1.212 (L2-Universitat)
+
+Iteration 36: extract E.32603   (Pelai -- L3-Catalunya                                                     ) with g=517 and h=620, f=1137
+
+Iteration 37: extract E.1032603 (Ascensor - Pelai -- L3-Catalunya                                          ) with g=517 and h=621, f=1138
+
+Iteration 38: extract E.42401   (Plaça Urquinaona -- L4-Urquinaona                                         ) with g=479 and h=660, f=1139
+
+Iteration 39: extract E.32604   (Bergara -- L3-Catalunya                                                   ) with g=517 and h=622, f=1139
+
+Iteration 40: extract E.32601   (La Rambla -- L3-Catalunya                                                 ) with g=517 and h=623, f=1140
+
+Iteration 41: extract E.42411   (Jonqueres -- L4-Urquinaona                                                ) with g=479 and h=661, f=1140
+
+Iteration 42: extract 1.124     (L1-Urgell                                                                 ) with g=602 and h=542, f=1144
+  -> update 1.123     (L1-Rocafort                                                               ): g inf -> 682 (w=80), h=496, f=1178 via 1.124 (L1-Urgell)
+  -> update E.1012401 (Ascensor - Comte d'Urgell -- L1-Urgell                                    ): g inf -> 662 (w=60), h=536, f=1198 via 1.124 (L1-Urgell)
+  -> update E.12401   (Comte d'Urgell -- L1-Urgell                                               ): g inf -> 662 (w=60), h=535, f=1197 via 1.124 (L1-Urgell)
+  -> update E.12411   (Villarroel / Diputació -- L1-Urgell                                       ): g inf -> 662 (w=60), h=549, f=1211 via 1.124 (L1-Urgell)
+  -> update E.12412   (Villarroel / Sepúlveda -- L1-Urgell                                       ): g inf -> 662 (w=60), h=549, f=1211 via 1.124 (L1-Urgell)
+
+Iteration 43: extract E.1021801 (Ascensor - Sibelius -- L2-Clot                                            ) with g=269 and h=881, f=1150
+
+Iteration 44: extract E.21801   (Sibelius -- L2-Clot                                                       ) with g=269 and h=881, f=1150
+
+Iteration 45: extract 1.425     (L4-Passeig de Gràcia                                                      ) with g=513 and h=642, f=1155
+  -> update 1.213     (L2-Passeig de Gràcia                                                      ): g 632 -> 573 (w=60), h=639, f=1212 via 1.425 (L4-Passeig de Gràcia)
+  -> update 1.426     (L4-Girona                                                                 ): g inf -> 604 (w=91), h=692, f=1296 via 1.425 (L4-Passeig de Gràcia)
+  -> update E.42501   (Passeig de Gràcia / Gran Via -- L4-Passeig de Gràcia                      ): g inf -> 573 (w=60), h=639, f=1212 via 1.425 (L4-Passeig de Gràcia)
+
+Iteration 46: extract E.12502   (Pelai -- L1-Universitat                                                   ) with g=561 and h=595, f=1156
+
+Iteration 47: extract E.12501   (Ronda Universitat -- L1-Universitat                                       ) with g=561 and h=600, f=1161
+
+Iteration 48: extract 1.423     (L4-Jaume I                                                                ) with g=500 and h=664, f=1164
+  -> update 1.422     (L4-Barceloneta                                                            ): g inf -> 591 (w=91), h=689, f=1280 via 1.423 (L4-Jaume I)
+  -> update E.1042301 (Ascensor - Plaça de l'Àngel -- L4-Jaume I                                 ): g inf -> 560 (w=60), h=662, f=1222 via 1.423 (L4-Jaume I)
+  -> update E.1042311 (Ascensor - Argenteria -- L4-Jaume I                                       ): g inf -> 560 (w=60), h=666, f=1226 via 1.423 (L4-Jaume I)
+  -> update E.42301   (Plaça de l'Àngel -- L4-Jaume I                                            ): g inf -> 560 (w=60), h=662, f=1222 via 1.423 (L4-Jaume I)
+  -> update E.42311   (Argenteria -- L4-Jaume I                                                  ): g inf -> 560 (w=60), h=666, f=1226 via 1.423 (L4-Jaume I)
+
+Iteration 49: extract 1.325     (L3-Liceu                                                                  ) with g=555 and h=615, f=1170
+  -> update 1.324     (L3-Drassanes                                                              ): g inf -> 648 (w=93), h=604, f=1252 via 1.325 (L3-Liceu)
+  -> update E.1032521 (Ascensor - La Rambla / Teatre Liceu -- L3-Liceu                           ): g inf -> 615 (w=60), h=615, f=1230 via 1.325 (L3-Liceu)
+  -> update E.1032531 (Ascensor - La Rambla / Teatre Liceu -- L3-Liceu                           ): g inf -> 615 (w=60), h=614, f=1229 via 1.325 (L3-Liceu)
+  -> update E.32501   (La Rambla / Mercat de la Boqueria -- L3-Liceu                             ): g inf -> 615 (w=60), h=615, f=1230 via 1.325 (L3-Liceu)
+  -> update E.32511   (La Rambla / Mercat de la Boqueria -- L3-Liceu                             ): g inf -> 615 (w=60), h=616, f=1231 via 1.325 (L3-Liceu)
+  -> update E.32521   (La Rambla / Teatre Liceu -- L3-Liceu                                      ): g inf -> 615 (w=60), h=615, f=1230 via 1.325 (L3-Liceu)
+  -> update E.32531   (La Rambla / Teatre Liceu -- L3-Liceu                                      ): g inf -> 615 (w=60), h=614, f=1229 via 1.325 (L3-Liceu)
+
+Iteration 50: extract 1.211     (L2-Sant Antoni                                                            ) with g=630 and h=548, f=1178
+  -> update 1.210     (L2-Paral·lel                                                              ): g inf -> 752 (w=122), h=555, f=1307 via 1.211 (L2-Sant Antoni)
+  -> update E.1021101 (Ascensor - Villarroel -- L2-Sant Antoni                                   ): g inf -> 690 (w=60), h=552, f=1242 via 1.211 (L2-Sant Antoni)
+  -> update E.21101   (Villarroel -- L2-Sant Antoni                                              ): g inf -> 690 (w=60), h=553, f=1243 via 1.211 (L2-Sant Antoni)
+  -> update E.21111   (Sant Antoni Abat -- L2-Sant Antoni                                        ): g inf -> 690 (w=60), h=543, f=1233 via 1.211 (L2-Sant Antoni)
+  -> update E.21112   (Urgell -- L2-Sant Antoni                                                  ): g inf -> 690 (w=60), h=541, f=1231 via 1.211 (L2-Sant Antoni)
+
+Iteration 51: extract 1.123     (L1-Rocafort                                                               ) with g=682 and h=496, f=1178
+  -> update 1.122     (L1-Espanya                                                                ): g inf -> 770 (w=88), h=443, f=1213 via 1.123 (L1-Rocafort)
+  -> update E.1012301 (Ascensor - Rocafort / Diputació -- L1-Rocafort                            ): g inf -> 742 (w=60), h=491, f=1233 via 1.123 (L1-Rocafort)
+  -> update E.12301   (Rocafort / Diputació -- L1-Rocafort                                       ): g inf -> 742 (w=60), h=491, f=1233 via 1.123 (L1-Rocafort)
+  -> update E.12302   (Rocafort / Sepúlveda -- L1-Rocafort                                       ): g inf -> 742 (w=60), h=491, f=1233 via 1.123 (L1-Rocafort)
+  -> update E.12311   (Calàbria / Diputació -- L1-Rocafort                                       ): g inf -> 742 (w=60), h=500, f=1242 via 1.123 (L1-Rocafort)
+  -> update E.12312   (Calàbria / Sepúlveda -- L1-Rocafort                                       ): g inf -> 742 (w=60), h=501, f=1243 via 1.123 (L1-Rocafort)
+
+Iteration 52: extract E.21702   (València / Aragó -- L2-Encants                                            ) with g=345 and h=837, f=1182
+
+Iteration 53: extract E.21701   (València / Mallorca -- L2-Encants                                         ) with g=345 and h=837, f=1182
+
+Iteration 54: extract E.1021702 (Ascensor - València / Aragó -- L2-Encants                                 ) with g=345 and h=838, f=1183
+
+Iteration 55: extract 1.132     (L1-Navas                                                                  ) with g=260 and h=929, f=1189
+  -> update 1.133     (L1-La Sagrera                                                             ): g inf -> 355 (w=95), h=977, f=1332 via 1.132 (L1-Navas)
+  -> update E.1013201 (Ascensor - Navas de Tolosa -- L1-Navas                                    ): g inf -> 320 (w=60), h=927, f=1247 via 1.132 (L1-Navas)
+  -> update E.13201   (Navas de Tolosa -- L1-Navas                                               ): g inf -> 320 (w=60), h=925, f=1245 via 1.132 (L1-Navas)
+  -> update E.13211   (Biscaia -- L1-Navas                                                       ): g inf -> 320 (w=60), h=935, f=1255 via 1.132 (L1-Navas)
+
+Iteration 56: extract E.21211   (Ronda Sant Antoni -- L2-Universitat                                       ) with g=606 and h=584, f=1190
+
+Iteration 57: extract 1.327     (L3-Passeig de Gràcia                                                      ) with g=552 and h=640, f=1192
+  -> update 1.328     (L3-Diagonal                                                               ): g inf -> 649 (w=97), h=647, f=1296 via 1.327 (L3-Passeig de Gràcia)
+  -> update E.1032701 (Ascensor - Aragó / Pau Claris -- L3-Passeig de Gràcia                     ): g inf -> 612 (w=60), h=643, f=1255 via 1.327 (L3-Passeig de Gràcia)
+  -> update E.32701   (Aragó / Pau Claris -- L3-Passeig de Gràcia                                ): g inf -> 612 (w=60), h=643, f=1255 via 1.327 (L3-Passeig de Gràcia)
+  -> update E.32702   (Aragó / Rambla Catalunya -- L3-Passeig de Gràcia                          ): g inf -> 612 (w=60), h=640, f=1252 via 1.327 (L3-Passeig de Gràcia)
+  -> update E.32711   (Consell de Cent -- L3-Passeig de Gràcia                                   ): g inf -> 612 (w=60), h=640, f=1252 via 1.327 (L3-Passeig de Gràcia)
+
+Iteration 58: extract E.21201   (Plaça Universitat -- L2-Universitat                                       ) with g=606 and h=587, f=1193
+
+Iteration 59: extract E.1021201 (Ascensor - Plaça Universitat -- L2-Universitat                            ) with g=606 and h=589, f=1195
+
+Iteration 60: extract E.12401   (Comte d'Urgell -- L1-Urgell                                               ) with g=662 and h=535, f=1197
+
+Iteration 61: extract E.1012401 (Ascensor - Comte d'Urgell -- L1-Urgell                                    ) with g=662 and h=536, f=1198
+
+Iteration 62: extract 1.216     (L2-Sagrada Família                                                        ) with g=419 and h=780, f=1199
+  -> update 1.215     (L2-Monumental                                                             ): g inf -> 525 (w=106), h=776, f=1301 via 1.216 (L2-Sagrada Família)
+  -> update 1.523     (L5-Sagrada Família                                                        ): g inf -> 464 (w=45), h=771, f=1235 via 1.216 (L2-Sagrada Família)
+  -> update E.1021601 (Ascensor - Mallorca - Marina -- L2-Sagrada Família                        ): g inf -> 479 (w=60), h=781, f=1260 via 1.216 (L2-Sagrada Família)
+  -> update E.21601   (Mallorca - Marina -- L2-Sagrada Família                                   ): g inf -> 479 (w=60), h=782, f=1261 via 1.216 (L2-Sagrada Família)
+
+Iteration 63: extract E.12411   (Villarroel / Diputació -- L1-Urgell                                       ) with g=662 and h=549, f=1211
+
+Iteration 64: extract E.12412   (Villarroel / Sepúlveda -- L1-Urgell                                       ) with g=662 and h=549, f=1211
+
+Iteration 65: extract 1.213     (L2-Passeig de Gràcia                                                      ) with g=573 and h=639, f=1212
+  -> update 1.214     (L2-Tetuan                                                                 ): g inf -> 688 (w=115), h=716, f=1404 via 1.213 (L2-Passeig de Gràcia)
+  -> update E.1021301 (Ascensor - Rbla. Catalunya -- L2-Passeig de Gràcia                        ): g inf -> 633 (w=60), h=635, f=1268 via 1.213 (L2-Passeig de Gràcia)
+  -> update E.21301   (Rbla. Catalunya -- L2-Passeig de Gràcia                                   ): g inf -> 633 (w=60), h=633, f=1266 via 1.213 (L2-Passeig de Gràcia)
+  -> update E.21311   (Pau Claris -- L2-Passeig de Gràcia                                        ): g inf -> 633 (w=60), h=644, f=1277 via 1.213 (L2-Passeig de Gràcia)
+
+Iteration 66: extract E.42501   (Passeig de Gràcia / Gran Via -- L4-Passeig de Gràcia                      ) with g=573 and h=639, f=1212
+
+Iteration 67: extract 1.122     (L1-Espanya                                                                ) with g=770 and h=443, f=1213
+  -> update 1.121     (L1-Hostafrancs                                                            ): g inf -> 857 (w=87), h=410, f=1267 via 1.122 (L1-Espanya)
+  -> update 1.321     (L3-Espanya                                                                ): g inf -> 950 (w=180), h=451, f=1401 via 1.122 (L1-Espanya)
+  -> update E.1012201 (Ascensor - Creu Coberta -- L1-Espanya                                     ): g inf -> 830 (w=60), h=440, f=1270 via 1.122 (L1-Espanya)
+  -> update E.12201   (Creu Coberta -- L1-Espanya                                                ): g inf -> 830 (w=60), h=435, f=1265 via 1.122 (L1-Espanya)
+  -> update E.12202   (Tarragona -- L1-Espanya                                                   ): g inf -> 830 (w=60), h=443, f=1273 via 1.122 (L1-Espanya)
+  -> update E.12211   (Exposició / Paral·lel -- L1-Espanya                                       ): g inf -> 830 (w=60), h=438, f=1268 via 1.122 (L1-Espanya)
+  -> update E.12212   (Exposició / Gran Via -- L1-Espanya                                        ): g inf -> 830 (w=60), h=434, f=1264 via 1.122 (L1-Espanya)
+
+Iteration 68: extract E.1042301 (Ascensor - Plaça de l'Àngel -- L4-Jaume I                                 ) with g=560 and h=662, f=1222
+
+Iteration 69: extract E.42301   (Plaça de l'Àngel -- L4-Jaume I                                            ) with g=560 and h=662, f=1222
+
+Iteration 70: extract E.42311   (Argenteria -- L4-Jaume I                                                  ) with g=560 and h=666, f=1226
+
+Iteration 71: extract E.1042311 (Ascensor - Argenteria -- L4-Jaume I                                       ) with g=560 and h=666, f=1226
+
+Iteration 72: extract E.32531   (La Rambla / Teatre Liceu -- L3-Liceu                                      ) with g=615 and h=614, f=1229
+
+Iteration 73: extract E.1032531 (Ascensor - La Rambla / Teatre Liceu -- L3-Liceu                           ) with g=615 and h=614, f=1229
+
+Iteration 74: extract E.1032521 (Ascensor - La Rambla / Teatre Liceu -- L3-Liceu                           ) with g=615 and h=615, f=1230
+
+Iteration 75: extract E.32501   (La Rambla / Mercat de la Boqueria -- L3-Liceu                             ) with g=615 and h=615, f=1230
+
+Iteration 76: extract E.32521   (La Rambla / Teatre Liceu -- L3-Liceu                                      ) with g=615 and h=615, f=1230
+
+Iteration 77: extract E.21112   (Urgell -- L2-Sant Antoni                                                  ) with g=690 and h=541, f=1231
+
+Iteration 78: extract E.32511   (La Rambla / Mercat de la Boqueria -- L3-Liceu                             ) with g=615 and h=616, f=1231
+
+Iteration 79: extract E.12301   (Rocafort / Diputació -- L1-Rocafort                                       ) with g=742 and h=491, f=1233
+
+Iteration 80: extract E.1012301 (Ascensor - Rocafort / Diputació -- L1-Rocafort                            ) with g=742 and h=491, f=1233
+
+Iteration 81: extract E.12302   (Rocafort / Sepúlveda -- L1-Rocafort                                       ) with g=742 and h=491, f=1233
+
+Iteration 82: extract E.21111   (Sant Antoni Abat -- L2-Sant Antoni                                        ) with g=690 and h=543, f=1233
+
+Iteration 83: extract 1.523     (L5-Sagrada Família                                                        ) with g=464 and h=771, f=1235
+  -> update 1.522     (L5-Verdaguer                                                              ): g inf -> 572 (w=108), h=703, f=1275 via 1.523 (L5-Sagrada Família)
+  -> update 1.524     (L5-Sant Pau | Dos de Maig                                                 ): g inf -> 571 (w=107), h=836, f=1407 via 1.523 (L5-Sagrada Família)
+  -> update E.1052301 (Ascensor - Provença / Avinguda Gaudí -- L5-Sagrada Família                ): g inf -> 524 (w=60), h=780, f=1304 via 1.523 (L5-Sagrada Família)
+  -> update E.52301   (Provença / Avinguda Gaudí -- L5-Sagrada Família                           ): g inf -> 524 (w=60), h=779, f=1303 via 1.523 (L5-Sagrada Família)
+  -> update E.52311   (Sardenya -- L5-Sagrada Família                                            ): g inf -> 524 (w=60), h=768, f=1292 via 1.523 (L5-Sagrada Família)
+  -> update E.52312   (Plaça de la Sagrada Família -- L5-Sagrada Família                         ): g inf -> 524 (w=60), h=767, f=1291 via 1.523 (L5-Sagrada Família)
+
+Iteration 84: extract E.1021101 (Ascensor - Villarroel -- L2-Sant Antoni                                   ) with g=690 and h=552, f=1242
+
+Iteration 85: extract E.12311   (Calàbria / Diputació -- L1-Rocafort                                       ) with g=742 and h=500, f=1242
+
+Iteration 86: extract E.21101   (Villarroel -- L2-Sant Antoni                                              ) with g=690 and h=553, f=1243
+
+Iteration 87: extract E.12312   (Calàbria / Sepúlveda -- L1-Rocafort                                       ) with g=742 and h=501, f=1243
+
+Iteration 88: extract E.13201   (Navas de Tolosa -- L1-Navas                                               ) with g=320 and h=925, f=1245
+
+Iteration 89: extract E.1013201 (Ascensor - Navas de Tolosa -- L1-Navas                                    ) with g=320 and h=927, f=1247
+
+Iteration 90: extract E.32711   (Consell de Cent -- L3-Passeig de Gràcia                                   ) with g=612 and h=640, f=1252
+
+Iteration 91: extract E.32702   (Aragó / Rambla Catalunya -- L3-Passeig de Gràcia                          ) with g=612 and h=640, f=1252
+
+Iteration 92: extract 1.324     (L3-Drassanes                                                              ) with g=648 and h=604, f=1252
+  -> update 1.323     (L3-Paral·lel                                                              ): g inf -> 741 (w=93), h=554, f=1295 via 1.324 (L3-Drassanes)
+  -> update E.1032401 (Ascensor - La Rambla -- L3-Drassanes                                      ): g inf -> 708 (w=60), h=611, f=1319 via 1.324 (L3-Drassanes)
+  -> update E.1032411 (Ascensor - Drassanes -- L3-Drassanes                                      ): g inf -> 708 (w=60), h=605, f=1313 via 1.324 (L3-Drassanes)
+  -> update E.32401   (La Rambla -- L3-Drassanes                                                 ): g inf -> 708 (w=60), h=612, f=1320 via 1.324 (L3-Drassanes)
+  -> update E.32403   (Santa Madrona -- L3-Drassanes                                             ): g inf -> 708 (w=60), h=609, f=1317 via 1.324 (L3-Drassanes)
+  -> update E.32411   (Drassanes -- L3-Drassanes                                                 ): g inf -> 708 (w=60), h=604, f=1312 via 1.324 (L3-Drassanes)
+
+Iteration 93: extract E.32701   (Aragó / Pau Claris -- L3-Passeig de Gràcia                                ) with g=612 and h=643, f=1255
+
+Iteration 94: extract E.1032701 (Ascensor - Aragó / Pau Claris -- L3-Passeig de Gràcia                     ) with g=612 and h=643, f=1255
+
+Iteration 95: extract E.13211   (Biscaia -- L1-Navas                                                       ) with g=320 and h=935, f=1255
+
+Iteration 96: extract E.1021601 (Ascensor - Mallorca - Marina -- L2-Sagrada Família                        ) with g=479 and h=781, f=1260
+
+Iteration 97: extract E.21601   (Mallorca - Marina -- L2-Sagrada Família                                   ) with g=479 and h=782, f=1261
+
+Iteration 98: extract E.12212   (Exposició / Gran Via -- L1-Espanya                                        ) with g=830 and h=434, f=1264
+
+Iteration 99: extract E.12201   (Creu Coberta -- L1-Espanya                                                ) with g=830 and h=435, f=1265
+
+Iteration 100: extract E.21301   (Rbla. Catalunya -- L2-Passeig de Gràcia                                   ) with g=633 and h=633, f=1266
+
+Iteration 101: extract 1.121     (L1-Hostafrancs                                                            ) with g=857 and h=410, f=1267
+  -> update 1.120     (L1-Plaça de Sants                                                         ): g inf -> 927 (w=70), h=386, f=1313 via 1.121 (L1-Hostafrancs)
+  -> update E.1012101 (Ascensor - Consell de Cent / Mercat -- L1-Hostafrancs                     ): g inf -> 917 (w=60), h=413, f=1330 via 1.121 (L1-Hostafrancs)
+  -> update E.12101   (Consell de Cent / Mercat -- L1-Hostafrancs                                ): g inf -> 917 (w=60), h=414, f=1331 via 1.121 (L1-Hostafrancs)
+  -> update E.12111   (Hostafrancs -- L1-Hostafrancs                                             ): g inf -> 917 (w=60), h=413, f=1330 via 1.121 (L1-Hostafrancs)
+  -> update E.12121   (Moianès -- L1-Hostafrancs                                                 ): g inf -> 917 (w=60), h=404, f=1321 via 1.121 (L1-Hostafrancs)
+  -> update E.12131   (Consell de Cent -- L1-Hostafrancs                                         ): g inf -> 917 (w=60), h=410, f=1327 via 1.121 (L1-Hostafrancs)
+
+Iteration 102: extract E.1021301 (Ascensor - Rbla. Catalunya -- L2-Passeig de Gràcia                        ) with g=633 and h=635, f=1268
+
+Iteration 103: extract E.12211   (Exposició / Paral·lel -- L1-Espanya                                       ) with g=830 and h=438, f=1268
+
+Iteration 104: extract E.1012201 (Ascensor - Creu Coberta -- L1-Espanya                                     ) with g=830 and h=440, f=1270
+
+Iteration 105: extract E.12202   (Tarragona -- L1-Espanya                                                   ) with g=830 and h=443, f=1273
+
+Iteration 106: extract 1.219     (L2-Bac de Roda                                                            ) with g=309 and h=964, f=1273
+  -> update 1.220     (L2-Sant Martí                                                             ): g inf -> 385 (w=76), h=1018, f=1403 via 1.219 (L2-Bac de Roda)
+  -> update E.1021901 (Ascensor - Fluvià -- L2-Bac de Roda                                       ): g inf -> 369 (w=60), h=970, f=1339 via 1.219 (L2-Bac de Roda)
+  -> update E.21901   (Fluvià -- L2-Bac de Roda                                                  ): g inf -> 369 (w=60), h=971, f=1340 via 1.219 (L2-Bac de Roda)
+  -> update E.21911   (Bac de Roda -- L2-Bac de Roda                                             ): g inf -> 369 (w=60), h=959, f=1328 via 1.219 (L2-Bac de Roda)
+
+Iteration 107: extract 1.522     (L5-Verdaguer                                                              ) with g=572 and h=703, f=1275
+  -> update 1.427     (L4-Verdaguer                                                              ): g inf -> 617 (w=45), h=719, f=1336 via 1.522 (L5-Verdaguer)
+  -> update 1.521     (L5-Diagonal                                                               ): g inf -> 673 (w=101), h=630, f=1303 via 1.522 (L5-Verdaguer)
+  -> update E.52201   (Bailèn -- L5-Verdaguer                                                    ): g inf -> 632 (w=60), h=706, f=1338 via 1.522 (L5-Verdaguer)
+  -> update E.52211   (Avinguda Diagonal -- L5-Verdaguer                                         ): g inf -> 632 (w=60), h=695, f=1327 via 1.522 (L5-Verdaguer)
+  -> update E.52212   (Girona -- L5-Verdaguer                                                    ): g inf -> 632 (w=60), h=697, f=1329 via 1.522 (L5-Verdaguer)
+
+Iteration 108: extract E.21311   (Pau Claris -- L2-Passeig de Gràcia                                        ) with g=633 and h=644, f=1277
+
+Iteration 109: extract 1.422     (L4-Barceloneta                                                            ) with g=591 and h=689, f=1280
+  -> update 1.421     (L4-Ciutadella | Vila Olímpica                                             ): g inf -> 691 (w=100), h=767, f=1458 via 1.422 (L4-Barceloneta)
+  -> update E.1042201 (Ascensor - Plaça Pau Vila -- L4-Barceloneta                               ): g inf -> 651 (w=60), h=695, f=1346 via 1.422 (L4-Barceloneta)
+  -> update E.42201   (Plaça Pau Vila -- L4-Barceloneta                                          ): g inf -> 651 (w=60), h=699, f=1350 via 1.422 (L4-Barceloneta)
+
+Iteration 110: extract E.52312   (Plaça de la Sagrada Família -- L5-Sagrada Família                         ) with g=524 and h=767, f=1291
+
+Iteration 111: extract E.52311   (Sardenya -- L5-Sagrada Família                                            ) with g=524 and h=768, f=1292
+
+Iteration 112: extract 1.323     (L3-Paral·lel                                                              ) with g=741 and h=554, f=1295
+  -> update 1.322     (L3-Poble Sec                                                              ): g inf -> 839 (w=98), h=501, f=1340 via 1.323 (L3-Paral·lel)
+  -> update 1.9901    (FM-Paral·lel                                                              ): g inf -> 801 (w=60), h=547, f=1348 via 1.323 (L3-Paral·lel)
+
+Iteration 113: extract 1.328     (L3-Diagonal                                                               ) with g=649 and h=647, f=1296
+  -> update 1.329     (L3-Fontana                                                                ): g inf -> 758 (w=109), h=667, f=1425 via 1.328 (L3-Diagonal)
+  -> update E.1032801 (Ascensor - Pg. de Gràcia / Rambla Catalunya -- L3-Diagonal                ): g inf -> 709 (w=60), h=645, f=1354 via 1.328 (L3-Diagonal)
+  -> update E.32801   (Pg. de Gràcia / Rambla Catalunya -- L3-Diagonal                           ): g inf -> 709 (w=60), h=646, f=1355 via 1.328 (L3-Diagonal)
+  -> update E.32802   (Pg. de Gràcia / Pau Claris -- L3-Diagonal                                 ): g inf -> 709 (w=60), h=648, f=1357 via 1.328 (L3-Diagonal)
+  -> update E.32803   (Pg. de Gràcia (escala mecànica) -- L3-Diagonal                            ): g inf -> 709 (w=60), h=645, f=1354 via 1.328 (L3-Diagonal)
+  -> update E.32811   (Diagonal / Rambla Catalunya -- L3-Diagonal                                ): g inf -> 709 (w=60), h=647, f=1356 via 1.328 (L3-Diagonal)
+  -> update E.32812   (Diagonal / Pau Claris -- L3-Diagonal                                      ): g inf -> 709 (w=60), h=649, f=1358 via 1.328 (L3-Diagonal)
+
+Iteration 114: extract 1.426     (L4-Girona                                                                 ) with g=604 and h=692, f=1296
+  -> update E.1042601 (Ascensor - Consell de Cent -- L4-Girona                                   ): g inf -> 664 (w=60), h=692, f=1356 via 1.426 (L4-Girona)
+  -> update E.42601   (Consell de Cent -- L4-Girona                                              ): g inf -> 664 (w=60), h=691, f=1355 via 1.426 (L4-Girona)
+  -> update E.42602   (Girona -- L4-Girona                                                       ): g inf -> 664 (w=60), h=693, f=1357 via 1.426 (L4-Girona)
+
+Iteration 115: extract 1.215     (L2-Monumental                                                             ) with g=525 and h=776, f=1301
+  -> update 1.214     (L2-Tetuan                                                                 ): g 688 -> 630 (w=105), h=716, f=1346 via 1.215 (L2-Monumental)
+  -> update E.1021501 (Ascensor - Marina -- L2-Monumental                                        ): g inf -> 585 (w=60), h=775, f=1360 via 1.215 (L2-Monumental)
+  -> update E.21501   (Marina -- L2-Monumental                                                   ): g inf -> 585 (w=60), h=775, f=1360 via 1.215 (L2-Monumental)
+  -> update E.21502   (Marina / Plaça de Toros -- L2-Monumental                                  ): g inf -> 585 (w=60), h=777, f=1362 via 1.215 (L2-Monumental)
+
+Iteration 116: extract 1.521     (L5-Diagonal                                                               ) with g=673 and h=630, f=1303
+  -> update 1.520     (L5-Hospital Clínic                                                        ): g inf -> 780 (w=107), h=549, f=1329 via 1.521 (L5-Diagonal)
+  -> update E.1052101 (Ascensor - Rambla Catalunya -- L5-Diagonal                                ): g inf -> 733 (w=60), h=631, f=1364 via 1.521 (L5-Diagonal)
+  -> update E.52101   (Rambla Catalunya -- L5-Diagonal                                           ): g inf -> 733 (w=60), h=631, f=1364 via 1.521 (L5-Diagonal)
+  -> update E.52111   (Rosselló / FGC -- L5-Diagonal                                             ): g inf -> 733 (w=60), h=628, f=1361 via 1.521 (L5-Diagonal)
+
+Iteration 117: extract E.52301   (Provença / Avinguda Gaudí -- L5-Sagrada Família                           ) with g=524 and h=779, f=1303
+
+Iteration 118: extract E.1052301 (Ascensor - Provença / Avinguda Gaudí -- L5-Sagrada Família                ) with g=524 and h=780, f=1304
+
+Iteration 119: extract 1.210     (L2-Paral·lel                                                              ) with g=752 and h=555, f=1307
+  -> update E.1021002 (Ascensor - Avinguda Paral·lel -- L2-Paral·lel                             ): g inf -> 812 (w=60), h=559, f=1371 via 1.210 (L2-Paral·lel)
+  -> update E.21001   (Nou de la Rambla -- L2-Paral·lel                                          ): g inf -> 812 (w=60), h=563, f=1375 via 1.210 (L2-Paral·lel)
+  -> update E.21002   (Avinguda Paral·lel -- L2-Paral·lel                                        ): g inf -> 812 (w=60), h=561, f=1373 via 1.210 (L2-Paral·lel)
+  -> update E.21011   (Fontrodona -- L2-Paral·lel                                                ): g inf -> 812 (w=60), h=546, f=1358 via 1.210 (L2-Paral·lel)
+  -> update E.21012   (Ronda Sant Pau -- L2-Paral·lel                                            ): g inf -> 812 (w=60), h=549, f=1361 via 1.210 (L2-Paral·lel)
+
+Iteration 120: extract E.32411   (Drassanes -- L3-Drassanes                                                 ) with g=708 and h=604, f=1312
+
+Iteration 121: extract E.1032411 (Ascensor - Drassanes -- L3-Drassanes                                      ) with g=708 and h=605, f=1313
+
+Iteration 122: extract 1.120     (L1-Plaça de Sants                                                         ) with g=927 and h=386, f=1313
+  -> update 1.119     (L1-Mercat Nou                                                             ): g inf -> 1006 (w=79), h=347, f=1353 via 1.120 (L1-Plaça de Sants)
+  -> update 1.517     (L5-Plaça de Sants                                                         ): g inf -> 1137 (w=210), h=376, f=1513 via 1.120 (L1-Plaça de Sants)
+  -> update E.12001   (Alcolea (escala mecànica) -- L1-Plaça de Sants                            ): g inf -> 987 (w=60), h=382, f=1369 via 1.120 (L1-Plaça de Sants)
+  -> update E.12002   (Alcolea -- L1-Plaça de Sants                                              ): g inf -> 987 (w=60), h=383, f=1370 via 1.120 (L1-Plaça de Sants)
+  -> update E.12003   (Olzinelles -- L1-Plaça de Sants                                           ): g inf -> 987 (w=60), h=381, f=1368 via 1.120 (L1-Plaça de Sants)
+  -> update E.12011   (Cros -- L1-Plaça de Sants                                                 ): g inf -> 987 (w=60), h=387, f=1374 via 1.120 (L1-Plaça de Sants)
+  -> update E.12012   (Riego -- L1-Plaça de Sants                                                ): g inf -> 987 (w=60), h=388, f=1375 via 1.120 (L1-Plaça de Sants)
+
+Iteration 123: extract E.32403   (Santa Madrona -- L3-Drassanes                                             ) with g=708 and h=609, f=1317
+
+Iteration 124: extract E.1032401 (Ascensor - La Rambla -- L3-Drassanes                                      ) with g=708 and h=611, f=1319
+
+Iteration 125: extract E.32401   (La Rambla -- L3-Drassanes                                                 ) with g=708 and h=612, f=1320
+
+Iteration 126: extract E.12121   (Moianès -- L1-Hostafrancs                                                 ) with g=917 and h=404, f=1321
+
+Iteration 127: extract E.52211   (Avinguda Diagonal -- L5-Verdaguer                                         ) with g=632 and h=695, f=1327
+
+Iteration 128: extract E.12131   (Consell de Cent -- L1-Hostafrancs                                         ) with g=917 and h=410, f=1327
+
+Iteration 129: extract E.21911   (Bac de Roda -- L2-Bac de Roda                                             ) with g=369 and h=959, f=1328
+
+Iteration 130: extract E.52212   (Girona -- L5-Verdaguer                                                    ) with g=632 and h=697, f=1329
+
+Iteration 131: extract 1.520     (L5-Hospital Clínic                                                        ) with g=780 and h=549, f=1329
+  -> update 1.519     (L5-Entença                                                                ): g inf -> 870 (w=90), h=492, f=1362 via 1.520 (L5-Hospital Clínic)
+  -> update E.1052012 (Ascensor - Rosselló -- L5-Hospital Clínic                                 ): g inf -> 840 (w=60), h=544, f=1384 via 1.520 (L5-Hospital Clínic)
+  -> update E.52001   (Villarroel -- L5-Hospital Clínic                                          ): g inf -> 840 (w=60), h=553, f=1393 via 1.520 (L5-Hospital Clínic)
+  -> update E.52012   (Rosselló -- L5-Hospital Clínic                                            ): g inf -> 840 (w=60), h=545, f=1385 via 1.520 (L5-Hospital Clínic)
+
+Iteration 132: extract E.1012101 (Ascensor - Consell de Cent / Mercat -- L1-Hostafrancs                     ) with g=917 and h=413, f=1330
+
+Iteration 133: extract E.12111   (Hostafrancs -- L1-Hostafrancs                                             ) with g=917 and h=413, f=1330
+
+Iteration 134: extract E.12101   (Consell de Cent / Mercat -- L1-Hostafrancs                                ) with g=917 and h=414, f=1331
+
+Iteration 135: extract 1.133     (L1-La Sagrera                                                             ) with g=355 and h=977, f=1332
+  -> update 1.134     (L1-Fabra i Puig                                                           ): g inf -> 483 (w=128), h=1021, f=1504 via 1.133 (L1-La Sagrera)
+  -> update 1.526     (L5-La Sagrera                                                             ): g inf -> 400 (w=45), h=967, f=1367 via 1.133 (L1-La Sagrera)
+  -> update 1.9300    (L9N-La Sagrera                                                            ): g inf -> 505 (w=150), h=961, f=1466 via 1.133 (L1-La Sagrera)
+  -> update 1.9301    (L10N-La Sagrera                                                           ): g inf -> 505 (w=150), h=961, f=1466 via 1.133 (L1-La Sagrera)
+  -> update E.1013301 (Ascensor - Meridiana | Hondures -- L1-La Sagrera                          ): g inf -> 415 (w=60), h=975, f=1390 via 1.133 (L1-La Sagrera)
+  -> update E.1013302 (Ascensor - Garcilaso -- L1-La Sagrera                                     ): g inf -> 415 (w=60), h=972, f=1387 via 1.133 (L1-La Sagrera)
+  -> update E.1013311 (Ascensor - Jardins d'Elx -- L1-La Sagrera                                 ): g inf -> 415 (w=60), h=984, f=1399 via 1.133 (L1-La Sagrera)
+  -> update E.13301   (Meridiana | Hondures -- L1-La Sagrera                                     ): g inf -> 415 (w=60), h=973, f=1388 via 1.133 (L1-La Sagrera)
+  -> update E.13302   (Garcilaso -- L1-La Sagrera                                                ): g inf -> 415 (w=60), h=971, f=1386 via 1.133 (L1-La Sagrera)
+  -> update E.13303   (Hondures -- L1-La Sagrera                                                 ): g inf -> 415 (w=60), h=974, f=1389 via 1.133 (L1-La Sagrera)
+  -> update E.13311   (Jardins d'Elx -- L1-La Sagrera                                            ): g inf -> 415 (w=60), h=984, f=1399 via 1.133 (L1-La Sagrera)
+
+Iteration 136: extract 1.427     (L4-Verdaguer                                                              ) with g=617 and h=719, f=1336
+  -> update 1.428     (L4-Joanic                                                                 ): g inf -> 725 (w=108), h=745, f=1470 via 1.427 (L4-Verdaguer)
+  -> update E.42701   (Passeig Sant Joan -- L4-Verdaguer                                         ): g inf -> 677 (w=60), h=718, f=1395 via 1.427 (L4-Verdaguer)
+
+Iteration 137: extract E.52201   (Bailèn -- L5-Verdaguer                                                    ) with g=632 and h=706, f=1338
+
+Iteration 138: extract E.1021901 (Ascensor - Fluvià -- L2-Bac de Roda                                       ) with g=369 and h=970, f=1339
+
+Iteration 139: extract 1.322     (L3-Poble Sec                                                              ) with g=839 and h=501, f=1340
+  -> update 1.321     (L3-Espanya                                                                ): g 950 -> 933 (w=94), h=451, f=1384 via 1.322 (L3-Poble Sec)
+  -> update E.1032201 (Ascensor - Manso -- L3-Poble Sec                                          ): g inf -> 899 (w=60), h=496, f=1395 via 1.322 (L3-Poble Sec)
+  -> update E.32201   (Manso -- L3-Poble Sec                                                     ): g inf -> 899 (w=60), h=494, f=1393 via 1.322 (L3-Poble Sec)
+  -> update E.32202   (Teodor Bonaplata -- L3-Poble Sec                                          ): g inf -> 899 (w=60), h=492, f=1391 via 1.322 (L3-Poble Sec)
+  -> update E.32211   (Parlament -- L3-Poble Sec                                                 ): g inf -> 899 (w=60), h=508, f=1407 via 1.322 (L3-Poble Sec)
+
+Iteration 140: extract E.21901   (Fluvià -- L2-Bac de Roda                                                  ) with g=369 and h=971, f=1340
+
+Iteration 141: extract 1.214     (L2-Tetuan                                                                 ) with g=630 and h=716, f=1346
+  -> update E.1021402 (Ascensor - Casp / Passeig de Sant Joan -- L2-Tetuan                       ): g inf -> 690 (w=60), h=710, f=1400 via 1.214 (L2-Tetuan)
+  -> update E.21401   (Diputació / Passeig de Sant Joan -- L2-Tetuan                             ): g inf -> 690 (w=60), h=712, f=1402 via 1.214 (L2-Tetuan)
+  -> update E.21402   (Casp / Passeig de Sant Joan -- L2-Tetuan                                  ): g inf -> 690 (w=60), h=712, f=1402 via 1.214 (L2-Tetuan)
+
+Iteration 142: extract E.1042201 (Ascensor - Plaça Pau Vila -- L4-Barceloneta                               ) with g=651 and h=695, f=1346
+
+Iteration 143: extract 1.9901    (FM-Paral·lel                                                              ) with g=801 and h=547, f=1348
+  -> update 1.9902    (FM-Parc de Montjuïc                                                       ): g inf -> 942 (w=141), h=486, f=1428 via 1.9901 (FM-Paral·lel)
+
+Iteration 144: extract E.42201   (Plaça Pau Vila -- L4-Barceloneta                                          ) with g=651 and h=699, f=1350
+
+Iteration 145: extract 1.119     (L1-Mercat Nou                                                             ) with g=1006 and h=347, f=1353
+  -> update 1.118     (L1-Santa Eulàlia                                                          ): g inf -> 1097 (w=91), h=292, f=1389 via 1.119 (L1-Mercat Nou)
+  -> update E.11901   (Riera de Tena -- L1-Mercat Nou                                            ): g inf -> 1066 (w=60), h=342, f=1408 via 1.119 (L1-Mercat Nou)
+
+Iteration 146: extract E.1032801 (Ascensor - Pg. de Gràcia / Rambla Catalunya -- L3-Diagonal                ) with g=709 and h=645, f=1354
+
+Iteration 147: extract E.32803   (Pg. de Gràcia (escala mecànica) -- L3-Diagonal                            ) with g=709 and h=645, f=1354
+
+Iteration 148: extract E.32801   (Pg. de Gràcia / Rambla Catalunya -- L3-Diagonal                           ) with g=709 and h=646, f=1355
+
+Iteration 149: extract E.42601   (Consell de Cent -- L4-Girona                                              ) with g=664 and h=691, f=1355
+
+Iteration 150: extract E.32811   (Diagonal / Rambla Catalunya -- L3-Diagonal                                ) with g=709 and h=647, f=1356
+
+Iteration 151: extract E.1042601 (Ascensor - Consell de Cent -- L4-Girona                                   ) with g=664 and h=692, f=1356
+
+Iteration 152: extract E.42602   (Girona -- L4-Girona                                                       ) with g=664 and h=693, f=1357
+
+Iteration 153: extract E.32802   (Pg. de Gràcia / Pau Claris -- L3-Diagonal                                 ) with g=709 and h=648, f=1357
+
+Iteration 154: extract E.21011   (Fontrodona -- L2-Paral·lel                                                ) with g=812 and h=546, f=1358
+
+Iteration 155: extract E.32812   (Diagonal / Pau Claris -- L3-Diagonal                                      ) with g=709 and h=649, f=1358
+
+Iteration 156: extract E.1021501 (Ascensor - Marina -- L2-Monumental                                        ) with g=585 and h=775, f=1360
+
+Iteration 157: extract E.21501   (Marina -- L2-Monumental                                                   ) with g=585 and h=775, f=1360
+
+Iteration 158: extract E.21012   (Ronda Sant Pau -- L2-Paral·lel                                            ) with g=812 and h=549, f=1361
+
+Iteration 159: extract E.52111   (Rosselló / FGC -- L5-Diagonal                                             ) with g=733 and h=628, f=1361
+
+Iteration 160: extract E.21502   (Marina / Plaça de Toros -- L2-Monumental                                  ) with g=585 and h=777, f=1362
+
+Iteration 161: extract 1.519     (L5-Entença                                                                ) with g=870 and h=492, f=1362
+  -> update 1.518     (L5-Sants Estació                                                          ): g inf -> 966 (w=96), h=433, f=1399 via 1.519 (L5-Entença)
+  -> update E.1051901 (Ascensor - Rocafort -- L5-Entença                                         ): g inf -> 930 (w=60), h=495, f=1425 via 1.519 (L5-Entença)
+  -> update E.51901   (Rocafort -- L5-Entença                                                    ): g inf -> 930 (w=60), h=498, f=1428 via 1.519 (L5-Entença)
+  -> update E.51911   (Entença -- L5-Entença                                                     ): g inf -> 930 (w=60), h=486, f=1416 via 1.519 (L5-Entença)
+
+Iteration 162: extract E.1052101 (Ascensor - Rambla Catalunya -- L5-Diagonal                                ) with g=733 and h=631, f=1364
+
+Iteration 163: extract E.52101   (Rambla Catalunya -- L5-Diagonal                                           ) with g=733 and h=631, f=1364
+
+Iteration 164: extract 1.526     (L5-La Sagrera                                                             ) with g=400 and h=967, f=1367
+  -> update 1.525     (L5-Camp de l'Arpa                                                         ): g inf -> 529 (w=129), h=895, f=1424 via 1.526 (L5-La Sagrera)
+  -> update 1.527     (L5-Congrés                                                                ): g inf -> 494 (w=94), h=960, f=1454 via 1.526 (L5-La Sagrera)
+  -> update 1.9300    (L9N-La Sagrera                                                            ): g 505 -> 490 (w=90), h=961, f=1451 via 1.526 (L5-La Sagrera)
+  -> update 1.9301    (L10N-La Sagrera                                                           ): g 505 -> 490 (w=90), h=961, f=1451 via 1.526 (L5-La Sagrera)
+  -> update E.1052611 (Ascensor - Felip II -- L5-La Sagrera                                      ): g inf -> 460 (w=60), h=961, f=1421 via 1.526 (L5-La Sagrera)
+  -> update E.52611   (Felip II -- L5-La Sagrera                                                 ): g inf -> 460 (w=60), h=960, f=1420 via 1.526 (L5-La Sagrera)
+
+Iteration 165: extract E.12003   (Olzinelles -- L1-Plaça de Sants                                           ) with g=987 and h=381, f=1368
+
+Iteration 166: extract E.12001   (Alcolea (escala mecànica) -- L1-Plaça de Sants                            ) with g=987 and h=382, f=1369
+
+Iteration 167: extract E.12002   (Alcolea -- L1-Plaça de Sants                                              ) with g=987 and h=383, f=1370
+
+Iteration 168: extract E.1021002 (Ascensor - Avinguda Paral·lel -- L2-Paral·lel                             ) with g=812 and h=559, f=1371
+
+Iteration 169: extract E.21002   (Avinguda Paral·lel -- L2-Paral·lel                                        ) with g=812 and h=561, f=1373
+
+Iteration 170: extract E.12011   (Cros -- L1-Plaça de Sants                                                 ) with g=987 and h=387, f=1374
+
+Iteration 171: extract E.12012   (Riego -- L1-Plaça de Sants                                                ) with g=987 and h=388, f=1375
+
+Iteration 172: extract E.21001   (Nou de la Rambla -- L2-Paral·lel                                          ) with g=812 and h=563, f=1375
+
+Iteration 173: extract 1.321     (L3-Espanya                                                                ) with g=933 and h=451, f=1384
+  -> update 1.320     (L3-Tarragona                                                              ): g inf -> 1026 (w=93), h=444, f=1470 via 1.321 (L3-Espanya)
+  -> update E.1032101 (Ascensor - Avinguda Paral·lel -- L3-Espanya                               ): g inf -> 993 (w=60), h=445, f=1438 via 1.321 (L3-Espanya)
+  -> update E.32101   (Avinguda Paral·lel -- L3-Espanya                                          ): g inf -> 993 (w=60), h=445, f=1438 via 1.321 (L3-Espanya)
+  -> update E.32102   (Exposició -- L3-Espanya                                                   ): g inf -> 993 (w=60), h=442, f=1435 via 1.321 (L3-Espanya)
+
+Iteration 174: extract E.1052012 (Ascensor - Rosselló -- L5-Hospital Clínic                                 ) with g=840 and h=544, f=1384
+
+Iteration 175: extract E.52012   (Rosselló -- L5-Hospital Clínic                                            ) with g=840 and h=545, f=1385
+
+Iteration 176: extract E.13302   (Garcilaso -- L1-La Sagrera                                                ) with g=415 and h=971, f=1386
+
+Iteration 177: extract E.1013302 (Ascensor - Garcilaso -- L1-La Sagrera                                     ) with g=415 and h=972, f=1387
+
+Iteration 178: extract E.13301   (Meridiana | Hondures -- L1-La Sagrera                                     ) with g=415 and h=973, f=1388
+
+Iteration 179: extract E.13303   (Hondures -- L1-La Sagrera                                                 ) with g=415 and h=974, f=1389
+
+Iteration 180: extract 1.118     (L1-Santa Eulàlia                                                          ) with g=1097 and h=292, f=1389
+  -> update 1.117     (L1-Torrassa                                                               ): g inf -> 1213 (w=116), h=249, f=1462 via 1.118 (L1-Santa Eulàlia)
+  -> update E.11801   (Pont de la Torrassa -- L1-Santa Eulàlia                                   ): g inf -> 1157 (w=60), h=285, f=1442 via 1.118 (L1-Santa Eulàlia)
+  -> update E.11811   (Riera Blanca -- L1-Santa Eulàlia                                          ): g inf -> 1157 (w=60), h=306, f=1463 via 1.118 (L1-Santa Eulàlia)
+
+Iteration 181: extract E.1013301 (Ascensor - Meridiana | Hondures -- L1-La Sagrera                          ) with g=415 and h=975, f=1390
+
+Iteration 182: extract E.32202   (Teodor Bonaplata -- L3-Poble Sec                                          ) with g=899 and h=492, f=1391
+
+Iteration 183: extract E.52001   (Villarroel -- L5-Hospital Clínic                                          ) with g=840 and h=553, f=1393
+
+Iteration 184: extract E.32201   (Manso -- L3-Poble Sec                                                     ) with g=899 and h=494, f=1393
+
+Iteration 185: extract E.42701   (Passeig Sant Joan -- L4-Verdaguer                                         ) with g=677 and h=718, f=1395
+
+Iteration 186: extract E.1032201 (Ascensor - Manso -- L3-Poble Sec                                          ) with g=899 and h=496, f=1395
+
+Iteration 187: extract 1.518     (L5-Sants Estació                                                          ) with g=966 and h=433, f=1399
+  -> update 1.319     (L3-Sants Estació                                                          ): g inf -> 1011 (w=45), h=448, f=1459 via 1.518 (L5-Sants Estació)
+  -> update 1.517     (L5-Plaça de Sants                                                         ): g 1137 -> 1060 (w=94), h=376, f=1436 via 1.518 (L5-Sants Estació)
+  -> update E.1051802 (Ascensor - Estació RENFE / Pl. Països Catalans -- L5-Sants Estació        ): g inf -> 1026 (w=60), h=427, f=1453 via 1.518 (L5-Sants Estació)
+  -> update E.51801   (Estació RENFE / Pl. Joan Peiró -- L5-Sants Estació                        ): g inf -> 1026 (w=60), h=425, f=1451 via 1.518 (L5-Sants Estació)
+  -> update E.51802   (Estació RENFE / Pl. Països Catalans -- L5-Sants Estació                   ): g inf -> 1026 (w=60), h=429, f=1455 via 1.518 (L5-Sants Estació)
+
+Iteration 188: extract E.1013311 (Ascensor - Jardins d'Elx -- L1-La Sagrera                                 ) with g=415 and h=984, f=1399
+
+Iteration 189: extract E.13311   (Jardins d'Elx -- L1-La Sagrera                                            ) with g=415 and h=984, f=1399
+
+Iteration 190: extract E.1021402 (Ascensor - Casp / Passeig de Sant Joan -- L2-Tetuan                       ) with g=690 and h=710, f=1400
+
+Iteration 191: extract E.21402   (Casp / Passeig de Sant Joan -- L2-Tetuan                                  ) with g=690 and h=712, f=1402
+
+Iteration 192: extract E.21401   (Diputació / Passeig de Sant Joan -- L2-Tetuan                             ) with g=690 and h=712, f=1402
+
+Iteration 193: extract 1.220     (L2-Sant Martí                                                             ) with g=385 and h=1018, f=1403
+  -> update 1.221     (L2-La Pau                                                                 ): g inf -> 478 (w=93), h=1079, f=1557 via 1.220 (L2-Sant Martí)
+  -> update E.1022001 (Ascensor - Agricultura -- L2-Sant Martí                                   ): g inf -> 445 (w=60), h=1012, f=1457 via 1.220 (L2-Sant Martí)
+  -> update E.22001   (Agricultura -- L2-Sant Martí                                              ): g inf -> 445 (w=60), h=1011, f=1456 via 1.220 (L2-Sant Martí)
+  -> update E.22011   (Cantàbria -- L2-Sant Martí                                                ): g inf -> 445 (w=60), h=1023, f=1468 via 1.220 (L2-Sant Martí)
+
+Iteration 194: extract E.32211   (Parlament -- L3-Poble Sec                                                 ) with g=899 and h=508, f=1407
+
+Iteration 195: extract 1.524     (L5-Sant Pau | Dos de Maig                                                 ) with g=571 and h=836, f=1407
+  -> update E.1052401 (Ascensor - Dos de Maig -- L5-Sant Pau | Dos de Maig                       ): g inf -> 631 (w=60), h=843, f=1474 via 1.524 (L5-Sant Pau | Dos de Maig)
+  -> update E.52401   (Dos de Maig -- L5-Sant Pau | Dos de Maig                                  ): g inf -> 631 (w=60), h=841, f=1472 via 1.524 (L5-Sant Pau | Dos de Maig)
+  -> update E.52411   (Cartagena -- L5-Sant Pau | Dos de Maig                                    ): g inf -> 631 (w=60), h=829, f=1460 via 1.524 (L5-Sant Pau | Dos de Maig)
+
+Iteration 196: extract E.11901   (Riera de Tena -- L1-Mercat Nou                                            ) with g=1066 and h=342, f=1408
+
+Iteration 197: extract E.51911   (Entença -- L5-Entença                                                     ) with g=930 and h=486, f=1416
+
+Iteration 198: extract E.52611   (Felip II -- L5-La Sagrera                                                 ) with g=460 and h=960, f=1420
+
+Iteration 199: extract E.1052611 (Ascensor - Felip II -- L5-La Sagrera                                      ) with g=460 and h=961, f=1421
+
+Iteration 200: extract 1.525     (L5-Camp de l'Arpa                                                         ) with g=529 and h=895, f=1424
+  -> update E.1052501 (Ascensor - Passeig Maragall -- L5-Camp de l'Arpa                          ): g inf -> 589 (w=60), h=890, f=1479 via 1.525 (L5-Camp de l'Arpa)
+  -> update E.52501   (Passeig Maragall -- L5-Camp de l'Arpa                                     ): g inf -> 589 (w=60), h=890, f=1479 via 1.525 (L5-Camp de l'Arpa)
+  -> update E.52511   (Indústria -- L5-Camp de l'Arpa                                            ): g inf -> 589 (w=60), h=897, f=1486 via 1.525 (L5-Camp de l'Arpa)
+
+Iteration 201: extract 1.329     (L3-Fontana                                                                ) with g=758 and h=667, f=1425
+  -> update 1.330     (L3-Lesseps                                                                ): g inf -> 835 (w=77), h=690, f=1525 via 1.329 (L3-Fontana)
+  -> update E.32901   (Gran de Gràcia / Astúries -- L3-Fontana                                   ): g inf -> 818 (w=60), h=671, f=1489 via 1.329 (L3-Fontana)
+
+Iteration 202: extract E.1051901 (Ascensor - Rocafort -- L5-Entença                                         ) with g=930 and h=495, f=1425
+
+Iteration 203: extract E.51901   (Rocafort -- L5-Entença                                                    ) with g=930 and h=498, f=1428
+
+Iteration 204: extract 1.9902    (FM-Parc de Montjuïc                                                       ) with g=942 and h=486, f=1428
+  -> update E.990201  (Avinguda Miramar -- FM-Parc de Montjuïc                                   ): g inf -> 1002 (w=60), h=484, f=1486 via 1.9902 (FM-Parc de Montjuïc)
+
+Iteration 205: extract E.32102   (Exposició -- L3-Espanya                                                   ) with g=993 and h=442, f=1435
+
+Iteration 206: extract 1.517     (L5-Plaça de Sants                                                         ) with g=1060 and h=376, f=1436
+  -> update 1.516     (L5-Badal                                                                  ): g inf -> 1145 (w=85), h=345, f=1490 via 1.517 (L5-Plaça de Sants)
+  -> update E.51701   (Plaça de Sants -- L5-Plaça de Sants                                       ): g inf -> 1120 (w=60), h=375, f=1495 via 1.517 (L5-Plaça de Sants)
+  -> update E.51702   (Galileu -- L5-Plaça de Sants                                              ): g inf -> 1120 (w=60), h=377, f=1497 via 1.517 (L5-Plaça de Sants)
+
+Iteration 207: extract E.1032101 (Ascensor - Avinguda Paral·lel -- L3-Espanya                               ) with g=993 and h=445, f=1438
+
+Iteration 208: extract E.32101   (Avinguda Paral·lel -- L3-Espanya                                          ) with g=993 and h=445, f=1438
+
+Iteration 209: extract E.11801   (Pont de la Torrassa -- L1-Santa Eulàlia                                   ) with g=1157 and h=285, f=1442
+
+Iteration 210: extract E.51801   (Estació RENFE / Pl. Joan Peiró -- L5-Sants Estació                        ) with g=1026 and h=425, f=1451
+
+Iteration 211: extract 1.9300    (L9N-La Sagrera                                                            ) with g=490 and h=961, f=1451
+  -> update 1.9320    (L9N-Onze de Setembre                                                      ): g inf -> 673 (w=183), h=1063, f=1736 via 1.9300 (L9N-La Sagrera)
+
+Iteration 212: extract 1.9301    (L10N-La Sagrera                                                           ) with g=490 and h=961, f=1451
+  -> update 1.9321    (L10N-Onze de Setembre                                                     ): g inf -> 673 (w=183), h=1063, f=1736 via 1.9301 (L10N-La Sagrera)
+
+Iteration 213: extract E.1051802 (Ascensor - Estació RENFE / Pl. Països Catalans -- L5-Sants Estació        ) with g=1026 and h=427, f=1453
+
+Iteration 214: extract 1.527     (L5-Congrés                                                                ) with g=494 and h=960, f=1454
+  -> update 1.528     (L5-Maragall                                                               ): g inf -> 573 (w=79), h=953, f=1526 via 1.527 (L5-Congrés)
+  -> update E.1052701 (Ascensor - Matanzas -- L5-Congrés                                         ): g inf -> 554 (w=60), h=963, f=1517 via 1.527 (L5-Congrés)
+  -> update E.52701   (Matanzas -- L5-Congrés                                                    ): g inf -> 554 (w=60), h=964, f=1518 via 1.527 (L5-Congrés)
+  -> update E.52711   (Francesc Tàrrega -- L5-Congrés                                            ): g inf -> 554 (w=60), h=959, f=1513 via 1.527 (L5-Congrés)
+
+Iteration 215: extract E.51802   (Estació RENFE / Pl. Països Catalans -- L5-Sants Estació                   ) with g=1026 and h=429, f=1455
+
+Iteration 216: extract E.22001   (Agricultura -- L2-Sant Martí                                              ) with g=445 and h=1011, f=1456
+
+Iteration 217: extract E.1022001 (Ascensor - Agricultura -- L2-Sant Martí                                   ) with g=445 and h=1012, f=1457
+
+Iteration 218: extract 1.421     (L4-Ciutadella | Vila Olímpica                                             ) with g=691 and h=767, f=1458
+  -> update 1.420     (L4-Bogatell                                                               ): g inf -> 835 (w=144), h=810, f=1645 via 1.421 (L4-Ciutadella | Vila Olímpica)
+  -> update E.42101   (Avinguda Icària -- L4-Ciutadella | Vila Olímpica                          ): g inf -> 751 (w=60), h=776, f=1527 via 1.421 (L4-Ciutadella | Vila Olímpica)
+  -> update E.42102   (Zoo -- L4-Ciutadella | Vila Olímpica                                      ): g inf -> 751 (w=60), h=775, f=1526 via 1.421 (L4-Ciutadella | Vila Olímpica)
+
+Iteration 219: extract 1.319     (L3-Sants Estació                                                          ) with g=1011 and h=448, f=1459
+  -> update 1.318     (L3-Plaça del Centre                                                       ): g inf -> 1099 (w=88), h=431, f=1530 via 1.319 (L3-Sants Estació)
+  -> update E.1031901 (Ascensor - Pl. Països Catalans / Numància / Ambulatori -- L3-Sants Estació): g inf -> 1071 (w=60), h=445, f=1516 via 1.319 (L3-Sants Estació)
+  -> update E.31901   (Pl. Països Catalans / Numància / Ambulatori -- L3-Sants Estació           ): g inf -> 1071 (w=60), h=446, f=1517 via 1.319 (L3-Sants Estació)
+  -> update E.31902   (Av. Josep Tarradellas -- L3-Sants Estació                                 ): g inf -> 1071 (w=60), h=449, f=1520 via 1.319 (L3-Sants Estació)
+  -> update E.31911   (Numància -- L3-Sants Estació                                              ): g inf -> 1071 (w=60), h=451, f=1522 via 1.319 (L3-Sants Estació)
+  -> update E.31912   (Dolors Batlle i Sunyer -- L3-Sants Estació                                ): g inf -> 1071 (w=60), h=448, f=1519 via 1.319 (L3-Sants Estació)
+
+Iteration 220: extract E.52411   (Cartagena -- L5-Sant Pau | Dos de Maig                                    ) with g=631 and h=829, f=1460
+
+Iteration 221: extract 1.117     (L1-Torrassa                                                               ) with g=1213 and h=249, f=1462
+  -> update 1.116     (L1-Florida                                                                ): g inf -> 1296 (w=83), h=238, f=1534 via 1.117 (L1-Torrassa)
+  -> update 1.9150    (L9S-Torrassa                                                              ): g inf -> 1258 (w=45), h=246, f=1504 via 1.117 (L1-Torrassa)
+  -> update 1.9151    (L10S-Torrassa                                                             ): g inf -> 1258 (w=45), h=246, f=1504 via 1.117 (L1-Torrassa)
+  -> update E.1011711 (Ascensor - Av. Catalunya -- L1-Torrassa                                   ): g inf -> 1273 (w=60), h=251, f=1524 via 1.117 (L1-Torrassa)
+  -> update E.11711   (Av. Catalunya -- L1-Torrassa                                              ): g inf -> 1273 (w=60), h=250, f=1523 via 1.117 (L1-Torrassa)
+  -> update E.11712   (Rosalía de Castro -- L1-Torrassa                                          ): g inf -> 1273 (w=60), h=247, f=1520 via 1.117 (L1-Torrassa)
+
+Iteration 222: extract E.11811   (Riera Blanca -- L1-Santa Eulàlia                                          ) with g=1157 and h=306, f=1463
+
+Iteration 223: extract E.22011   (Cantàbria -- L2-Sant Martí                                                ) with g=445 and h=1023, f=1468
+
+Iteration 224: extract 1.428     (L4-Joanic                                                                 ) with g=725 and h=745, f=1470
+  -> update 1.429     (L4-Alfons X                                                               ): g inf -> 818 (w=93), h=807, f=1625 via 1.428 (L4-Joanic)
+  -> update E.1042801 (Ascensor - Escorial -- L4-Joanic                                          ): g inf -> 785 (w=60), h=739, f=1524 via 1.428 (L4-Joanic)
+  -> update E.42801   (Escorial -- L4-Joanic                                                     ): g inf -> 785 (w=60), h=740, f=1525 via 1.428 (L4-Joanic)
+  -> update E.42802   (Pi i Margall -- L4-Joanic                                                 ): g inf -> 785 (w=60), h=739, f=1524 via 1.428 (L4-Joanic)
+
+Iteration 225: extract 1.320     (L3-Tarragona                                                              ) with g=1026 and h=444, f=1470
+  -> update E.1032004 (Ascensor - Aragó -- L3-Tarragona                                          ): g inf -> 1086 (w=60), h=444, f=1530 via 1.320 (L3-Tarragona)
+  -> update E.32001   (Elisi -- L3-Tarragona                                                     ): g inf -> 1086 (w=60), h=442, f=1528 via 1.320 (L3-Tarragona)
+  -> update E.32002   (València -- L3-Tarragona                                                  ): g inf -> 1086 (w=60), h=446, f=1532 via 1.320 (L3-Tarragona)
+  -> update E.32003   (Tarragona -- L3-Tarragona                                                 ): g inf -> 1086 (w=60), h=441, f=1527 via 1.320 (L3-Tarragona)
+  -> update E.32004   (Aragó -- L3-Tarragona                                                     ): g inf -> 1086 (w=60), h=446, f=1532 via 1.320 (L3-Tarragona)
+
+Iteration 226: extract E.52401   (Dos de Maig -- L5-Sant Pau | Dos de Maig                                  ) with g=631 and h=841, f=1472
+
+Iteration 227: extract E.1052401 (Ascensor - Dos de Maig -- L5-Sant Pau | Dos de Maig                       ) with g=631 and h=843, f=1474
+
+Iteration 228: extract E.52501   (Passeig Maragall -- L5-Camp de l'Arpa                                     ) with g=589 and h=890, f=1479
+
+Iteration 229: extract E.1052501 (Ascensor - Passeig Maragall -- L5-Camp de l'Arpa                          ) with g=589 and h=890, f=1479
+
+Iteration 230: extract E.990201  (Avinguda Miramar -- FM-Parc de Montjuïc                                   ) with g=1002 and h=484, f=1486
+
+Iteration 231: extract E.52511   (Indústria -- L5-Camp de l'Arpa                                            ) with g=589 and h=897, f=1486
+
+Iteration 232: extract E.32901   (Gran de Gràcia / Astúries -- L3-Fontana                                   ) with g=818 and h=671, f=1489
+
+Iteration 233: extract 1.516     (L5-Badal                                                                  ) with g=1145 and h=345, f=1490
+  -> update 1.515     (L5-Collblanc                                                              ): g inf -> 1233 (w=88), h=324, f=1557 via 1.516 (L5-Badal)
+  -> update E.1051611 (Ascensor - Carrer de Sants / Arizala -- L5-Badal                          ): g inf -> 1205 (w=60), h=344, f=1549 via 1.516 (L5-Badal)
+  -> update E.51601   (Carrer de Sants -- L5-Badal                                               ): g inf -> 1205 (w=60), h=350, f=1555 via 1.516 (L5-Badal)
+  -> update E.51602   (Carreras i Candi -- L5-Badal                                              ): g inf -> 1205 (w=60), h=340, f=1545 via 1.516 (L5-Badal)
+  -> update E.51611   (Carrer de Sants / Arizala -- L5-Badal                                     ): g inf -> 1205 (w=60), h=342, f=1547 via 1.516 (L5-Badal)
+
+Iteration 234: extract E.51701   (Plaça de Sants -- L5-Plaça de Sants                                       ) with g=1120 and h=375, f=1495
+
+Iteration 235: extract E.51702   (Galileu -- L5-Plaça de Sants                                              ) with g=1120 and h=377, f=1497
+
+Iteration 236: extract 1.9150    (L9S-Torrassa                                                              ) with g=1258 and h=246, f=1504
+  -> update 1.9140    (L9S-Can Tries | Gornal                                                    ): g inf -> 1371 (w=113), h=184, f=1555 via 1.9150 (L9S-Torrassa)
+  -> update 1.9160    (L9S-Collblanc                                                             ): g inf -> 1358 (w=100), h=326, f=1684 via 1.9150 (L9S-Torrassa)
+
+Iteration 237: extract 1.9151    (L10S-Torrassa                                                             ) with g=1258 and h=246, f=1504
+  -> update 1.9141    (L10S-Can Tries | Gornal                                                   ): g inf -> 1371 (w=113), h=184, f=1555 via 1.9151 (L10S-Torrassa)
+  -> update 1.9161    (L10S-Collblanc                                                            ): g inf -> 1358 (w=100), h=326, f=1684 via 1.9151 (L10S-Torrassa)
+
+Iteration 238: extract 1.134     (L1-Fabra i Puig                                                           ) with g=483 and h=1021, f=1504
+  -> update 1.135     (L1-Sant Andreu                                                            ): g inf -> 617 (w=134), h=1109, f=1726 via 1.134 (L1-Fabra i Puig)
+  -> update E.1013411 (Ascensor - Concepción Arenal -- L1-Fabra i Puig                           ): g inf -> 543 (w=60), h=1019, f=1562 via 1.134 (L1-Fabra i Puig)
+  -> update E.13401   (Passeig Fabra i Puig -- L1-Fabra i Puig                                   ): g inf -> 543 (w=60), h=1027, f=1570 via 1.134 (L1-Fabra i Puig)
+  -> update E.13402   (Sòcrates -- L1-Fabra i Puig                                               ): g inf -> 543 (w=60), h=1034, f=1577 via 1.134 (L1-Fabra i Puig)
+  -> update E.13403   (Avinguda Meridiana -- L1-Fabra i Puig                                     ): g inf -> 543 (w=60), h=1024, f=1567 via 1.134 (L1-Fabra i Puig)
+  -> update E.13404   (Renfe -- L1-Fabra i Puig                                                  ): g inf -> 543 (w=60), h=1029, f=1572 via 1.134 (L1-Fabra i Puig)
+  -> update E.13411   (Concepción Arenal -- L1-Fabra i Puig                                      ): g inf -> 543 (w=60), h=1018, f=1561 via 1.134 (L1-Fabra i Puig)
+
+Iteration 239: extract E.52711   (Francesc Tàrrega -- L5-Congrés                                            ) with g=554 and h=959, f=1513
+
+Iteration 240: extract E.1031901 (Ascensor - Pl. Països Catalans / Numància / Ambulatori -- L3-Sants Estació) with g=1071 and h=445, f=1516
+
+Iteration 241: extract E.1052701 (Ascensor - Matanzas -- L5-Congrés                                         ) with g=554 and h=963, f=1517
+
+Iteration 242: extract E.31901   (Pl. Països Catalans / Numància / Ambulatori -- L3-Sants Estació           ) with g=1071 and h=446, f=1517
+
+Iteration 243: extract E.52701   (Matanzas -- L5-Congrés                                                    ) with g=554 and h=964, f=1518
+
+Iteration 244: extract E.31912   (Dolors Batlle i Sunyer -- L3-Sants Estació                                ) with g=1071 and h=448, f=1519
+
+Iteration 245: extract E.31902   (Av. Josep Tarradellas -- L3-Sants Estació                                 ) with g=1071 and h=449, f=1520
+
+Iteration 246: extract E.11712   (Rosalía de Castro -- L1-Torrassa                                          ) with g=1273 and h=247, f=1520
+
+Iteration 247: extract E.31911   (Numància -- L3-Sants Estació                                              ) with g=1071 and h=451, f=1522
+
+Iteration 248: extract E.11711   (Av. Catalunya -- L1-Torrassa                                              ) with g=1273 and h=250, f=1523
+
+Iteration 249: extract E.1042801 (Ascensor - Escorial -- L4-Joanic                                          ) with g=785 and h=739, f=1524
+
+Iteration 250: extract E.1011711 (Ascensor - Av. Catalunya -- L1-Torrassa                                   ) with g=1273 and h=251, f=1524
+
+Iteration 251: extract E.42802   (Pi i Margall -- L4-Joanic                                                 ) with g=785 and h=739, f=1524
+
+Iteration 252: extract E.42801   (Escorial -- L4-Joanic                                                     ) with g=785 and h=740, f=1525
+
+Iteration 253: extract 1.330     (L3-Lesseps                                                                ) with g=835 and h=690, f=1525
+  -> update 1.331     (L3-Vallcarca                                                              ): g inf -> 937 (w=102), h=726, f=1663 via 1.330 (L3-Lesseps)
+  -> update E.1033011 (Ascensor - Plaça Lesseps -- L3-Lesseps                                    ): g inf -> 895 (w=60), h=695, f=1590 via 1.330 (L3-Lesseps)
+  -> update E.33001   (Septimània -- L3-Lesseps                                                  ): g inf -> 895 (w=60), h=691, f=1586 via 1.330 (L3-Lesseps)
+  -> update E.33011   (Plaça Lesseps -- L3-Lesseps                                               ): g inf -> 895 (w=60), h=697, f=1592 via 1.330 (L3-Lesseps)
+
+Iteration 254: extract E.42102   (Zoo -- L4-Ciutadella | Vila Olímpica                                      ) with g=751 and h=775, f=1526
+
+Iteration 255: extract 1.528     (L5-Maragall                                                               ) with g=573 and h=953, f=1526
+  -> update 1.431     (L4-Maragall                                                               ): g inf -> 723 (w=150), h=941, f=1664 via 1.528 (L5-Maragall)
+  -> update 1.529     (L5-Virrei Amat                                                            ): g inf -> 658 (w=85), h=986, f=1644 via 1.528 (L5-Maragall)
+  -> update E.1052801 (Ascensor - Ramon Albó -- L5-Maragall                                      ): g inf -> 633 (w=60), h=952, f=1585 via 1.528 (L5-Maragall)
+  -> update E.52801   (Ramon Albó -- L5-Maragall                                                 ): g inf -> 633 (w=60), h=951, f=1584 via 1.528 (L5-Maragall)
+  -> update E.52811   (Avinguda dels Quinze -- L5-Maragall                                       ): g inf -> 633 (w=60), h=957, f=1590 via 1.528 (L5-Maragall)
+  -> update E.52812   (Prat d'en Roquer -- L5-Maragall                                           ): g inf -> 633 (w=60), h=957, f=1590 via 1.528 (L5-Maragall)
+
+Iteration 256: extract E.32003   (Tarragona -- L3-Tarragona                                                 ) with g=1086 and h=441, f=1527
+
+Iteration 257: extract E.42101   (Avinguda Icària -- L4-Ciutadella | Vila Olímpica                          ) with g=751 and h=776, f=1527
+
+Iteration 258: extract E.32001   (Elisi -- L3-Tarragona                                                     ) with g=1086 and h=442, f=1528
+
+Iteration 259: extract E.1032004 (Ascensor - Aragó -- L3-Tarragona                                          ) with g=1086 and h=444, f=1530
+
+Iteration 260: extract 1.318     (L3-Plaça del Centre                                                       ) with g=1099 and h=431, f=1530
+  -> update 1.317     (L3-Les Corts                                                              ): g inf -> 1195 (w=96), h=433, f=1628 via 1.318 (L3-Plaça del Centre)
+  -> update E.1031801 (Ascensor - Plaça del Centre (mar) -- L3-Plaça del Centre                  ): g inf -> 1159 (w=60), h=429, f=1588 via 1.318 (L3-Plaça del Centre)
+  -> update E.31801   (Plaça del Centre (mar) -- L3-Plaça del Centre                             ): g inf -> 1159 (w=60), h=429, f=1588 via 1.318 (L3-Plaça del Centre)
+  -> update E.31802   (Plaça del Centre (muntanya) -- L3-Plaça del Centre                        ): g inf -> 1159 (w=60), h=431, f=1590 via 1.318 (L3-Plaça del Centre)
+
+Iteration 261: extract E.32004   (Aragó -- L3-Tarragona                                                     ) with g=1086 and h=446, f=1532
+
+Iteration 262: extract E.32002   (València -- L3-Tarragona                                                  ) with g=1086 and h=446, f=1532
+
+Iteration 263: extract 1.116     (L1-Florida                                                                ) with g=1296 and h=238, f=1534
+  -> update 1.115     (L1-Can Serra                                                              ): g inf -> 1379 (w=83), h=233, f=1612 via 1.116 (L1-Florida)
+  -> update E.1011601 (Ascensor - Avinguda Masnou -- L1-Florida                                  ): g inf -> 1356 (w=60), h=240, f=1596 via 1.116 (L1-Florida)
+  -> update E.11601   (Avinguda Masnou -- L1-Florida                                             ): g inf -> 1356 (w=60), h=240, f=1596 via 1.116 (L1-Florida)
+  -> update E.11602   (Blocs Florida -- L1-Florida                                               ): g inf -> 1356 (w=60), h=237, f=1593 via 1.116 (L1-Florida)
+
+Iteration 264: extract E.51602   (Carreras i Candi -- L5-Badal                                              ) with g=1205 and h=340, f=1545
+
+Iteration 265: extract E.51611   (Carrer de Sants / Arizala -- L5-Badal                                     ) with g=1205 and h=342, f=1547
+
+Iteration 266: extract E.1051611 (Ascensor - Carrer de Sants / Arizala -- L5-Badal                          ) with g=1205 and h=344, f=1549
+
+Iteration 267: extract 1.9141    (L10S-Can Tries | Gornal                                                   ) with g=1371 and h=184, f=1555
+  -> update 1.959     (L10S-Provençana                                                           ): g inf -> 1453 (w=82), h=212, f=1665 via 1.9141 (L10S-Can Tries | Gornal)
+  -> update E.1091401 (Ascensor - Can Tries - Narcís de Monturiol -- L9S/L10S-Can Tries | Gornal ): g inf -> 1431 (w=60), h=186, f=1617 via 1.9141 (L10S-Can Tries | Gornal)
+  -> update E.91401   (Can Tries - Narcís de Monturiol -- L9S/L10S-Can Tries | Gornal            ): g inf -> 1431 (w=60), h=182, f=1613 via 1.9141 (L10S-Can Tries | Gornal)
+
+Iteration 268: extract 1.9140    (L9S-Can Tries | Gornal                                                    ) with g=1371 and h=184, f=1555
+  -> update 1.913     (L9S-Europa | Fira                                                         ): g inf -> 1468 (w=97), h=194, f=1662 via 1.9140 (L9S-Can Tries | Gornal)
+
+Iteration 269: extract E.51601   (Carrer de Sants -- L5-Badal                                               ) with g=1205 and h=350, f=1555
+
+Iteration 270: extract 1.515     (L5-Collblanc                                                              ) with g=1233 and h=324, f=1557
+  -> update 1.555     (L5-Ernest Lluch                                                           ): g inf -> 1299 (w=66), h=315, f=1614 via 1.515 (L5-Collblanc)
+  -> update 1.9160    (L9S-Collblanc                                                             ): g 1358 -> 1353 (w=120), h=326, f=1679 via 1.515 (L5-Collblanc)
+  -> update 1.9161    (L10S-Collblanc                                                            ): g 1358 -> 1353 (w=120), h=326, f=1679 via 1.515 (L5-Collblanc)
+  -> update E.51501   (Travessera de les Corts -- L5-Collblanc                                   ): g inf -> 1293 (w=60), h=328, f=1621 via 1.515 (L5-Collblanc)
+  -> update E.51502   (Doctor Martí i Julià -- L5-Collblanc                                      ): g inf -> 1293 (w=60), h=327, f=1620 via 1.515 (L5-Collblanc)
+  -> update E.51511   (Sant Ramon -- L5-Collblanc                                                ): g inf -> 1293 (w=60), h=323, f=1616 via 1.515 (L5-Collblanc)
+
+Iteration 271: extract 1.221     (L2-La Pau                                                                 ) with g=478 and h=1079, f=1557
+  -> update 1.222     (L2-Verneda                                                                ): g inf -> 590 (w=112), h=1144, f=1734 via 1.221 (L2-La Pau)
+  -> update 1.413     (L4-La Pau                                                                 ): g inf -> 523 (w=45), h=1075, f=1598 via 1.221 (L2-La Pau)
+
+Iteration 272: extract E.13411   (Concepción Arenal -- L1-Fabra i Puig                                      ) with g=543 and h=1018, f=1561
+
+Iteration 273: extract E.1013411 (Ascensor - Concepción Arenal -- L1-Fabra i Puig                           ) with g=543 and h=1019, f=1562
+
+Iteration 274: extract E.13403   (Avinguda Meridiana -- L1-Fabra i Puig                                     ) with g=543 and h=1024, f=1567
+
+Iteration 275: extract E.13401   (Passeig Fabra i Puig -- L1-Fabra i Puig                                   ) with g=543 and h=1027, f=1570
+
+Iteration 276: extract E.13404   (Renfe -- L1-Fabra i Puig                                                  ) with g=543 and h=1029, f=1572
+
+Iteration 277: extract E.13402   (Sòcrates -- L1-Fabra i Puig                                               ) with g=543 and h=1034, f=1577
+
+Iteration 278: extract E.52801   (Ramon Albó -- L5-Maragall                                                 ) with g=633 and h=951, f=1584
+
+Iteration 279: extract E.1052801 (Ascensor - Ramon Albó -- L5-Maragall                                      ) with g=633 and h=952, f=1585
+
+Iteration 280: extract E.33001   (Septimània -- L3-Lesseps                                                  ) with g=895 and h=691, f=1586
+
+Iteration 281: extract E.31801   (Plaça del Centre (mar) -- L3-Plaça del Centre                             ) with g=1159 and h=429, f=1588
+
+Iteration 282: extract E.1031801 (Ascensor - Plaça del Centre (mar) -- L3-Plaça del Centre                  ) with g=1159 and h=429, f=1588
+
+Iteration 283: extract E.1033011 (Ascensor - Plaça Lesseps -- L3-Lesseps                                    ) with g=895 and h=695, f=1590
+
+Iteration 284: extract E.52811   (Avinguda dels Quinze -- L5-Maragall                                       ) with g=633 and h=957, f=1590
+
+Iteration 285: extract E.52812   (Prat d'en Roquer -- L5-Maragall                                           ) with g=633 and h=957, f=1590
+
+Iteration 286: extract E.31802   (Plaça del Centre (muntanya) -- L3-Plaça del Centre                        ) with g=1159 and h=431, f=1590
+
+Iteration 287: extract E.33011   (Plaça Lesseps -- L3-Lesseps                                               ) with g=895 and h=697, f=1592
+
+Iteration 288: extract E.11602   (Blocs Florida -- L1-Florida                                               ) with g=1356 and h=237, f=1593
+
+Iteration 289: extract E.11601   (Avinguda Masnou -- L1-Florida                                             ) with g=1356 and h=240, f=1596
+
+Iteration 290: extract E.1011601 (Ascensor - Avinguda Masnou -- L1-Florida                                  ) with g=1356 and h=240, f=1596
+
+Iteration 291: extract 1.413     (L4-La Pau                                                                 ) with g=523 and h=1075, f=1598
+  -> update 1.414     (L4-Besòs                                                                  ): g inf -> 629 (w=106), h=1074, f=1703 via 1.413 (L4-La Pau)
+  -> update E.1041301 (Ascensor - Rambla Guipúscoa / Ca n'Oliva -- L4-La Pau                     ): g inf -> 583 (w=60), h=1076, f=1659 via 1.413 (L4-La Pau)
+  -> update E.41301   (Rambla Guipúscoa / Ca n'Oliva -- L4-La Pau                                ): g inf -> 583 (w=60), h=1077, f=1660 via 1.413 (L4-La Pau)
+
+Iteration 292: extract 1.115     (L1-Can Serra                                                              ) with g=1379 and h=233, f=1612
+  -> update 1.114     (L1-Rambla Just Oliveras                                                   ): g inf -> 1459 (w=80), h=202, f=1661 via 1.115 (L1-Can Serra)
+  -> update E.1011502 (Ascensor - Avinguda Can Serra -- L1-Can Serra                             ): g inf -> 1439 (w=60), h=232, f=1671 via 1.115 (L1-Can Serra)
+  -> update E.11501   (Parc de les Planes -- L1-Can Serra                                        ): g inf -> 1439 (w=60), h=236, f=1675 via 1.115 (L1-Can Serra)
+  -> update E.11502   (Avinguda Can Serra -- L1-Can Serra                                        ): g inf -> 1439 (w=60), h=231, f=1670 via 1.115 (L1-Can Serra)
+
+Iteration 293: extract E.91401   (Can Tries - Narcís de Monturiol -- L9S/L10S-Can Tries | Gornal            ) with g=1431 and h=182, f=1613
+
+Iteration 294: extract 1.555     (L5-Ernest Lluch                                                           ) with g=1299 and h=315, f=1614
+  -> update 1.514     (L5-Pubilla Cases                                                          ): g inf -> 1403 (w=104), h=292, f=1695 via 1.555 (L5-Ernest Lluch)
+  -> update E.105501  (Ascensor - Avinguda de Xile -- L5-Ernest Lluch                            ): g inf -> 1359 (w=60), h=314, f=1673 via 1.555 (L5-Ernest Lluch)
+  -> update E.55501   (Avinguda de Xile -- L5-Ernest Lluch                                       ): g inf -> 1359 (w=60), h=316, f=1675 via 1.555 (L5-Ernest Lluch)
+  -> update E.55502   (Cementiri de Sants -- L5-Ernest Lluch                                     ): g inf -> 1359 (w=60), h=313, f=1672 via 1.555 (L5-Ernest Lluch)
+
+Iteration 295: extract E.51511   (Sant Ramon -- L5-Collblanc                                                ) with g=1293 and h=323, f=1616
+
+Iteration 296: extract E.1091401 (Ascensor - Can Tries - Narcís de Monturiol -- L9S/L10S-Can Tries | Gornal ) with g=1431 and h=186, f=1617
+
+Iteration 297: extract E.51502   (Doctor Martí i Julià -- L5-Collblanc                                      ) with g=1293 and h=327, f=1620
+
+Iteration 298: extract E.51501   (Travessera de les Corts -- L5-Collblanc                                   ) with g=1293 and h=328, f=1621
+
+Iteration 299: extract 1.429     (L4-Alfons X                                                               ) with g=818 and h=807, f=1625
+  -> update 1.430     (L4-Guinardó | Hospital de Sant Pau                                        ): g inf -> 923 (w=105), h=868, f=1791 via 1.429 (L4-Alfons X)
+  -> update E.1042901 (Ascensor - Ronda Guinardó -- L4-Alfons X                                  ): g inf -> 878 (w=60), h=804, f=1682 via 1.429 (L4-Alfons X)
+  -> update E.42901   (Ronda Guinardó -- L4-Alfons X                                             ): g inf -> 878 (w=60), h=808, f=1686 via 1.429 (L4-Alfons X)
+  -> update E.42902   (Lepant -- L4-Alfons X                                                     ): g inf -> 878 (w=60), h=806, f=1684 via 1.429 (L4-Alfons X)
+  -> update E.42903   (Plaça Alfons el Savi -- L4-Alfons X                                       ): g inf -> 878 (w=60), h=799, f=1677 via 1.429 (L4-Alfons X)
+
+Iteration 300: extract 1.317     (L3-Les Corts                                                              ) with g=1195 and h=433, f=1628
+  -> update 1.316     (L3-Maria Cristina                                                         ): g inf -> 1294 (w=99), h=453, f=1747 via 1.317 (L3-Les Corts)
+  -> update E.1031701 (Ascensor - Travessera de les Corts -- L3-Les Corts                        ): g inf -> 1255 (w=60), h=431, f=1686 via 1.317 (L3-Les Corts)
+  -> update E.31701   (Travessera de les Corts -- L3-Les Corts                                   ): g inf -> 1255 (w=60), h=430, f=1685 via 1.317 (L3-Les Corts)
+  -> update E.31702   (Joan Güell -- L3-Les Corts                                                ): g inf -> 1255 (w=60), h=435, f=1690 via 1.317 (L3-Les Corts)
+
+Iteration 301: extract 1.529     (L5-Virrei Amat                                                            ) with g=658 and h=986, f=1644
+  -> update 1.530     (L5-Vilapicina                                                             ): g inf -> 753 (w=95), h=966, f=1719 via 1.529 (L5-Virrei Amat)
+  -> update E.1052903 (Ascensor - Virrei Amat (muntanya) -- L5-Virrei Amat                       ): g inf -> 718 (w=60), h=990, f=1708 via 1.529 (L5-Virrei Amat)
+  -> update E.52901   (Pi i Molist -- L5-Virrei Amat                                             ): g inf -> 718 (w=60), h=991, f=1709 via 1.529 (L5-Virrei Amat)
+  -> update E.52902   (Fabra i Puig -- L5-Virrei Amat                                            ): g inf -> 718 (w=60), h=988, f=1706 via 1.529 (L5-Virrei Amat)
+  -> update E.52903   (Virrei Amat (muntanya) -- L5-Virrei Amat                                  ): g inf -> 718 (w=60), h=990, f=1708 via 1.529 (L5-Virrei Amat)
+  -> update E.52911   (Felip II / Virrei Amat -- L5-Virrei Amat                                  ): g inf -> 718 (w=60), h=984, f=1702 via 1.529 (L5-Virrei Amat)
+  -> update E.52912   (Virrei Amat (mar) -- L5-Virrei Amat                                       ): g inf -> 718 (w=60), h=983, f=1701 via 1.529 (L5-Virrei Amat)
+
+Iteration 302: extract 1.420     (L4-Bogatell                                                               ) with g=835 and h=810, f=1645
+  -> update 1.419     (L4-Llacuna                                                                ): g inf -> 920 (w=85), h=870, f=1790 via 1.420 (L4-Bogatell)
+  -> update E.1042011 (Ascensor - Pujades -- L4-Bogatell                                         ): g inf -> 895 (w=60), h=817, f=1712 via 1.420 (L4-Bogatell)
+  -> update E.42001   (Pujades / Pere IV -- L4-Bogatell                                          ): g inf -> 895 (w=60), h=806, f=1701 via 1.420 (L4-Bogatell)
+  -> update E.42011   (Pujades -- L4-Bogatell                                                    ): g inf -> 895 (w=60), h=816, f=1711 via 1.420 (L4-Bogatell)
+
+Iteration 303: extract E.1041301 (Ascensor - Rambla Guipúscoa / Ca n'Oliva -- L4-La Pau                     ) with g=583 and h=1076, f=1659
+
+Iteration 304: extract E.41301   (Rambla Guipúscoa / Ca n'Oliva -- L4-La Pau                                ) with g=583 and h=1077, f=1660
+
+Iteration 305: extract 1.114     (L1-Rambla Just Oliveras                                                   ) with g=1459 and h=202, f=1661
+  -> update 1.113     (L1-Av. Carrilet                                                           ): g inf -> 1545 (w=86), h=143, f=1688 via 1.114 (L1-Rambla Just Oliveras)
+  -> update E.1011403 (Ascensor - Renfe -- L1-Rambla Just Oliveras                               ): g inf -> 1519 (w=60), h=200, f=1719 via 1.114 (L1-Rambla Just Oliveras)
+  -> update E.11401   (Avinguda Can Serra -- L1-Rambla Just Oliveras                             ): g inf -> 1519 (w=60), h=205, f=1724 via 1.114 (L1-Rambla Just Oliveras)
+  -> update E.11402   (Rambla Just Oliveras -- L1-Rambla Just Oliveras                           ): g inf -> 1519 (w=60), h=196, f=1715 via 1.114 (L1-Rambla Just Oliveras)
+  -> update E.11403   (Renfe -- L1-Rambla Just Oliveras                                          ): g inf -> 1519 (w=60), h=200, f=1719 via 1.114 (L1-Rambla Just Oliveras)
+
+Iteration 306: extract 1.913     (L9S-Europa | Fira                                                         ) with g=1468 and h=194, f=1662
+  -> update 1.912     (L9S-Fira                                                                  ): g inf -> 1563 (w=95), h=192, f=1755 via 1.913 (L9S-Europa | Fira)
+  -> update E.1091301 (Ascensor - Fira Gran Via -- L9S-Europa | Fira                             ): g inf -> 1528 (w=60), h=189, f=1717 via 1.913 (L9S-Europa | Fira)
+  -> update E.1091311 (Ascensor - Plaça Europa -- L9S-Europa | Fira                              ): g inf -> 1528 (w=60), h=184, f=1712 via 1.913 (L9S-Europa | Fira)
+  -> update E.91301   (Fira Gran Via -- L9S-Europa | Fira                                        ): g inf -> 1528 (w=60), h=188, f=1716 via 1.913 (L9S-Europa | Fira)
+  -> update E.91311   (Plaça Europa -- L9S-Europa | Fira                                         ): g inf -> 1528 (w=60), h=184, f=1712 via 1.913 (L9S-Europa | Fira)
+
+Iteration 307: extract 1.331     (L3-Vallcarca                                                              ) with g=937 and h=726, f=1663
+  -> update 1.332     (L3-Penitents                                                              ): g inf -> 1038 (w=101), h=776, f=1814 via 1.331 (L3-Vallcarca)
+  -> update E.1033101 (Ascensor - Avinguda República Argentina -- L3-Vallcarca                   ): g inf -> 997 (w=60), h=724, f=1721 via 1.331 (L3-Vallcarca)
+  -> update E.33101   (Avinguda República Argentina -- L3-Vallcarca                              ): g inf -> 997 (w=60), h=723, f=1720 via 1.331 (L3-Vallcarca)
+  -> update E.33102   (Gomis -- L3-Vallcarca                                                     ): g inf -> 997 (w=60), h=725, f=1722 via 1.331 (L3-Vallcarca)
+  -> update E.33103   (Avinguda Vallcarca + Parc Güell -- L3-Vallcarca                           ): g inf -> 997 (w=60), h=726, f=1723 via 1.331 (L3-Vallcarca)
+
+Iteration 308: extract 1.431     (L4-Maragall                                                               ) with g=723 and h=941, f=1664
+  -> update 1.430     (L4-Guinardó | Hospital de Sant Pau                                        ): g 923 -> 847 (w=124), h=868, f=1715 via 1.431 (L4-Maragall)
+  -> update 1.432     (L4-Llucmajor                                                              ): g inf -> 915 (w=192), h=1043, f=1958 via 1.431 (L4-Maragall)
+  -> update E.1043102 (Ascensor - Ronda Guinardó - costat Muntanya -- L4-Maragall                ): g inf -> 783 (w=60), h=935, f=1718 via 1.431 (L4-Maragall)
+  -> update E.43101   (Ronda Guinardó - costat Mar -- L4-Maragall                                ): g inf -> 783 (w=60), h=936, f=1719 via 1.431 (L4-Maragall)
+  -> update E.43102   (Ronda Guinardó - costat Muntanya -- L4-Maragall                           ): g inf -> 783 (w=60), h=936, f=1719 via 1.431 (L4-Maragall)
+
+Iteration 309: extract 1.959     (L10S-Provençana                                                           ) with g=1453 and h=212, f=1665
+  -> update 1.958     (L10S-Ciutat de la Justícia                                                ): g inf -> 1553 (w=100), h=266, f=1819 via 1.959 (L10S-Provençana)
+  -> update E.1095901 (Ascensor - Aprestadora / Rosell -- L10S-Provençana                        ): g inf -> 1513 (w=60), h=214, f=1727 via 1.959 (L10S-Provençana)
+  -> update E.95901   (Aprestadora / Rosell -- L10S-Provençana                                   ): g inf -> 1513 (w=60), h=215, f=1728 via 1.959 (L10S-Provençana)
+
+Iteration 310: extract E.11502   (Avinguda Can Serra -- L1-Can Serra                                        ) with g=1439 and h=231, f=1670
+
+Iteration 311: extract E.1011502 (Ascensor - Avinguda Can Serra -- L1-Can Serra                             ) with g=1439 and h=232, f=1671
+
+Iteration 312: extract E.55502   (Cementiri de Sants -- L5-Ernest Lluch                                     ) with g=1359 and h=313, f=1672
+
+Iteration 313: extract E.105501  (Ascensor - Avinguda de Xile -- L5-Ernest Lluch                            ) with g=1359 and h=314, f=1673
+
+Iteration 314: extract E.55501   (Avinguda de Xile -- L5-Ernest Lluch                                       ) with g=1359 and h=316, f=1675
+
+Iteration 315: extract E.11501   (Parc de les Planes -- L1-Can Serra                                        ) with g=1439 and h=236, f=1675
+
+Iteration 316: extract E.42903   (Plaça Alfons el Savi -- L4-Alfons X                                       ) with g=878 and h=799, f=1677
+
+Iteration 317: extract 1.9161    (L10S-Collblanc                                                            ) with g=1353 and h=326, f=1679
+  -> update E.1091601 (Ascensor - Av. Sant Ramon -- L9S/L10S-Collblanc                           ): g inf -> 1413 (w=60), h=323, f=1736 via 1.9161 (L10S-Collblanc)
+  -> update E.91601   (Av. Sant Ramon -- L9S/L10S-Collblanc                                      ): g inf -> 1413 (w=60), h=324, f=1737 via 1.9161 (L10S-Collblanc)
+
+Iteration 318: extract 1.9160    (L9S-Collblanc                                                             ) with g=1353 and h=326, f=1679
+  -> update 1.918     (L9S-Zona Universitària                                                    ): g inf -> 1482 (w=129), h=392, f=1874 via 1.9160 (L9S-Collblanc)
+
+Iteration 319: extract E.1042901 (Ascensor - Ronda Guinardó -- L4-Alfons X                                  ) with g=878 and h=804, f=1682
+
+Iteration 320: extract E.42902   (Lepant -- L4-Alfons X                                                     ) with g=878 and h=806, f=1684
+
+Iteration 321: extract E.31701   (Travessera de les Corts -- L3-Les Corts                                   ) with g=1255 and h=430, f=1685
+
+Iteration 322: extract E.42901   (Ronda Guinardó -- L4-Alfons X                                             ) with g=878 and h=808, f=1686
+
+Iteration 323: extract E.1031701 (Ascensor - Travessera de les Corts -- L3-Les Corts                        ) with g=1255 and h=431, f=1686
+
+Iteration 324: extract 1.113     (L1-Av. Carrilet                                                           ) with g=1545 and h=143, f=1688
+  -> update 1.112     (L1-Bellvitge                                                              ): g inf -> 1668 (w=123), h=72, f=1740 via 1.113 (L1-Av. Carrilet)
+  -> update E.11301   (Prat de la Riba -- L1-Av. Carrilet                                        ): g inf -> 1605 (w=60), h=152, f=1757 via 1.113 (L1-Av. Carrilet)
+  -> update E.11311   (Avinguda Carrilet -- L1-Av. Carrilet                                      ): g inf -> 1605 (w=60), h=138, f=1743 via 1.113 (L1-Av. Carrilet)
+
+Iteration 325: extract E.31702   (Joan Güell -- L3-Les Corts                                                ) with g=1255 and h=435, f=1690
+
+Iteration 326: extract 1.514     (L5-Pubilla Cases                                                          ) with g=1403 and h=292, f=1695
+  -> update 1.513     (L5-Can Vidalet                                                            ): g inf -> 1507 (w=104), h=272, f=1779 via 1.514 (L5-Pubilla Cases)
+  -> update E.1051401 (Ascensor - Avinguda Josep Molins -- L5-Pubilla Cases                      ): g inf -> 1463 (w=60), h=289, f=1752 via 1.514 (L5-Pubilla Cases)
+  -> update E.51401   (Avinguda Josep Molins -- L5-Pubilla Cases                                 ): g inf -> 1463 (w=60), h=289, f=1752 via 1.514 (L5-Pubilla Cases)
+  -> update E.51402   (Esteve Grau -- L5-Pubilla Cases                                           ): g inf -> 1463 (w=60), h=288, f=1751 via 1.514 (L5-Pubilla Cases)
+  -> update E.51411   (Doctor Ramon Solanich -- L5-Pubilla Cases                                 ): g inf -> 1463 (w=60), h=294, f=1757 via 1.514 (L5-Pubilla Cases)
+
+Iteration 327: extract E.42001   (Pujades / Pere IV -- L4-Bogatell                                          ) with g=895 and h=806, f=1701
+
+Iteration 328: extract E.52912   (Virrei Amat (mar) -- L5-Virrei Amat                                       ) with g=718 and h=983, f=1701
+
+Iteration 329: extract E.52911   (Felip II / Virrei Amat -- L5-Virrei Amat                                  ) with g=718 and h=984, f=1702
+
+Iteration 330: extract 1.414     (L4-Besòs                                                                  ) with g=629 and h=1074, f=1703
+  -> update 1.415     (L4-Besòs Mar                                                              ): g inf -> 712 (w=83), h=1074, f=1786 via 1.414 (L4-Besòs)
+  -> update E.1041402 (Ascensor - Tram Besòs -- L4-Besòs                                         ): g inf -> 689 (w=60), h=1073, f=1762 via 1.414 (L4-Besòs)
+  -> update E.41401   (Gran Via de les Corts Catalanes -- L4-Besòs                               ): g inf -> 689 (w=60), h=1077, f=1766 via 1.414 (L4-Besòs)
+  -> update E.41402   (Tram Besòs -- L4-Besòs                                                    ): g inf -> 689 (w=60), h=1074, f=1763 via 1.414 (L4-Besòs)
+
+Iteration 331: extract E.52902   (Fabra i Puig -- L5-Virrei Amat                                            ) with g=718 and h=988, f=1706
+
+Iteration 332: extract E.1052903 (Ascensor - Virrei Amat (muntanya) -- L5-Virrei Amat                       ) with g=718 and h=990, f=1708
+
+Iteration 333: extract E.52903   (Virrei Amat (muntanya) -- L5-Virrei Amat                                  ) with g=718 and h=990, f=1708
+
+Iteration 334: extract E.52901   (Pi i Molist -- L5-Virrei Amat                                             ) with g=718 and h=991, f=1709
+
+Iteration 335: extract E.42011   (Pujades -- L4-Bogatell                                                    ) with g=895 and h=816, f=1711
+
+Iteration 336: extract E.91311   (Plaça Europa -- L9S-Europa | Fira                                         ) with g=1528 and h=184, f=1712
+
+Iteration 337: extract E.1042011 (Ascensor - Pujades -- L4-Bogatell                                         ) with g=895 and h=817, f=1712
+
+Iteration 338: extract E.1091311 (Ascensor - Plaça Europa -- L9S-Europa | Fira                              ) with g=1528 and h=184, f=1712
+
+Iteration 339: extract E.11402   (Rambla Just Oliveras -- L1-Rambla Just Oliveras                           ) with g=1519 and h=196, f=1715
+
+Iteration 340: extract 1.430     (L4-Guinardó | Hospital de Sant Pau                                        ) with g=847 and h=868, f=1715
+  -> update E.1043001 (Ascensor - Sant Quintí -- L4-Guinardó | Hospital de Sant Pau              ): g inf -> 907 (w=60), h=868, f=1775 via 1.430 (L4-Guinardó | Hospital de Sant Pau)
+  -> update E.43001   (Sant Quintí -- L4-Guinardó | Hospital de Sant Pau                         ): g inf -> 907 (w=60), h=871, f=1778 via 1.430 (L4-Guinardó | Hospital de Sant Pau)
+  -> update E.43012   (Hospital de Sant Pau -- L4-Guinardó | Hospital de Sant Pau                ): g inf -> 907 (w=60), h=869, f=1776 via 1.430 (L4-Guinardó | Hospital de Sant Pau)
+
+Iteration 341: extract E.91301   (Fira Gran Via -- L9S-Europa | Fira                                        ) with g=1528 and h=188, f=1716
+
+Iteration 342: extract E.1091301 (Ascensor - Fira Gran Via -- L9S-Europa | Fira                             ) with g=1528 and h=189, f=1717
+
+Iteration 343: extract E.1043102 (Ascensor - Ronda Guinardó - costat Muntanya -- L4-Maragall                ) with g=783 and h=935, f=1718
+
+Iteration 344: extract 1.530     (L5-Vilapicina                                                             ) with g=753 and h=966, f=1719
+  -> update 1.531     (L5-Horta                                                                  ): g inf -> 856 (w=103), h=934, f=1790 via 1.530 (L5-Vilapicina)
+  -> update E.1053011 (Ascensor - Passeig de les Palmeres -- L5-Vilapicina                       ): g inf -> 813 (w=60), h=967, f=1780 via 1.530 (L5-Vilapicina)
+  -> update E.1053012 (Ascensor - Teide -- L5-Vilapicina                                         ): g inf -> 813 (w=60), h=969, f=1782 via 1.530 (L5-Vilapicina)
+  -> update E.53001   (Canfranc -- L5-Vilapicina                                                 ): g inf -> 813 (w=60), h=966, f=1779 via 1.530 (L5-Vilapicina)
+  -> update E.53002   (Cartellà -- L5-Vilapicina                                                 ): g inf -> 813 (w=60), h=962, f=1775 via 1.530 (L5-Vilapicina)
+  -> update E.53011   (Passeig de les Palmeres -- L5-Vilapicina                                  ): g inf -> 813 (w=60), h=968, f=1781 via 1.530 (L5-Vilapicina)
+  -> update E.53012   (Teide -- L5-Vilapicina                                                    ): g inf -> 813 (w=60), h=970, f=1783 via 1.530 (L5-Vilapicina)
+
+Iteration 345: extract E.11403   (Renfe -- L1-Rambla Just Oliveras                                          ) with g=1519 and h=200, f=1719
+
+Iteration 346: extract E.43102   (Ronda Guinardó - costat Muntanya -- L4-Maragall                           ) with g=783 and h=936, f=1719
+
+Iteration 347: extract E.1011403 (Ascensor - Renfe -- L1-Rambla Just Oliveras                               ) with g=1519 and h=200, f=1719
+
+Iteration 348: extract E.43101   (Ronda Guinardó - costat Mar -- L4-Maragall                                ) with g=783 and h=936, f=1719
+
+Iteration 349: extract E.33101   (Avinguda República Argentina -- L3-Vallcarca                              ) with g=997 and h=723, f=1720
+
+Iteration 350: extract E.1033101 (Ascensor - Avinguda República Argentina -- L3-Vallcarca                   ) with g=997 and h=724, f=1721
+
+Iteration 351: extract E.33102   (Gomis -- L3-Vallcarca                                                     ) with g=997 and h=725, f=1722
+
+Iteration 352: extract E.33103   (Avinguda Vallcarca + Parc Güell -- L3-Vallcarca                           ) with g=997 and h=726, f=1723
+
+Iteration 353: extract E.11401   (Avinguda Can Serra -- L1-Rambla Just Oliveras                             ) with g=1519 and h=205, f=1724
+
+Iteration 354: extract 1.135     (L1-Sant Andreu                                                            ) with g=617 and h=1109, f=1726
+  -> update 1.136     (L1-Torras i Bages                                                         ): g inf -> 710 (w=93), h=1162, f=1872 via 1.135 (L1-Sant Andreu)
+  -> update E.1013501 (Ascensor - Plaça d'Orfila -- L1-Sant Andreu                               ): g inf -> 677 (w=60), h=1104, f=1781 via 1.135 (L1-Sant Andreu)
+  -> update E.13501   (Plaça d'Orfila -- L1-Sant Andreu                                          ): g inf -> 677 (w=60), h=1102, f=1779 via 1.135 (L1-Sant Andreu)
+  -> update E.13511   (Joan Torras -- L1-Sant Andreu                                             ): g inf -> 677 (w=60), h=1116, f=1793 via 1.135 (L1-Sant Andreu)
+
+Iteration 355: extract E.1095901 (Ascensor - Aprestadora / Rosell -- L10S-Provençana                        ) with g=1513 and h=214, f=1727
+
+Iteration 356: extract E.95901   (Aprestadora / Rosell -- L10S-Provençana                                   ) with g=1513 and h=215, f=1728
+
+Iteration 357: extract 1.222     (L2-Verneda                                                                ) with g=590 and h=1144, f=1734
+  -> update 1.223     (L2-Artigues | Sant Adrià                                                  ): g inf -> 698 (w=108), h=1212, f=1910 via 1.222 (L2-Verneda)
+  -> update E.1022201 (Ascensor - Santander -- L2-Verneda                                        ): g inf -> 650 (w=60), h=1145, f=1795 via 1.222 (L2-Verneda)
+  -> update E.22201   (Santander -- L2-Verneda                                                   ): g inf -> 650 (w=60), h=1145, f=1795 via 1.222 (L2-Verneda)
+  -> update E.22202   (Ctra. Mataró -- L2-Verneda                                                ): g inf -> 650 (w=60), h=1145, f=1795 via 1.222 (L2-Verneda)
+
+Iteration 358: extract 1.9320    (L9N-Onze de Setembre                                                      ) with g=673 and h=1063, f=1736
+  -> update 1.9330    (L9N-Bon Pastor                                                            ): g inf -> 822 (w=149), h=1169, f=1991 via 1.9320 (L9N-Onze de Setembre)
+  -> update E.1093201 (Ascensor - Onze de Setembre -- L9N/L10N-Onze de Setembre                  ): g inf -> 733 (w=60), h=1065, f=1798 via 1.9320 (L9N-Onze de Setembre)
+  -> update E.93201   (Onze de Setembre -- L9N/L10N-Onze de Setembre                             ): g inf -> 733 (w=60), h=1064, f=1797 via 1.9320 (L9N-Onze de Setembre)
+
+Iteration 359: extract E.1091601 (Ascensor - Av. Sant Ramon -- L9S/L10S-Collblanc                           ) with g=1413 and h=323, f=1736
+
+Iteration 360: extract 1.9321    (L10N-Onze de Setembre                                                     ) with g=673 and h=1063, f=1736
+  -> update 1.9331    (L10N-Bon Pastor                                                           ): g inf -> 822 (w=149), h=1169, f=1991 via 1.9321 (L10N-Onze de Setembre)
+
+Iteration 361: extract E.91601   (Av. Sant Ramon -- L9S/L10S-Collblanc                                      ) with g=1413 and h=324, f=1737
+
+Iteration 362: extract 1.112     (L1-Bellvitge                                                              ) with g=1668 and h=72, f=1740
+  -> update 1.111     (L1-Hospital de Bellvitge                                                  ): g inf -> 1782 (w=114), h=5, f=1787 via 1.112 (L1-Bellvitge)
+  -> update E.1011201 (Ascensor - Rambla de la Marina / Avda. Granvia -- L1-Bellvitge            ): g inf -> 1728 (w=60), h=73, f=1801 via 1.112 (L1-Bellvitge)
+  -> update E.11201   (Rambla de la Marina / Avda. Granvia -- L1-Bellvitge                       ): g inf -> 1728 (w=60), h=74, f=1802 via 1.112 (L1-Bellvitge)
+  -> update E.11202   (Rambla de la Marina / Merca 2 -- L1-Bellvitge                             ): g inf -> 1728 (w=60), h=70, f=1798 via 1.112 (L1-Bellvitge)
+  -> update E.11211   (Rambla de la Marina / Trav. Industrial -- L1-Bellvitge                    ): g inf -> 1728 (w=60), h=76, f=1804 via 1.112 (L1-Bellvitge)
+  -> update E.11212   (Rambla de la Marina / Mercat Municipal -- L1-Bellvitge                    ): g inf -> 1728 (w=60), h=73, f=1801 via 1.112 (L1-Bellvitge)
+
+Iteration 363: extract E.11311   (Avinguda Carrilet -- L1-Av. Carrilet                                      ) with g=1605 and h=138, f=1743
+
+Iteration 364: extract 1.316     (L3-Maria Cristina                                                         ) with g=1294 and h=453, f=1747
+  -> update 1.315     (L3-Palau Reial                                                            ): g inf -> 1387 (w=93), h=422, f=1809 via 1.316 (L3-Maria Cristina)
+  -> update E.1031603 (Ascensor - Gran Via Carles III -- L3-Maria Cristina                       ): g inf -> 1354 (w=60), h=455, f=1809 via 1.316 (L3-Maria Cristina)
+  -> update E.31602   (Av. Diagonal / Doctor Ferran -- L3-Maria Cristina                         ): g inf -> 1354 (w=60), h=458, f=1812 via 1.316 (L3-Maria Cristina)
+  -> update E.31603   (Gran Via Carles III -- L3-Maria Cristina                                  ): g inf -> 1354 (w=60), h=455, f=1809 via 1.316 (L3-Maria Cristina)
+  -> update E.31604   (Capità Arenas -- L3-Maria Cristina                                        ): g inf -> 1354 (w=60), h=459, f=1813 via 1.316 (L3-Maria Cristina)
+
+Iteration 365: extract E.51402   (Esteve Grau -- L5-Pubilla Cases                                           ) with g=1463 and h=288, f=1751
+
+Iteration 366: extract E.1051401 (Ascensor - Avinguda Josep Molins -- L5-Pubilla Cases                      ) with g=1463 and h=289, f=1752
+
+Iteration 367: extract E.51401   (Avinguda Josep Molins -- L5-Pubilla Cases                                 ) with g=1463 and h=289, f=1752
+
+Iteration 368: extract 1.912     (L9S-Fira                                                                  ) with g=1563 and h=192, f=1755
+  -> update 1.911     (L9S-Parc Logístic                                                         ): g inf -> 1704 (w=141), h=156, f=1860 via 1.912 (L9S-Fira)
+  -> update E.1091201 (Ascensor - Botànica + Accés NORD | EST -- L9S-Fira                        ): g inf -> 1623 (w=60), h=193, f=1816 via 1.912 (L9S-Fira)
+  -> update E.91201   (Botànica + Accés NORD | EST -- L9S-Fira                                   ): g inf -> 1623 (w=60), h=195, f=1818 via 1.912 (L9S-Fira)
+  -> update E.91202   (Accés SUD -- L9S-Fira                                                     ): g inf -> 1623 (w=60), h=192, f=1815 via 1.912 (L9S-Fira)
+
+Iteration 369: extract E.51411   (Doctor Ramon Solanich -- L5-Pubilla Cases                                 ) with g=1463 and h=294, f=1757
+
+Iteration 370: extract E.11301   (Prat de la Riba -- L1-Av. Carrilet                                        ) with g=1605 and h=152, f=1757
+
+Iteration 371: extract E.1041402 (Ascensor - Tram Besòs -- L4-Besòs                                         ) with g=689 and h=1073, f=1762
+
+Iteration 372: extract E.41402   (Tram Besòs -- L4-Besòs                                                    ) with g=689 and h=1074, f=1763
+
+Iteration 373: extract E.41401   (Gran Via de les Corts Catalanes -- L4-Besòs                               ) with g=689 and h=1077, f=1766
+
+Iteration 374: extract E.1043001 (Ascensor - Sant Quintí -- L4-Guinardó | Hospital de Sant Pau              ) with g=907 and h=868, f=1775
+
+Iteration 375: extract E.53002   (Cartellà -- L5-Vilapicina                                                 ) with g=813 and h=962, f=1775
+
+Iteration 376: extract E.43012   (Hospital de Sant Pau -- L4-Guinardó | Hospital de Sant Pau                ) with g=907 and h=869, f=1776
+
+Iteration 377: extract E.43001   (Sant Quintí -- L4-Guinardó | Hospital de Sant Pau                         ) with g=907 and h=871, f=1778
+
+Iteration 378: extract 1.513     (L5-Can Vidalet                                                            ) with g=1507 and h=272, f=1779
+  -> update 1.512     (L5-Can Boixeres                                                           ): g inf -> 1610 (w=103), h=247, f=1857 via 1.513 (L5-Can Vidalet)
+  -> update E.1051311 (Ascensor - Maladeta -- L5-Can Vidalet                                     ): g inf -> 1567 (w=60), h=275, f=1842 via 1.513 (L5-Can Vidalet)
+  -> update E.51301   (Hortènsia -- L5-Can Vidalet                                               ): g inf -> 1567 (w=60), h=274, f=1841 via 1.513 (L5-Can Vidalet)
+  -> update E.51311   (Maladeta -- L5-Can Vidalet                                                ): g inf -> 1567 (w=60), h=278, f=1845 via 1.513 (L5-Can Vidalet)
+
+Iteration 379: extract E.13501   (Plaça d'Orfila -- L1-Sant Andreu                                          ) with g=677 and h=1102, f=1779
+
+Iteration 380: extract E.53001   (Canfranc -- L5-Vilapicina                                                 ) with g=813 and h=966, f=1779
+
+Iteration 381: extract E.1053011 (Ascensor - Passeig de les Palmeres -- L5-Vilapicina                       ) with g=813 and h=967, f=1780
+
+Iteration 382: extract E.53011   (Passeig de les Palmeres -- L5-Vilapicina                                  ) with g=813 and h=968, f=1781
+
+Iteration 383: extract E.1013501 (Ascensor - Plaça d'Orfila -- L1-Sant Andreu                               ) with g=677 and h=1104, f=1781
+
+Iteration 384: extract E.1053012 (Ascensor - Teide -- L5-Vilapicina                                         ) with g=813 and h=969, f=1782
+
+Iteration 385: extract E.53012   (Teide -- L5-Vilapicina                                                    ) with g=813 and h=970, f=1783
+
+Iteration 386: extract 1.415     (L4-Besòs Mar                                                              ) with g=712 and h=1074, f=1786
+  -> update 1.416     (L4-El Maresme | Fòrum                                                     ): g inf -> 789 (w=77), h=1056, f=1845 via 1.415 (L4-Besòs Mar)
+  -> update E.1041501 (Ascensor - Jaume Fabre -- L4-Besòs Mar                                    ): g inf -> 772 (w=60), h=1074, f=1846 via 1.415 (L4-Besòs Mar)
+  -> update E.41501   (Jaume Fabre -- L4-Besòs Mar                                               ): g inf -> 772 (w=60), h=1074, f=1846 via 1.415 (L4-Besòs Mar)
+  -> update E.41511   (Ferrer Bassa -- L4-Besòs Mar                                              ): g inf -> 772 (w=60), h=1074, f=1846 via 1.415 (L4-Besòs Mar)
+
+Iteration 387: extract 1.111     (L1-Hospital de Bellvitge                                                  ) with g=1782 and h=5, f=1787
+  -> update E.1011101 (Ascensor - Residència sanitària -- L1-Hospital de Bellvitge               ): g inf -> 1842 (w=60), h=1, f=1843 via 1.111 (L1-Hospital de Bellvitge)
+  -> update E.11101   (Residència sanitària -- L1-Hospital de Bellvitge                          ): g inf -> 1842 (w=60), h=0, f=1842 via 1.111 (L1-Hospital de Bellvitge)
+
+Iteration 388: extract 1.531     (L5-Horta                                                                  ) with g=856 and h=934, f=1790
+  -> update 1.532     (L5-El Carmel                                                              ): g inf -> 965 (w=109), h=872, f=1837 via 1.531 (L5-Horta)
+  -> update E.1053111 (Ascensor - Lisboa -- L5-Horta                                             ): g inf -> 916 (w=60), h=931, f=1847 via 1.531 (L5-Horta)
+  -> update E.53101   (Plaça Eivissa -- L5-Horta                                                 ): g inf -> 916 (w=60), h=941, f=1857 via 1.531 (L5-Horta)
+  -> update E.53102   (Tajo -- L5-Horta                                                          ): g inf -> 916 (w=60), h=937, f=1853 via 1.531 (L5-Horta)
+  -> update E.53111   (Lisboa -- L5-Horta                                                        ): g inf -> 916 (w=60), h=930, f=1846 via 1.531 (L5-Horta)
+
+Iteration 389: extract 1.419     (L4-Llacuna                                                                ) with g=920 and h=870, f=1790
+  -> update 1.418     (L4-Poblenou                                                               ): g inf -> 1004 (w=84), h=929, f=1933 via 1.419 (L4-Llacuna)
+  -> update E.1041901 (Ascensor - Pujades / Ciutat de Granada -- L4-Llacuna                      ): g inf -> 980 (w=60), h=864, f=1844 via 1.419 (L4-Llacuna)
+  -> update E.41901   (Pujades / Ciutat de Granada -- L4-Llacuna                                 ): g inf -> 980 (w=60), h=866, f=1846 via 1.419 (L4-Llacuna)
+
+Iteration 390: extract E.13511   (Joan Torras -- L1-Sant Andreu                                             ) with g=677 and h=1116, f=1793
+
+Iteration 391: extract E.1022201 (Ascensor - Santander -- L2-Verneda                                        ) with g=650 and h=1145, f=1795
+
+Iteration 392: extract E.22201   (Santander -- L2-Verneda                                                   ) with g=650 and h=1145, f=1795
+
+Iteration 393: extract E.22202   (Ctra. Mataró -- L2-Verneda                                                ) with g=650 and h=1145, f=1795
+
+Iteration 394: extract E.93201   (Onze de Setembre -- L9N/L10N-Onze de Setembre                             ) with g=733 and h=1064, f=1797
+
+Iteration 395: extract E.11202   (Rambla de la Marina / Merca 2 -- L1-Bellvitge                             ) with g=1728 and h=70, f=1798
+
+Iteration 396: extract E.1093201 (Ascensor - Onze de Setembre -- L9N/L10N-Onze de Setembre                  ) with g=733 and h=1065, f=1798
+
+Iteration 397: extract E.1011201 (Ascensor - Rambla de la Marina / Avda. Granvia -- L1-Bellvitge            ) with g=1728 and h=73, f=1801
+
+Iteration 398: extract E.11212   (Rambla de la Marina / Mercat Municipal -- L1-Bellvitge                    ) with g=1728 and h=73, f=1801
+
+Iteration 399: extract E.11201   (Rambla de la Marina / Avda. Granvia -- L1-Bellvitge                       ) with g=1728 and h=74, f=1802
+
+Iteration 400: extract E.11211   (Rambla de la Marina / Trav. Industrial -- L1-Bellvitge                    ) with g=1728 and h=76, f=1804
+
+Iteration 401: extract 1.315     (L3-Palau Reial                                                            ) with g=1387 and h=422, f=1809
+  -> update 1.314     (L3-Zona Universitària                                                     ): g inf -> 1486 (w=99), h=395, f=1881 via 1.315 (L3-Palau Reial)
+  -> update E.1031501 (Ascensor - Facultat de Ciències -- L3-Palau Reial                         ): g inf -> 1447 (w=60), h=419, f=1866 via 1.315 (L3-Palau Reial)
+  -> update E.31501   (Facultat de Ciències -- L3-Palau Reial                                    ): g inf -> 1447 (w=60), h=417, f=1864 via 1.315 (L3-Palau Reial)
+  -> update E.31503   (Avda. Diagonal -- L3-Palau Reial                                          ): g inf -> 1447 (w=60), h=421, f=1868 via 1.315 (L3-Palau Reial)
+  -> update E.31504   (Palau de Pedralbes -- L3-Palau Reial                                      ): g inf -> 1447 (w=60), h=422, f=1869 via 1.315 (L3-Palau Reial)
+
+Iteration 402: extract E.31603   (Gran Via Carles III -- L3-Maria Cristina                                  ) with g=1354 and h=455, f=1809
+
+Iteration 403: extract E.1031603 (Ascensor - Gran Via Carles III -- L3-Maria Cristina                       ) with g=1354 and h=455, f=1809
+
+Iteration 404: extract E.31602   (Av. Diagonal / Doctor Ferran -- L3-Maria Cristina                         ) with g=1354 and h=458, f=1812
+
+Iteration 405: extract E.31604   (Capità Arenas -- L3-Maria Cristina                                        ) with g=1354 and h=459, f=1813
+
+Iteration 406: extract 1.332     (L3-Penitents                                                              ) with g=1038 and h=776, f=1814
+  -> update 1.333     (L3-Vall d'Hebron                                                          ): g inf -> 1142 (w=104), h=845, f=1987 via 1.332 (L3-Penitents)
+  -> update E.1033202 (Ascensor - Anna Piferrer -- L3-Penitents                                  ): g inf -> 1098 (w=60), h=767, f=1865 via 1.332 (L3-Penitents)
+  -> update E.33201   (Avinguda Vallcarca -- L3-Penitents                                        ): g inf -> 1098 (w=60), h=769, f=1867 via 1.332 (L3-Penitents)
+  -> update E.33202   (Anna Piferrer -- L3-Penitents                                             ): g inf -> 1098 (w=60), h=767, f=1865 via 1.332 (L3-Penitents)
+
+Iteration 407: extract E.91202   (Accés SUD -- L9S-Fira                                                     ) with g=1623 and h=192, f=1815
+
+Iteration 408: extract E.1091201 (Ascensor - Botànica + Accés NORD | EST -- L9S-Fira                        ) with g=1623 and h=193, f=1816
+
+Iteration 409: extract E.91201   (Botànica + Accés NORD | EST -- L9S-Fira                                   ) with g=1623 and h=195, f=1818
+
+Iteration 410: extract 1.958     (L10S-Ciutat de la Justícia                                                ) with g=1553 and h=266, f=1819
+  -> update 1.957     (L10S-Foneria                                                              ): g inf -> 1646 (w=93), h=287, f=1933 via 1.958 (L10S-Ciutat de la Justícia)
+  -> update E.1095801 (Ascensor - Gran Via / Alhambra -- L10S-Ciutat de la Justícia              ): g inf -> 1613 (w=60), h=260, f=1873 via 1.958 (L10S-Ciutat de la Justícia)
+  -> update E.95801   (Gran Via / Alhambra -- L10S-Ciutat de la Justícia                         ): g inf -> 1613 (w=60), h=257, f=1870 via 1.958 (L10S-Ciutat de la Justícia)
+  -> update E.95802   (Ciutat de la Justícia -- L10S-Ciutat de la Justícia                       ): g inf -> 1613 (w=60), h=272, f=1885 via 1.958 (L10S-Ciutat de la Justícia)
+
+Iteration 411: extract 1.532     (L5-El Carmel                                                              ) with g=965 and h=872, f=1837
+  -> update 1.533     (L5-El Coll | La Teixonera                                                 ): g inf -> 1065 (w=100), h=829, f=1894 via 1.532 (L5-El Carmel)
+  -> update E.1053201 (Ascensor - Plaça Pastrana -- L5-El Carmel                                 ): g inf -> 1025 (w=60), h=883, f=1908 via 1.532 (L5-El Carmel)
+  -> update E.1053211 (Ascensor - Llobregós -- L5-El Carmel                                      ): g inf -> 1025 (w=60), h=862, f=1887 via 1.532 (L5-El Carmel)
+  -> update E.53201   (Plaça Pastrana -- L5-El Carmel                                            ): g inf -> 1025 (w=60), h=884, f=1909 via 1.532 (L5-El Carmel)
+  -> update E.53211   (Llobregós -- L5-El Carmel                                                 ): g inf -> 1025 (w=60), h=859, f=1884 via 1.532 (L5-El Carmel)
+  -> update E.53212   (Mercat -- L5-El Carmel                                                    ): g inf -> 1025 (w=60), h=864, f=1889 via 1.532 (L5-El Carmel)
+
+Iteration 412: extract E.51301   (Hortènsia -- L5-Can Vidalet                                               ) with g=1567 and h=274, f=1841
+
+Iteration 413: extract E.1051311 (Ascensor - Maladeta -- L5-Can Vidalet                                     ) with g=1567 and h=275, f=1842
+
+Iteration 414: extract E.11101   (Residència sanitària -- L1-Hospital de Bellvitge                          ) with g=1842 and h=0, f=1842
+  -> goal reached!
+
+Shortest path (not necessarily unique) from E.13002 (Badajoz -- L1-Glòries) to E.11101 (Residència sanitària -- L1-Hospital de Bellvitge):
+  E.13002 (Badajoz -- L1-Glòries)
+  -> 1.130 (L1-Glòries)
+  -> 1.129 (L1-Marina)
+  -> 1.128 (L1-Arc de Triomf)
+  -> 1.127 (L1-Urquinaona)
+  -> 1.126 (L1-Catalunya)
+  -> 1.125 (L1-Universitat)
+  -> 1.124 (L1-Urgell)
+  -> 1.123 (L1-Rocafort)
+  -> 1.122 (L1-Espanya)
+  -> 1.121 (L1-Hostafrancs)
+  -> 1.120 (L1-Plaça de Sants)
+  -> 1.119 (L1-Mercat Nou)
+  -> 1.118 (L1-Santa Eulàlia)
+  -> 1.117 (L1-Torrassa)
+  -> 1.116 (L1-Florida)
+  -> 1.115 (L1-Can Serra)
+  -> 1.114 (L1-Rambla Just Oliveras)
+  -> 1.113 (L1-Av. Carrilet)
+  -> 1.112 (L1-Bellvitge)
+  -> 1.111 (L1-Hospital de Bellvitge)
+  -> E.11101 (Residència sanitària -- L1-Hospital de Bellvitge)
+Optimum weight: 30:42 (format: HH:MM:SS)
+
+Iterations needed: 414
+Elapsed time: 2.326 ms

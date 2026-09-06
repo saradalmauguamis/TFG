@@ -1,0 +1,583 @@
+
+======================================================================
+OBJECTIVE
+======================================================================
+
+Is mean(total) per sw edge (platform -> platform) a trustworthy static weight for shortest-path algorithms on the weighted graph? We test this two ways.
+  1. Overall variability (CV). Is the spread small relative to the mean, regardless of cause?
+  2. Time-of-day structure (hourly range). Does the mean hide a rush/off-peak pattern a static weight would wash out?
+The edge weight itself stays total ('arrival_b - arrival_a'). Every flagged edge also gets it split into door ('departure_a - arrival_a', dwell at the boarding platform) and sw ('arrival_b - departure_a', time spent actually moving between platforms), as a diagnostic for *why* it's noisy, not as a third thing being proven.
+
+These two tests are not independent. CV is computed from samples pooled across the whole day, so it reacts to both true randomness within an hour and a real rush/off-peak shift between hours. An edge can have a stable mean within every hour and still fail CV purely because those per-hour means differ from each other. The hourly-range test isolates that second cause specifically: it's what tells you whether a CV failure comes from genuine time-of-day structure (fixable with time-dependent routing) or from noise that's present even within a single hour (not fixable that way).
+
+Disclaimer: for coherence we will consider the next file(s) from data:
+ - stop_times_shared.txt from /5_shared_platforms
+ - stops_shared.txt from /5_shared_platforms
+ - trips_cleaned.txt from /2_duplicated_trips
+
+
+Number of edges with at least one sample: 320
+
+
+======================================================================
+EDGE STABILITY BY COEFFICIENT OF VARIATION
+======================================================================
+
+CV = stdev / mean, computed from total travel time.
+
+Stability summary:
+  CV < 5%                       extremely stable: 277 (86.56%)
+  5% <= CV < 10%                stable: 36 (11.25%)
+  10% <= CV < 15%                acceptable: 6 (1.88%)
+  15% <= CV                      unstable: 1 (0.31%)
+
+Edges ranked by total CV (highest first, 15% <= CV): 1 of 320 (0.31%)
+1. L11 dir1  1.1138 (Torre Baró | Vallbona) -> 1.1137 (Casa de l'Aigua)  [CV=19.88%: unstable]
+     total  mean=2:34 (153.55s) median=2:10 (130.00s) cnt=321 stdev=30.53s cv=19.88%
+     door       0:52 (52.30s) cnt=321 stdev=31.50s
+     sw         1:41 (101.25s) cnt=321 stdev=0.97s
+     -> stdev dominated by door (door=31.50s vs sw=0.97s)
+
+
+======================================================================
+TIME-OF-DAY VARIATION BY HOURLY RANGE
+======================================================================
+
+Hourly range = max(hourly mean) - min(hourly mean), normalized by overall total mean.
+
+Time-of-day summary:
+  hourly range < 5%     static weight is excellent: 204 (64.15%)
+  5% <= hourly range < 15%   static weight still reasonable: 89 (27.99%)
+  15% <= hourly range  time-dependent routing would help: 25 (7.86%)
+
+Edges ranked by total hourly range percentage (highest first, range >= 15%): 25 of 318 (7.86%)
+1. L10S dir0  1.959 (Provençana) -> 1.9141 (Can Tries | Gornal)  [range=34.58s, 30.80%]
+     overall total      1:52 (112.27s) cnt=465 stdev=13.17s
+     min hourly mean  01:00, 02:00, 03:00, 04:00      1:25 (85.00s)
+     max hourly mean  23:00      2:00 (119.58s)
+2. L10S dir0  1.956 (Foc) -> 1.957 (Foneria)  [range=34.38s, 29.70%]
+     overall total      1:56 (115.78s) cnt=465 stdev=12.46s
+     min hourly mean  01:00, 02:00, 03:00      1:30 (90.00s)
+     max hourly mean  23:00      2:04 (124.38s)
+3. L1 dir1  1.116 (Florida) -> 1.115 (Can Serra)  [range=24.06s, 29.09%]
+     overall total      1:23 (82.69s) cnt=693 stdev=6.61s
+     min hourly mean  01:00      1:20 (79.94s)
+     max hourly mean  05:00      1:44 (104.00s)
+4. L10S dir0  1.957 (Foneria) -> 1.958 (Ciutat de la Justícia)  [range=32.75s, 28.76%]
+     overall total      1:54 (113.88s) cnt=465 stdev=12.12s
+     min hourly mean  01:00, 02:00, 03:00, 04:00      1:29 (89.00s)
+     max hourly mean  23:00      2:02 (121.75s)
+5. L1 dir1  1.115 (Can Serra) -> 1.114 (Rambla Just Oliveras)  [range=22.48s, 28.23%]
+     overall total      1:20 (79.64s) cnt=693 stdev=6.52s
+     min hourly mean  01:00      1:17 (76.94s)
+     max hourly mean  05:00      1:39 (99.42s)
+6. L10S dir0  1.958 (Ciutat de la Justícia) -> 1.959 (Provençana)  [range=32.54s, 26.90%]
+     overall total      2:01 (120.97s) cnt=465 stdev=12.13s
+     min hourly mean  01:00, 02:00, 03:00, 04:00      1:36 (96.00s)
+     max hourly mean  23:00      2:09 (128.54s)
+7. L1 dir1  1.114 (Rambla Just Oliveras) -> 1.113 (Av. Carrilet)  [range=23.01s, 26.87%]
+     overall total      1:26 (85.63s) cnt=693 stdev=6.34s
+     min hourly mean  01:00      1:23 (82.93s)
+     max hourly mean  05:00      1:46 (105.94s)
+8. L1 dir1  1.117 (Torrassa) -> 1.116 (Florida)  [range=21.62s, 25.99%]
+     overall total      1:23 (83.19s) cnt=693 stdev=5.73s
+     min hourly mean  01:00      1:20 (79.75s)
+     max hourly mean  05:00      1:41 (101.37s)
+9. L9S dir1  1.9160 (Collblanc) -> 1.9150 (Torrassa)  [range=42.10s, 25.24%]
+     overall total      2:47 (166.75s) cnt=458 stdev=11.18s
+     min hourly mean  01:00, 03:00      2:08 (128.00s)
+     max hourly mean  05:00      2:50 (170.10s)
+10. L1 dir1  1.112 (Bellvitge) -> 1.111 (Hospital de Bellvitge)  [range=23.57s, 20.66%]
+     overall total      1:54 (114.13s) cnt=692 stdev=5.90s
+     min hourly mean  00:00      1:50 (110.19s)
+     max hourly mean  05:00      2:14 (133.76s)
+11. L11 dir1  1.1138 (Torre Baró | Vallbona) -> 1.1137 (Casa de l'Aigua)  [range=31.50s, 20.51%]
+     overall total      2:34 (153.55s) cnt=321 stdev=30.53s
+     min hourly mean  01:00, 03:00, 22:00      2:10 (130.00s)
+     max hourly mean  10:00, 13:00, 17:00, 21:00      2:42 (161.50s)
+12. L1 dir0  1.139 (Santa Coloma) -> 1.140 (Fondo)  [range=21.47s, 20.24%]
+     overall total      1:46 (106.09s) cnt=724 stdev=7.11s
+     min hourly mean  02:00      1:40 (99.58s)
+     max hourly mean  21:00      2:01 (121.06s)
+13. L1 dir0  1.138 (Baró de Viver) -> 1.139 (Santa Coloma)  [range=19.90s, 20.11%]
+     overall total      1:39 (98.94s) cnt=725 stdev=6.73s
+     min hourly mean  02:00      1:34 (93.67s)
+     max hourly mean  21:00      1:54 (113.56s)
+14. L1 dir1  1.113 (Av. Carrilet) -> 1.112 (Bellvitge)  [range=24.51s, 19.92%]
+     overall total      2:03 (123.06s) cnt=693 stdev=6.59s
+     min hourly mean  00:00      1:57 (117.05s)
+     max hourly mean  05:00      2:22 (141.56s)
+15. L10S dir0  1.953 (Port Comercial | La Factoria) -> 1.954 (Zona Franca)  [range=27.75s, 19.28%]
+     overall total      2:24 (143.90s) cnt=429 stdev=10.42s
+     min hourly mean  08:00      2:04 (123.62s)
+     max hourly mean  23:00      2:31 (151.38s)
+16. L1 dir0  1.137 (Trinitat Vella) -> 1.138 (Baró de Viver)  [range=16.72s, 19.20%]
+     overall total      1:27 (87.08s) cnt=725 stdev=6.15s
+     min hourly mean  04:00      1:24 (84.43s)
+     max hourly mean  21:00      1:41 (101.15s)
+17. L1 dir0  1.135 (Sant Andreu) -> 1.136 (Torras i Bages)  [range=17.87s, 19.16%]
+     overall total      1:33 (93.29s) cnt=725 stdev=6.30s
+     min hourly mean  04:00      1:31 (90.67s)
+     max hourly mean  21:00      1:49 (108.54s)
+18. L10S dir1  1.9161 (Collblanc) -> 1.9151 (Torrassa)  [range=32.00s, 18.87%]
+     overall total      2:50 (169.58s) cnt=462 stdev=8.48s
+     min hourly mean  02:00, 03:00      2:20 (140.00s)
+     max hourly mean  05:00, 06:00, 07:00, 08:00, 09:00, 10:00, 11:00, 12:00, 13:00, 14:00, 15:00, 16:00, 17:00, 18:00, 19:00, 20:00, 21:00, 22:00, 23:00      2:52 (172.00s)
+19. L2 dir0  1.225 (Gorg) -> 1.226 (Pep Ventura)  [range=18.37s, 18.60%]
+     overall total      1:39 (98.73s) cnt=599 stdev=5.58s
+     min hourly mean  03:00      1:37 (97.00s)
+     max hourly mean  05:00      1:55 (115.37s)
+20. L10S dir1  1.958 (Ciutat de la Justícia) -> 1.957 (Foneria)  [range=17.12s, 18.33%]
+     overall total      1:33 (93.38s) cnt=462 stdev=5.43s
+     min hourly mean  01:00, 03:00      1:26 (86.00s)
+     max hourly mean  23:00      1:43 (103.12s)
+21. L10S dir0  1.952 (Ecoparc) -> 1.953 (Port Comercial | La Factoria)  [range=23.61s, 18.13%]
+     overall total      2:10 (130.17s) cnt=429 stdev=10.04s
+     min hourly mean  08:00      1:51 (111.43s)
+     max hourly mean  23:00      2:15 (135.04s)
+22. L10S dir1  1.957 (Foneria) -> 1.956 (Foc)  [range=16.46s, 17.44%]
+     overall total      1:34 (94.39s) cnt=462 stdev=5.42s
+     min hourly mean  01:00, 03:00      1:27 (87.00s)
+     max hourly mean  23:00      1:43 (103.46s)
+23. L10S dir1  1.959 (Provençana) -> 1.958 (Ciutat de la Justícia)  [range=17.15s, 17.08%]
+     overall total      1:40 (100.37s) cnt=462 stdev=5.44s
+     min hourly mean  01:00, 03:00      1:33 (93.00s)
+     max hourly mean  23:00      1:50 (110.15s)
+24. L2 dir0  1.224 (Sant Roc) -> 1.225 (Gorg)  [range=14.74s, 17.07%]
+     overall total      1:26 (86.34s) cnt=599 stdev=4.88s
+     min hourly mean  00:00, 01:00, 02:00, 03:00, 04:00, 22:00, 23:00      1:25 (85.00s)
+     max hourly mean  05:00      1:40 (99.74s)
+25. L1 dir0  1.136 (Torras i Bages) -> 1.137 (Trinitat Vella)  [range=17.44s, 15.81%]
+     overall total      1:50 (110.33s) cnt=725 stdev=6.36s
+     min hourly mean  04:00      1:48 (107.67s)
+     max hourly mean  21:00      2:05 (125.11s)
+
+
+======================================================================
+HOUR-OF-DAY BREAKDOWN FOR TOP CV EDGES
+======================================================================
+
+Hour-of-day total/door/sw breakdown for the top 1 highest-CV edges (CV >= 15%):
+
+
+1. L11 dir1  1.1138 (Torre Baró | Vallbona) -> 1.1137 (Casa de l'Aigua)
+     overall total      2:34 (153.55s) cnt=321 stdev=30.53s cv=19.88%
+     overall door       0:52 (52.30s) cnt=321 stdev=31.50s
+     overall sw         1:41 (101.25s) cnt=321 stdev=0.97s
+
+     00:00
+       total      2:16 (136.30s) cnt=10 stdev=19.92s
+       door       0:34 (34.50s) cnt=10 stdev=20.55s
+       sw         1:42 (101.80s) cnt=10 stdev=0.63s
+
+     01:00
+       total      2:10 (130.00s) cnt=9 stdev=0.00s
+       door       0:28 (28.00s) cnt=9 stdev=0.00s
+       sw         1:42 (102.00s) cnt=9 stdev=0.00s
+
+     02:00
+       total      2:23 (142.60s) cnt=5 stdev=28.17s
+       door       0:41 (41.00s) cnt=5 stdev=29.07s
+       sw         1:42 (101.60s) cnt=5 stdev=0.89s
+
+     03:00
+       total      2:10 (130.00s) cnt=4 stdev=0.00s
+       door       0:28 (28.00s) cnt=4 stdev=0.00s
+       sw         1:42 (102.00s) cnt=4 stdev=0.00s
+
+     05:00
+       total      2:17 (137.00s) cnt=9 stdev=21.00s
+       door       0:35 (35.22s) cnt=9 stdev=21.67s
+       sw         1:42 (101.78s) cnt=9 stdev=0.67s
+
+     06:00
+       total      2:19 (139.00s) cnt=14 stdev=22.88s
+       door       0:37 (37.29s) cnt=14 stdev=23.60s
+       sw         1:42 (101.71s) cnt=14 stdev=0.73s
+
+     07:00
+       total      2:39 (159.40s) cnt=15 stdev=32.53s
+       door       0:58 (58.33s) cnt=15 stdev=33.57s
+       sw         1:41 (101.07s) cnt=15 stdev=1.03s
+
+     08:00
+       total      2:40 (159.65s) cnt=17 stdev=32.41s
+       door       0:59 (58.59s) cnt=17 stdev=33.44s
+       sw         1:41 (101.06s) cnt=17 stdev=1.03s
+
+     09:00
+       total      2:38 (157.56s) cnt=16 stdev=32.28s
+       door       0:56 (56.44s) cnt=16 stdev=33.30s
+       sw         1:41 (101.12s) cnt=16 stdev=1.02s
+
+     10:00
+       total      2:42 (161.50s) cnt=16 stdev=32.53s
+       door       1:00 (60.50s) cnt=16 stdev=33.57s
+       sw         1:41 (101.00s) cnt=16 stdev=1.03s
+
+     11:00
+       total      2:38 (157.56s) cnt=16 stdev=32.28s
+       door       0:56 (56.44s) cnt=16 stdev=33.30s
+       sw         1:41 (101.12s) cnt=16 stdev=1.02s
+
+     12:00
+       total      2:40 (159.65s) cnt=17 stdev=32.41s
+       door       0:59 (58.59s) cnt=17 stdev=33.44s
+       sw         1:41 (101.06s) cnt=17 stdev=1.03s
+
+     13:00
+       total      2:42 (161.50s) cnt=16 stdev=32.53s
+       door       1:00 (60.50s) cnt=16 stdev=33.57s
+       sw         1:41 (101.00s) cnt=16 stdev=1.03s
+
+     14:00
+       total      2:38 (157.56s) cnt=16 stdev=32.28s
+       door       0:56 (56.44s) cnt=16 stdev=33.30s
+       sw         1:41 (101.12s) cnt=16 stdev=1.02s
+
+     15:00
+       total      2:40 (159.65s) cnt=17 stdev=32.41s
+       door       0:59 (58.59s) cnt=17 stdev=33.44s
+       sw         1:41 (101.06s) cnt=17 stdev=1.03s
+
+     16:00
+       total      2:40 (159.65s) cnt=17 stdev=32.41s
+       door       0:59 (58.59s) cnt=17 stdev=33.44s
+       sw         1:41 (101.06s) cnt=17 stdev=1.03s
+
+     17:00
+       total      2:42 (161.50s) cnt=16 stdev=32.53s
+       door       1:00 (60.50s) cnt=16 stdev=33.57s
+       sw         1:41 (101.00s) cnt=16 stdev=1.03s
+
+     18:00
+       total      2:38 (157.56s) cnt=16 stdev=32.28s
+       door       0:56 (56.44s) cnt=16 stdev=33.30s
+       sw         1:41 (101.12s) cnt=16 stdev=1.02s
+
+     19:00
+       total      2:40 (159.65s) cnt=17 stdev=32.41s
+       door       0:59 (58.59s) cnt=17 stdev=33.44s
+       sw         1:41 (101.06s) cnt=17 stdev=1.03s
+
+     20:00
+       total      2:39 (159.40s) cnt=15 stdev=32.53s
+       door       0:58 (58.33s) cnt=15 stdev=33.57s
+       sw         1:41 (101.07s) cnt=15 stdev=1.03s
+
+     21:00
+       total      2:42 (161.50s) cnt=16 stdev=32.53s
+       door       1:00 (60.50s) cnt=16 stdev=33.57s
+       sw         1:41 (101.00s) cnt=16 stdev=1.03s
+
+     22:00
+       total      2:10 (130.00s) cnt=14 stdev=0.00s
+       door       0:28 (28.00s) cnt=14 stdev=0.00s
+       sw         1:42 (102.00s) cnt=14 stdev=0.00s
+
+     23:00
+       total      2:15 (134.85s) cnt=13 stdev=17.47s
+       door       0:33 (33.00s) cnt=13 stdev=18.03s
+       sw         1:42 (101.85s) cnt=13 stdev=0.55s
+
+
+======================================================================
+HOUR-OF-DAY BREAKDOWN FOR TOP HOURLY-RANGE EDGES
+======================================================================
+
+Hour-of-day total/door/sw breakdown for the top 2 highest hourly-range edges (hourly range >= 15%):
+
+
+1. L10S dir0  1.959 (Provençana) -> 1.9141 (Can Tries | Gornal)
+     overall total      1:52 (112.27s) cnt=465 stdev=13.17s hourly_range=34.58s (30.80%)
+     overall door       0:52 (52.27s) cnt=465 stdev=13.17s
+     overall sw         1:00 (60.00s) cnt=465 stdev=0.00s
+     min hourly mean  01:00, 02:00, 03:00, 04:00      1:25 (85.00s)
+     max hourly mean  23:00      2:00 (119.58s)
+
+     00:00
+       total      1:45 (105.00s) cnt=16 stdev=21.65s
+       door       0:45 (45.00s) cnt=16 stdev=21.65s
+       sw         1:00 (60.00s) cnt=16 stdev=0.00s
+
+     01:00
+       total      1:25 (85.00s) cnt=13 stdev=0.00s
+       door       0:25 (25.00s) cnt=13 stdev=0.00s
+       sw         1:00 (60.00s) cnt=13 stdev=0.00s
+
+     02:00
+       total      1:25 (85.00s) cnt=5 stdev=0.00s
+       door       0:25 (25.00s) cnt=5 stdev=0.00s
+       sw         1:00 (60.00s) cnt=5 stdev=0.00s
+
+     03:00
+       total      1:25 (85.00s) cnt=5 stdev=0.00s
+       door       0:25 (25.00s) cnt=5 stdev=0.00s
+       sw         1:00 (60.00s) cnt=5 stdev=0.00s
+
+     04:00
+       total      1:25 (85.00s) cnt=5 stdev=0.00s
+       door       0:25 (25.00s) cnt=5 stdev=0.00s
+       sw         1:00 (60.00s) cnt=5 stdev=0.00s
+
+     05:00
+       total      1:48 (107.91s) cnt=22 stdev=20.15s
+       door       0:48 (47.91s) cnt=22 stdev=20.15s
+       sw         1:00 (60.00s) cnt=22 stdev=0.00s
+
+     06:00
+       total      1:59 (118.65s) cnt=23 stdev=2.93s
+       door       0:59 (58.65s) cnt=23 stdev=2.93s
+       sw         1:00 (60.00s) cnt=23 stdev=0.00s
+
+     07:00
+       total      1:41 (101.30s) cnt=23 stdev=15.26s
+       door       0:41 (41.30s) cnt=23 stdev=15.26s
+       sw         1:00 (60.00s) cnt=23 stdev=0.00s
+
+     08:00
+       total      1:35 (94.67s) cnt=24 stdev=16.85s
+       door       0:35 (34.67s) cnt=24 stdev=16.85s
+       sw         1:00 (60.00s) cnt=24 stdev=0.00s
+
+     09:00
+       total      1:39 (99.18s) cnt=22 stdev=15.49s
+       door       0:39 (39.18s) cnt=22 stdev=15.49s
+       sw         1:00 (60.00s) cnt=22 stdev=0.00s
+
+     10:00
+       total      1:58 (117.73s) cnt=22 stdev=0.88s
+       door       0:58 (57.73s) cnt=22 stdev=0.88s
+       sw         1:00 (60.00s) cnt=22 stdev=0.00s
+
+     11:00
+       total      1:58 (118.00s) cnt=21 stdev=0.00s
+       door       0:58 (58.00s) cnt=21 stdev=0.00s
+       sw         1:00 (60.00s) cnt=21 stdev=0.00s
+
+     12:00
+       total      1:58 (118.00s) cnt=23 stdev=0.00s
+       door       0:58 (58.00s) cnt=23 stdev=0.00s
+       sw         1:00 (60.00s) cnt=23 stdev=0.00s
+
+     13:00
+       total      1:58 (118.00s) cnt=21 stdev=0.00s
+       door       0:58 (58.00s) cnt=21 stdev=0.00s
+       sw         1:00 (60.00s) cnt=21 stdev=0.00s
+
+     14:00
+       total      1:58 (118.00s) cnt=22 stdev=0.00s
+       door       0:58 (58.00s) cnt=22 stdev=0.00s
+       sw         1:00 (60.00s) cnt=22 stdev=0.00s
+
+     15:00
+       total      1:58 (118.00s) cnt=21 stdev=0.00s
+       door       0:58 (58.00s) cnt=21 stdev=0.00s
+       sw         1:00 (60.00s) cnt=21 stdev=0.00s
+
+     16:00
+       total      1:58 (118.00s) cnt=23 stdev=0.00s
+       door       0:58 (58.00s) cnt=23 stdev=0.00s
+       sw         1:00 (60.00s) cnt=23 stdev=0.00s
+
+     17:00
+       total      1:58 (118.00s) cnt=21 stdev=0.00s
+       door       0:58 (58.00s) cnt=21 stdev=0.00s
+       sw         1:00 (60.00s) cnt=21 stdev=0.00s
+
+     18:00
+       total      1:58 (118.00s) cnt=22 stdev=0.00s
+       door       0:58 (58.00s) cnt=22 stdev=0.00s
+       sw         1:00 (60.00s) cnt=22 stdev=0.00s
+
+     19:00
+       total      1:58 (118.00s) cnt=21 stdev=0.00s
+       door       0:58 (58.00s) cnt=21 stdev=0.00s
+       sw         1:00 (60.00s) cnt=21 stdev=0.00s
+
+     20:00
+       total      1:58 (118.00s) cnt=23 stdev=0.00s
+       door       0:58 (58.00s) cnt=23 stdev=0.00s
+       sw         1:00 (60.00s) cnt=23 stdev=0.00s
+
+     21:00
+       total      1:58 (118.00s) cnt=21 stdev=0.00s
+       door       0:58 (58.00s) cnt=21 stdev=0.00s
+       sw         1:00 (60.00s) cnt=21 stdev=0.00s
+
+     22:00
+       total      1:58 (118.00s) cnt=22 stdev=0.00s
+       door       0:58 (58.00s) cnt=22 stdev=0.00s
+       sw         1:00 (60.00s) cnt=22 stdev=0.00s
+
+     23:00
+       total      2:00 (119.58s) cnt=24 stdev=4.58s
+       door       1:00 (59.58s) cnt=24 stdev=4.58s
+       sw         1:00 (60.00s) cnt=24 stdev=0.00s
+
+
+2. L10S dir0  1.956 (Foc) -> 1.957 (Foneria)
+     overall total      1:56 (115.78s) cnt=465 stdev=12.46s hourly_range=34.38s (29.70%)
+     overall door       0:50 (49.78s) cnt=465 stdev=12.46s
+     overall sw         1:06 (66.00s) cnt=465 stdev=0.00s
+     min hourly mean  01:00, 02:00, 03:00      1:30 (90.00s)
+     max hourly mean  23:00      2:04 (124.38s)
+
+     00:00
+       total      1:40 (100.21s) cnt=14 stdev=17.66s
+       door       0:34 (34.21s) cnt=14 stdev=17.66s
+       sw         1:06 (66.00s) cnt=14 stdev=0.00s
+
+     01:00
+       total      1:30 (90.00s) cnt=11 stdev=0.00s
+       door       0:24 (24.00s) cnt=11 stdev=0.00s
+       sw         1:06 (66.00s) cnt=11 stdev=0.00s
+
+     02:00
+       total      1:30 (90.00s) cnt=6 stdev=0.00s
+       door       0:24 (24.00s) cnt=6 stdev=0.00s
+       sw         1:06 (66.00s) cnt=6 stdev=0.00s
+
+     03:00
+       total      1:30 (90.00s) cnt=4 stdev=0.00s
+       door       0:24 (24.00s) cnt=4 stdev=0.00s
+       sw         1:06 (66.00s) cnt=4 stdev=0.00s
+
+     04:00
+       total      1:33 (92.67s) cnt=6 stdev=6.53s
+       door       0:27 (26.67s) cnt=6 stdev=6.53s
+       sw         1:06 (66.00s) cnt=6 stdev=0.00s
+
+     05:00
+       total      1:56 (115.88s) cnt=25 stdev=18.55s
+       door       0:50 (49.88s) cnt=25 stdev=18.55s
+       sw         1:06 (66.00s) cnt=25 stdev=0.00s
+
+     06:00
+       total      2:01 (121.14s) cnt=21 stdev=2.22s
+       door       0:55 (55.14s) cnt=21 stdev=2.22s
+       sw         1:06 (66.00s) cnt=21 stdev=0.00s
+
+     07:00
+       total      1:44 (103.96s) cnt=23 stdev=14.47s
+       door       0:38 (37.96s) cnt=23 stdev=14.47s
+       sw         1:06 (66.00s) cnt=23 stdev=0.00s
+
+     08:00
+       total      1:38 (98.04s) cnt=23 stdev=15.53s
+       door       0:32 (32.04s) cnt=23 stdev=15.53s
+       sw         1:06 (66.00s) cnt=23 stdev=0.00s
+
+     09:00
+       total      1:46 (106.08s) cnt=24 stdev=14.54s
+       door       0:40 (40.08s) cnt=24 stdev=14.54s
+       sw         1:06 (66.00s) cnt=24 stdev=0.00s
+
+     10:00
+       total      2:01 (121.00s) cnt=21 stdev=0.00s
+       door       0:55 (55.00s) cnt=21 stdev=0.00s
+       sw         1:06 (66.00s) cnt=21 stdev=0.00s
+
+     11:00
+       total      2:01 (121.00s) cnt=22 stdev=0.00s
+       door       0:55 (55.00s) cnt=22 stdev=0.00s
+       sw         1:06 (66.00s) cnt=22 stdev=0.00s
+
+     12:00
+       total      2:01 (121.00s) cnt=21 stdev=0.00s
+       door       0:55 (55.00s) cnt=21 stdev=0.00s
+       sw         1:06 (66.00s) cnt=21 stdev=0.00s
+
+     13:00
+       total      2:01 (121.00s) cnt=23 stdev=0.00s
+       door       0:55 (55.00s) cnt=23 stdev=0.00s
+       sw         1:06 (66.00s) cnt=23 stdev=0.00s
+
+     14:00
+       total      2:01 (121.00s) cnt=21 stdev=0.00s
+       door       0:55 (55.00s) cnt=21 stdev=0.00s
+       sw         1:06 (66.00s) cnt=21 stdev=0.00s
+
+     15:00
+       total      2:01 (121.00s) cnt=22 stdev=0.00s
+       door       0:55 (55.00s) cnt=22 stdev=0.00s
+       sw         1:06 (66.00s) cnt=22 stdev=0.00s
+
+     16:00
+       total      2:01 (121.00s) cnt=21 stdev=0.00s
+       door       0:55 (55.00s) cnt=21 stdev=0.00s
+       sw         1:06 (66.00s) cnt=21 stdev=0.00s
+
+     17:00
+       total      2:01 (121.00s) cnt=23 stdev=0.00s
+       door       0:55 (55.00s) cnt=23 stdev=0.00s
+       sw         1:06 (66.00s) cnt=23 stdev=0.00s
+
+     18:00
+       total      2:01 (121.00s) cnt=21 stdev=0.00s
+       door       0:55 (55.00s) cnt=21 stdev=0.00s
+       sw         1:06 (66.00s) cnt=21 stdev=0.00s
+
+     19:00
+       total      2:01 (121.00s) cnt=22 stdev=0.00s
+       door       0:55 (55.00s) cnt=22 stdev=0.00s
+       sw         1:06 (66.00s) cnt=22 stdev=0.00s
+
+     20:00
+       total      2:01 (121.00s) cnt=21 stdev=0.00s
+       door       0:55 (55.00s) cnt=21 stdev=0.00s
+       sw         1:06 (66.00s) cnt=21 stdev=0.00s
+
+     21:00
+       total      2:01 (121.00s) cnt=23 stdev=0.00s
+       door       0:55 (55.00s) cnt=23 stdev=0.00s
+       sw         1:06 (66.00s) cnt=23 stdev=0.00s
+
+     22:00
+       total      2:01 (121.00s) cnt=21 stdev=0.00s
+       door       0:55 (55.00s) cnt=21 stdev=0.00s
+       sw         1:06 (66.00s) cnt=21 stdev=0.00s
+
+     23:00
+       total      2:04 (124.38s) cnt=26 stdev=6.74s
+       door       0:58 (58.38s) cnt=26 stdev=6.74s
+       sw         1:06 (66.00s) cnt=26 stdev=0.00s
+
+
+======================================================================
+SUMMARY
+======================================================================
+
+320 sw edges analyzed.
+
+Stability (CV): 313 stable/extremely stable (97.81%), 6 acceptable (1.88%), 1 unstable (0.31%).
+Time-of-day: 293 edges have a static weight that's fine (92.14%), 25 would benefit from time-dependent routing (7.86%).
+
+Verdict: mean(total) is a trustworthy static weight for 295 of 320 edges (92.19%). The remaining 25 (7.81%) need revisiting, and not necessarily with the same fix. See which test flagged each one below.
+
+Edges needing attention (25, high CV or high hourly range):
+  - L1 dir0  1.135 (Sant Andreu) -> 1.136 (Torras i Bages)  [hourly range=19.16%]
+  - L1 dir0  1.136 (Torras i Bages) -> 1.137 (Trinitat Vella)  [hourly range=15.81%]
+  - L1 dir0  1.137 (Trinitat Vella) -> 1.138 (Baró de Viver)  [hourly range=19.20%]
+  - L1 dir0  1.138 (Baró de Viver) -> 1.139 (Santa Coloma)  [hourly range=20.11%]
+  - L1 dir0  1.139 (Santa Coloma) -> 1.140 (Fondo)  [hourly range=20.24%]
+  - L1 dir1  1.112 (Bellvitge) -> 1.111 (Hospital de Bellvitge)  [hourly range=20.66%]
+  - L1 dir1  1.113 (Av. Carrilet) -> 1.112 (Bellvitge)  [hourly range=19.92%]
+  - L1 dir1  1.114 (Rambla Just Oliveras) -> 1.113 (Av. Carrilet)  [hourly range=26.87%]
+  - L1 dir1  1.115 (Can Serra) -> 1.114 (Rambla Just Oliveras)  [hourly range=28.23%]
+  - L1 dir1  1.116 (Florida) -> 1.115 (Can Serra)  [hourly range=29.09%]
+  - L1 dir1  1.117 (Torrassa) -> 1.116 (Florida)  [hourly range=25.99%]
+  - L2 dir0  1.224 (Sant Roc) -> 1.225 (Gorg)  [hourly range=17.07%]
+  - L2 dir0  1.225 (Gorg) -> 1.226 (Pep Ventura)  [hourly range=18.60%]
+  - L9S dir1  1.9160 (Collblanc) -> 1.9150 (Torrassa)  [hourly range=25.24%]
+  - L10S dir0  1.952 (Ecoparc) -> 1.953 (Port Comercial | La Factoria)  [hourly range=18.13%]
+  - L10S dir0  1.953 (Port Comercial | La Factoria) -> 1.954 (Zona Franca)  [hourly range=19.28%]
+  - L10S dir0  1.956 (Foc) -> 1.957 (Foneria)  [hourly range=29.70%]
+  - L10S dir0  1.957 (Foneria) -> 1.958 (Ciutat de la Justícia)  [hourly range=28.76%]
+  - L10S dir0  1.958 (Ciutat de la Justícia) -> 1.959 (Provençana)  [hourly range=26.90%]
+  - L10S dir0  1.959 (Provençana) -> 1.9141 (Can Tries | Gornal)  [hourly range=30.80%]
+  - L10S dir1  1.9161 (Collblanc) -> 1.9151 (Torrassa)  [hourly range=18.87%]
+  - L10S dir1  1.957 (Foneria) -> 1.956 (Foc)  [hourly range=17.44%]
+  - L10S dir1  1.958 (Ciutat de la Justícia) -> 1.957 (Foneria)  [hourly range=18.33%]
+  - L10S dir1  1.959 (Provençana) -> 1.958 (Ciutat de la Justícia)  [hourly range=17.08%]
+  - L11 dir1  1.1138 (Torre Baró | Vallbona) -> 1.1137 (Casa de l'Aigua)  [CV=19.88%, hourly range=20.51%]
